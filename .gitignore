@@ -1,0 +1,7 @@
+lib_sgpu/
+obj_sgpu/
+*.d
+*.o
+test_sgpu
+testheatbath
+tunecache.csv
