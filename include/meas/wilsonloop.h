@@ -4,18 +4,13 @@
 
 #include <constants.h>
 
+namespace CULQCD {
 
-namespace CULQCD{
-
-
-
-template<class Real>
+template <class Real>
 void CWilsonLoop(gauge array, complex *res, int radius, int Tmax);
 
-
-template<class Real>
+template <class Real>
 void WilsonLoop(gauge array, complex *res, int radius, int Tmax);
 }
 
 #endif
-

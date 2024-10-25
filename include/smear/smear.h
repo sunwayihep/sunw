@@ -4,22 +4,17 @@
 
 #include <constants.h>
 
-
-namespace CULQCD{
-
+namespace CULQCD {
 
 ////////////////////////////   APE SMEARING //////////////////////////////
-template<class Real>
+template <class Real>
 void ApplyAPEinSpace(gauge array, Real w, int steps, int nhits, Real tol);
 
-template<class Real>
+template <class Real>
 void ApplyAPEinTime(gauge array, Real w, int steps, int nhits, Real tol);
 
-
-
-
 ////////////////////////////   HYP SMEARING //////////////////////////////
-class ParamHYP{
+class ParamHYP {
 private:
   float alpha1;
   float alpha2;
@@ -35,40 +30,28 @@ public:
   void copyToGPUMem();
 };
 
-template<class Real>
+template <class Real>
 void ApplyHYPinSpace(gauge array, int steps, int nhits, Real tol, ParamHYP hyp);
 
-template<class Real>
+template <class Real>
 void ApplyHYPinTime(gauge array, int steps, int nhits, Real tol, ParamHYP hyp);
 
-
-
-
 ////////////////////////////   STOUT SMEARING //////////////////////////////
-template<class Real>
-void ApplyStoutinSpace(gauge array, Real w, int steps);
+template <class Real> void ApplyStoutinSpace(gauge array, Real w, int steps);
 
-template<class Real>
-void ApplyStoutinTime(gauge array, Real w, int steps);
-
-
-
-
+template <class Real> void ApplyStoutinTime(gauge array, Real w, int steps);
 
 ////////////////////////////   MULTIHIT SMEARING //////////////////////////////
-template<class Real>
+template <class Real>
 void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit);
 
-template<class Real>
+template <class Real>
 void ApplyMultiHitSpace(gauge array, gauge arrayout, RNG &randstates, int nhit);
 
-////////////////////////////   MULTIHIT EXTENDED SMEARING //////////////////////////////
-template<class Real>
+////////////////////////////   MULTIHIT EXTENDED SMEARING
+/////////////////////////////////
+template <class Real>
 void ApplyMultiHitExt(gauge array, gauge arrayout, RNG &randstates, int nhit);
-
-
-
 }
 
 #endif
-

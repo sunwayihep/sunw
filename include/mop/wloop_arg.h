@@ -1,7 +1,6 @@
 #pragma once
-namespace CULQCD{
-template<class Real>
-struct WLOPArg{
+namespace CULQCD {
+template <class Real> struct WLOPArg {
   complex *gaugefield;
   complex *fieldOp;
   int radius;
