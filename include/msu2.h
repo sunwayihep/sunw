@@ -188,7 +188,7 @@ class _msu2 {
 
 
     // print matrix contents (host code only!)
-    M_HOST void print() {
+    M_HOSTDEVICE void print() {
         printf("%.10e\t%.10e\t%.10e\t%.10e\n", val.x, val.y, val.z, val.w);
     }
     M_HOST void print(FILE *stream) {

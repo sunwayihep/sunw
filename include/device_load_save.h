@@ -75,7 +75,7 @@ __device__ inline void GAUGE_SAVE(complex *array, const msun A, const uint id){
 */
 template <ArrayType atype, class Real> 
 __host__ __device__ inline void GAUGE_SAVE(complex *array, const msun A, const uint id, const uint offset){
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -148,7 +148,7 @@ __device__ inline msun GAUGE_LOAD(const complex *array, const uint id){
 template <bool UseTex, ArrayType atype, class Real> 
 __device__ inline msun GAUGE_LOAD(const complex *array, const uint id, const uint offset){
 	msun A; 
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -208,7 +208,7 @@ __device__ inline msun GAUGE_LOAD(const complex *array, const uint id, const uin
 template <bool UseTex, ArrayType atype, class Real> 
 __device__ inline msun GAUGE_LOAD_DAGGER( const complex *array, const uint id){
     msun A; 
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -269,7 +269,7 @@ __device__ inline msun GAUGE_LOAD_DAGGER( const complex *array, const uint id){
 template <bool UseTex, ArrayType atype, class Real> 
 __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id, const uint offset){
     msun A; 
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -398,7 +398,7 @@ __device__ inline msun DELTA_LOAD_DAGGER(const complex *array, const uint id){
 template <bool UseTex, ArrayType atype, class Real> 
 __device__ inline msun  DELTA_LOAD(const complex *array, const uint id, const uint offset){
     msun A; 
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -438,7 +438,7 @@ __device__ inline msun  DELTA_LOAD(const complex *array, const uint id, const ui
 
 template <ArrayType atype, class Real> 
 __host__ __device__ inline void DELTA_SAVE(complex *array, msun A, uint id, uint offset){
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -537,7 +537,7 @@ __device__ inline msun GX_LOAD_DAGGER(const complex *array, const uint id){
 template <bool UseTex, ArrayType atype, class Real> 
 __device__ inline msun  GX_LOAD(const complex *array, const uint id, const uint offset){
     msun A; 
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -585,7 +585,7 @@ __device__ inline msun  GX_LOAD(const complex *array, const uint id, const uint 
 template <bool UseTex, ArrayType atype, class Real> 
 __device__ inline msun GX_LOAD_DAGGER(const complex *array, const uint id, const uint offset){
     msun A; 
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll
@@ -639,7 +639,7 @@ __device__ inline complex ELEM_LAMBDA_LOAD(const complex *array, const uint id){
 template <bool UseTex, ArrayType atype, class Real> 
 __device__ inline msun  LAMBDA_LOAD(const complex *array, const uint id, const uint offset){
     msun A; 
-#if (NCOLORS > 3)
+#if (NCOLORS > 3) || (NCOLORS == 2)
 #pragma unroll
     for(int i = 0; i< NCOLORS; i++)
 #pragma unroll

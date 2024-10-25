@@ -420,6 +420,41 @@ __device__ inline void heatBathSUN( msun& U, msun F, cuRNGState& localState ){
         //FLOP_min = (NCOLORS * 64 + 19 + 28 + 28) * 3 = NCOLORS * 192 + 225
     }
     //////////////////////////////////////////////////////////////////
+
+#elif (NCOLORS == 2)
+      int2 id = IndexBlock(0);
+      msu2 r = get_block_su2<Real>(F, id);	
+      Real k = r.abs();
+
+      /**
+      if (INDEX1D() == 0) {
+        printf("print U matrix\n");
+        U.print();
+        
+        printf("print F matrix\n");
+        F.print();
+
+        printf("print r matrix\n");
+        r.print();
+
+        printf("k = %f\n", k);
+      }*/
+      
+      Real ap = (Real)DEVPARAMS::BetaOverNc * k;
+      k = (Real)1.0 / k;
+      r *= k;
+      //msu2 a = generate_su2_matrix<T4, T>(ap, localState);
+      msu2 a = generate_su2_matrix_milc<Real>(ap, localState);
+      msu2 rr = mulsu2UVDagger<Real>( a, r);
+
+      int2 id2; id2.x=0, id2.y=1;
+      U = block_su2_to_sun(rr, id2);
+      /**
+      if (INDEX1D() == 0) {
+        printf("print U matrix\n");
+        U.print();
+      }*/
+
 #else
     //////////////////////////////////////////////////////////////////
     //TESTED IN SU(4) SP THIS IS WORST

@@ -3,7 +3,7 @@ VERSION  = V1_$(shell date "+%d_%m_%Y_%T")
 VERSION  = V1_$(shell date "+%d_%m_%Y_%H-%M-%S")
 STANDARD = c99
 ############################################################################################################
-USE_NUMBER_OF_COLORS := 4 				#Set N of SU(N), needs make cleanall before recompile
+USE_NUMBER_OF_COLORS := 2 				#Set N of SU(N), needs make cleanall before recompile
 BUILD_MULTI_GPU = $(MGPU) 				#no Multi-GPU: make or make MGPU=no, for Multi-GPU: make MGPU=yes / change "$(MGPU)" to no/yes
 MEASURE_TIMMINGS = yes 					#report timing, gb/s and gflops
 USE_CUDARNG = MRG32k3a 					#XORWOW/MRG32k3a  #CURAND type random generator
