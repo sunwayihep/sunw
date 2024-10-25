@@ -95,7 +95,7 @@ void heatBathTEST(int argc, char **argv) {
     h0.stop();
     COUT << "Time for "
          << "traj "
-         << "#" << i << ": " << t0.getElapsedTime() << " s" << endl;
+         << "#" << i << ": " << h0.getElapsedTime() << " s" << endl;
     COUT << endl;
 
     PlaquetteCUB<Real> plaqCUB(conf);
