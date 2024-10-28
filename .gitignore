@@ -2,6 +2,7 @@ lib_sgpu/
 obj_sgpu/
 *.d
 *.o
+*.out
 test_sgpu
-testheatbath
+heatbath_su*
 tunecache.csv

@@ -3,7 +3,7 @@ VERSION  = V1_$(shell date "+%d_%m_%Y_%T")
 VERSION  = V1_$(shell date "+%d_%m_%Y_%H-%M-%S")
 STANDARD = c99
 ############################################################################################################
-USE_NUMBER_OF_COLORS := 2 				#Set N of SU(N), needs make cleanall before recompile
+USE_NUMBER_OF_COLORS = 2 				#Set N of SU(N), needs make cleanall before recompile
 BUILD_MULTI_GPU = $(MGPU) 				#no Multi-GPU: make or make MGPU=no, for Multi-GPU: make MGPU=yes / change "$(MGPU)" to no/yes
 MEASURE_TIMMINGS = yes 					#report timing, gb/s and gflops
 USE_CUDARNG = MRG32k3a 					#XORWOW/MRG32k3a  #CURAND type random generator
@@ -232,8 +232,11 @@ CUDA_VERSION = $(shell awk '/\#define CUDA_VERSION/{print $$3}' $(CUDA_PATH)/inc
 HASH = \"cpu_arch=$(strip $(OS_ARCH)),gpu_arch=$(strip $(GPU_ARCH)),cuda_version=$(strip $(CUDA_VERSION))\"
 ############################################################################################################
 ############################################################################################################
+
+HEATBATH_OBJ=heatbath_su$(strip $(USE_NUMBER_OF_COLORS)).o
+HEATBATH_EXE=heatbath_su$(strip $(USE_NUMBER_OF_COLORS))
 # Target rules
-all: lib  $(PROJECTNAME) testheatbath
+all: lib  $(PROJECTNAME) $(HEATBATH_EXE)
 ############################################################################################################
 ############################################################################################################
 deps = $(MAINOBJ:.o=.d)
@@ -241,13 +244,13 @@ test: $(PROJECTNAME)
 $(MAINOBJ): test.cpp
 	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP  -c $< -o $@  
 
-testheatbath.o: testheatbath.cpp
+$(HEATBATH_OBJ): heatbath.cpp
 	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP  -c $< -o $@  
  
 $(PROJECTNAME):  $(MAINOBJ) $(LIBDIR)/$(LIBNAME)
 	$(VERBOSE)$(GCC) $(CCFLAGS) -I. -L. -o $@ $+ $(SUNPROPERTIES)  $(EXTRA_LDFLAGS) -L$(LIBDIR)/ -lSUN  $(LDFLAGS)  -lcudadevrt
 
-testheatbath:  testheatbath.o $(LIBDIR)/$(LIBNAME)
+$(HEATBATH_EXE):  $(HEATBATH_OBJ) $(LIBDIR)/$(LIBNAME)
 	$(VERBOSE)$(GCC) $(CCFLAGS) -I. -L. -o $@ $+ $(SUNPROPERTIES)  $(EXTRA_LDFLAGS) -L$(LIBDIR)/ -lSUN  $(LDFLAGS)  -lcudadevrt
 ############################################################################################################
 ############################################################################################################
@@ -327,16 +330,16 @@ directories:
 cleanall:
 	$(VERBOSE)rm -r -f $(OBJDIR)
 	$(VERBOSE)rm -r -f $(LIBDIR)
-	$(VERBOSE)rm -f $(PROJECTNAME) $(MAINOBJ) child.o testheatbath.o testheatbath
+	$(VERBOSE)rm -f $(PROJECTNAME) $(MAINOBJ) child.o $(HEATBATH_OBJ) $(HEATBATH_EXE) *.d
 clean:
 	$(VERBOSE)rm -r -f $(LIBDIR)
-	$(VERBOSE)rm -f $(PROJECTNAME) $(MAINOBJ) child.o testheatbath.o testheatbath
+	$(VERBOSE)rm -f $(PROJECTNAME) $(MAINOBJ) child.o $(HEATBATH_OBJ) $(HEATBATH_EXE) *.d
 
 pack: 
 	@echo Generating Package sun_$(VERSION).tar.gz
 	@tar cvfz sun_$(VERSION).tar.gz *.cpp *.h $(INCS)/*  $(SRCDIR)/* Makefile
 	@echo Generated Package sun_$(VERSION).tar.gz
 
-.PHONY : clean cleanall pack directories lib $(PROJECTNAME) testheatbath
+.PHONY : clean cleanall pack directories lib $(PROJECTNAME) $(HEATBATH_EXE)
 
 -include $(deps)

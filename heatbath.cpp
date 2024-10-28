@@ -21,7 +21,7 @@ using namespace std;
 using namespace CULQCD;
 
 template <class Real, ArrayType mygaugein>
-void heatBathTEST(int argc, char **argv);
+void runHeatBath(int argc, char **argv);
 
 // NEEDS: export CULQCD_RESOURCE_PATH="path to folder where the tuning
 // parameters are saved..."
@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
           "###########" << endl;
   COUT << "Start generating SU(" << NCOLORS << ") gauge configurations" << endl;
   const ArrayType mygauge = SOA; // SOA/SOA12/SOA8 for SU(3) and SOA for N>3
-  heatBathTEST<double, mygauge>(argc, argv);
+  runHeatBath<double, mygauge>(argc, argv);
   COUT << "####################################################################"
           "###########" << endl;
   EndCULQCD(0);
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
 // heatbath test module
 template <class Real, ArrayType mygaugein>
-void heatBathTEST(int argc, char **argv) {
+void runHeatBath(int argc, char **argv) {
   int ns = atoi(argv[1]);
   int nt = atoi(argv[2]);
   float beta0 = atof(argv[3]);
