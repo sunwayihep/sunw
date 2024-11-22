@@ -20,10 +20,31 @@ inline __host__ __device__ void Index_4D_NM(const int id, int x[4]) {
   x[0] = id % param_Grid(0);
 }
 
+// for N-dimensional lattice
+__host__ __device__ inline void Index_ND_NM(const int id, int x[NDIMS]) {
+  int temp = id;
+  for(int i=0; i<NDIMS; i++){
+    x[i] = temp % param_Grid(i);
+    temp /= param_Grid(i);
+  }
+}
+
 __device__ __host__ inline int Index_4D_NM(const int y[]) {
   return (((y[3] * param_Grid(2) + y[2]) * param_Grid(1) + y[1]) *
               param_Grid(0) +
           y[0]);
+}
+
+// for N-dimensional lattice
+__host__ __device__ inline int Index_ND_NM(const int y[NDIMS]) {
+  int index = 0;
+  int factor = 1;
+  for(int i=0; i<NDIMS; i++){
+    index += y[i] * factor;
+    factor *= param_Grid(i);
+  }
+  
+  return index;
 }
 
 inline __host__ __device__ int Index_4D_Neig_NM(const int id, const int mu,
@@ -38,6 +59,17 @@ inline __host__ __device__ int Index_4D_Neig_NM(const int id, const int mu,
          x[0];
 }
 
+__host__ __device__ inline int Index_ND_Neig_NM(const int id, const int mu,
+                                                const int lmu, const int nu,
+                                                const int lnu) {
+  int x[NDIMS];
+  Index_ND_NM(id, x);
+  x[mu] = (x[mu] + lmu + param_Grid(mu)) % param_Grid(mu);
+  x[nu] = (x[nu] + lnu + param_Grid(nu)) % param_Grid(nu);
+  
+  return Index_ND_NM(x);
+}
+
 inline __host__ __device__ int Index_4D_Neig_NM(const int id, const int mu,
                                                 const int lmu) {
   int x[4];
@@ -46,6 +78,15 @@ inline __host__ __device__ int Index_4D_Neig_NM(const int id, const int mu,
   return (((x[3] * param_Grid(2) + x[2]) * param_Grid(1)) + x[1]) *
              param_Grid(0) +
          x[0];
+}
+
+__host__ __device__ inline int Index_ND_Neig_NM(const int id, const int mu,
+                                                const int lmu) {
+  int x[NDIMS];
+  Index_ND_NM(id, x);
+  x[mu] = (x[mu] + lmu + param_Grid(mu)) % param_Grid(mu);
+  
+  return Index_ND_NM(x);
 }
 
 __device__ __host__ inline int Index_4D_Neig_NM(const int x[], const int mu,
@@ -59,6 +100,16 @@ __device__ __host__ inline int Index_4D_Neig_NM(const int x[], const int mu,
           y[0]);
 }
 
+__host__ __device__ inline int Index_ND_Neig_NM(const int x[NDIMS], const int mu,
+                                                const int lmu) {
+  int y[NDIMS];
+  for (int i = 0; i < NDIMS; i++)
+    y[i] = x[i];
+  y[mu] = (x[mu] + lmu + param_Grid(mu)) % param_Grid(mu);
+  
+  return Index_ND_NM(y);
+}
+
 __device__ __host__ inline int Index_4D_Neig_NM(const int x[], int dx[]) {
   int y[4];
   for (int i = 0; i < 4; i++)
@@ -68,15 +119,40 @@ __device__ __host__ inline int Index_4D_Neig_NM(const int x[], int dx[]) {
           y[0]);
 }
 
+__host__ __device__ inline int Index_ND_Neig_NM(const int x[NDIMS], int dx[NDIMS]) {
+  int y[NDIMS];
+  for (int i = 0; i < NDIMS; i++)
+    y[i] = (x[i] + dx[i] + param_Grid(i)) % param_Grid(i);
+  
+  return Index_ND_NM(y);
+}
+
 inline __host__ __device__ void Index_4D_Neig_NM(int y[], int x[], int mu,
                                                  int lmu) {
   for (int i = 0; i < 4; i++)
     y[i] = x[i];
   y[mu] = (y[mu] + lmu + param_Grid(mu)) % param_Grid(mu);
 }
+
+__host__ __device__ inline void Index_ND_Neig_NM(int y[NDIMS], int x[NDIMS], int mu,
+                                                 int lmu) {
+  for (int i = 0; i < NDIMS; i++)
+    y[i] = x[i];
+  y[mu] = (y[mu] + lmu + param_Grid(mu)) % param_Grid(mu);
+}
+
+
 inline __host__ __device__ void Index_4D_Neig_NM(int y[], int x[], int mu,
                                                  int lmu, int nu, int lnu) {
   for (int i = 0; i < 4; i++)
+    y[i] = x[i];
+  y[mu] = (y[mu] + lmu + param_Grid(mu)) % param_Grid(mu);
+  y[nu] = (y[nu] + lnu + param_Grid(nu)) % param_Grid(nu);
+}
+
+__host__ __device__ inline void Index_ND_Neig_NM(int y[NDIMS], int x[NDIMS], int mu,
+                                                 int lmu, int nu, int lnu) {
+  for (int i = 0; i < NDIMS; i++)
     y[i] = x[i];
   y[mu] = (y[mu] + lmu + param_Grid(mu)) % param_Grid(mu);
   y[nu] = (y[nu] + lnu + param_Grid(nu)) % param_Grid(nu);
@@ -124,14 +200,25 @@ inline __host__ __device__ int Index_3D_Neig_NM(const int x[3], int mu,
 // From EO to EO lattice index
 // 4D
 
-inline __host__ __device__ void Index_4D_EO(int x[4], const int id,
+//inline __host__ __device__ void Index_4D_EO(int x[4], const int id,
+//                                            const int oddbit) {
+//  int za = (id / (param_Grid(0) / 2));
+//  int zb = (za / param_Grid(1));
+//  x[1] = za - zb * param_Grid(1);
+//  x[3] = (zb / param_Grid(2));
+//  x[2] = zb - x[3] * param_Grid(2);
+//  int xodd = (x[1] + x[2] + x[3] + oddbit) & 1;
+//  x[0] = (2 * id + xodd) - za * param_Grid(0);
+//}
+
+inline __host__ __device__ void Index_4D_EO(int x[NDIMS], const int id,
                                             const int oddbit) {
   int za = (id / (param_Grid(0) / 2));
   int zb = (za / param_Grid(1));
   x[1] = za - zb * param_Grid(1);
-  x[3] = (zb / param_Grid(2));
-  x[2] = zb - x[3] * param_Grid(2);
-  int xodd = (x[1] + x[2] + x[3] + oddbit) & 1;
+  //x[3] = (zb / param_Grid(2));
+  //x[2] = zb - x[3] * param_Grid(2);
+  int xodd = (x[1] + oddbit) & 1;
   x[0] = (2 * id + xodd) - za * param_Grid(0);
 }
 
@@ -160,21 +247,37 @@ __device__ __host__ inline int Index_4D_Neig_EO(const int x[], const int dx[],
         @brief U(id + lmu * e_mu), retrieves the neighbor in evenodd lattice
    index
 */
+//inline __host__ __device__ int Index_4D_Neig_EO(const int id, int oddbit,
+//                                                int mu, int lmu) {
+//  int x[4];
+//  Index_4D_EO(x, id, oddbit);
+//#ifdef MULTI_GPU
+//  for (int i = 0; i < 4; i++)
+//    x[i] += param_border(i);
+//#endif
+//  x[mu] = (x[mu] + lmu + param_GridG(mu)) % param_GridG(mu);
+//
+//  int pos = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1]) *
+//                 param_GridG(0) +
+//             x[0]) /
+//            2;
+//  int oddbit1 = (x[0] + x[1] + x[2] + x[3]) & 1;
+//  pos += oddbit1 * param_HalfVolumeG();
+//  return pos;
+//}
+
 inline __host__ __device__ int Index_4D_Neig_EO(const int id, int oddbit,
                                                 int mu, int lmu) {
-  int x[4];
+  int x[NDIMS];
   Index_4D_EO(x, id, oddbit);
 #ifdef MULTI_GPU
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < NDIMS; i++)
     x[i] += param_border(i);
 #endif
   x[mu] = (x[mu] + lmu + param_GridG(mu)) % param_GridG(mu);
 
-  int pos = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1]) *
-                 param_GridG(0) +
-             x[0]) /
-            2;
-  int oddbit1 = (x[0] + x[1] + x[2] + x[3]) & 1;
+  int pos = (x[1] * param_GridG(0) + x[0]) / 2;
+  int oddbit1 = (x[0] + x[1]) & 1;
   pos += oddbit1 * param_HalfVolumeG();
   return pos;
 }
@@ -183,22 +286,41 @@ inline __host__ __device__ int Index_4D_Neig_EO(const int id, int oddbit,
         @brief U(id + lmu * e_mu + lnu * e_nu), retrieves the neighbor in
    evenodd lattice index
 */
-inline __host__ __device__ int
+//inline __host__ __device__ int
+//Index_4D_Neig_EO(const int id, int oddbit, int mu, int lmu, int nu, int lnu) {
+//  int x[4];
+//  Index_4D_EO(x, id, oddbit);
+//#ifdef MULTI_GPU
+//  for (int i = 0; i < 4; i++)
+//    x[i] += param_border(i);
+//#endif
+//  x[mu] = (x[mu] + lmu + param_GridG(mu)) % param_GridG(mu);
+//  x[nu] = (x[nu] + lnu + param_GridG(nu)) % param_GridG(nu);
+//
+//  int pos = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1]) *
+//                 param_GridG(0) +
+//             x[0]) /
+//            2;
+//  int oddbit1 = (x[0] + x[1] + x[2] + x[3]) & 1;
+//  pos += oddbit1 * param_HalfVolumeG();
+//  return pos;
+//}
+
+__host__ __device__ inline int
 Index_4D_Neig_EO(const int id, int oddbit, int mu, int lmu, int nu, int lnu) {
-  int x[4];
+  int x[NDIMS];
   Index_4D_EO(x, id, oddbit);
 #ifdef MULTI_GPU
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < NDIMS; i++)
     x[i] += param_border(i);
 #endif
   x[mu] = (x[mu] + lmu + param_GridG(mu)) % param_GridG(mu);
   x[nu] = (x[nu] + lnu + param_GridG(nu)) % param_GridG(nu);
 
-  int pos = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1]) *
-                 param_GridG(0) +
-             x[0]) /
-            2;
-  int oddbit1 = (x[0] + x[1] + x[2] + x[3]) & 1;
+  int pos = Index_ND_NM(x) / 2;
+  int sum_x = 0;
+  for(int i=0; i<NDIMS; i++) sum_x += x[i];
+  int oddbit1 = sum_x & 1;
   pos += oddbit1 * param_HalfVolumeG();
   return pos;
 }

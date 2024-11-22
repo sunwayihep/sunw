@@ -47,7 +47,7 @@ __global__ void kernel_calc_plaquette_evenodd(complex *array, complex *plaquette
 		int offset = mustride * 4;
 	#else
 		int mustride = DEVPARAMS::Volume;
-		int offset = mustride * 4;
+		int offset = mustride * NDIMS;
 		int idxoddbit = id + oddbit  * param_HalfVolume();
 		//int idxoddbit = idd; //cuda reports error: misaligned address LOL
 
@@ -58,18 +58,23 @@ __global__ void kernel_calc_plaquette_evenodd(complex *array, complex *plaquette
 	//------------------------------------------------------------------------
 	msun link, link1;
 	//#pragma unroll
-	for(int mu = 0; mu < 3; mu++){	
+	for(int mu = 0; mu < NDIMS; mu++){	
 		link1 = GAUGE_LOAD<UseTex, atype,Real>( array, idxoddbit + mu * mustride, offset);
 		int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
 		//#pragma unroll
-		for (int nu = (mu+1); nu < 4; nu++){
+		for (int nu = (mu+1); nu < NDIMS; nu++){
 			link = GAUGE_LOAD<UseTex, atype,Real>( array,  newidmu1 + nu * mustride, offset);	      
 			link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, Index_4D_Neig_EO(id, oddbit, nu, 1) + mu * mustride, offset);			
 			link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, idxoddbit + nu * mustride, offset);
-			if(nu == 3) plaq.imag() += (link1 * link).realtrace();
+			if(nu == (NDIMS-1)) plaq.imag() += (link1 * link).realtrace();
 			else plaq.real() += (link1 * link).realtrace();
 		}
 	}
+	// average plaqs over different spatial and time directions
+	#if (NDIMS > 2)
+	plaq.imag() /= TOTAL_NUM_TPLAQS
+	plaq.real() /= TOTAL_NUM_SPLAQS
+	#endif
 	plaquette[idd] = plaq;
 		  
 }
@@ -82,7 +87,7 @@ template <class Real>
 Plaquette<Real>::Plaquette(gauge &array, complex *sum):array(array){
 	plaq_value = complex::zero();
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		grid[i]=PARAMS::Grid[i];
 		size *= PARAMS::Grid[i];
 	} 
@@ -137,7 +142,7 @@ void Plaquette<Real>::Run(const cudaStream_t &stream, bool calcmeanvalue){
     apply(stream);
     if(calcmeanvalue){
 		plaq_value = reduction<complex>(sum, size, stream);
-		plaq_value /= (Real)(3 * NCOLORS * size);
+		plaq_value /= (Real)(NCOLORS * size);
 		#ifdef MULTI_GPU
 		comm_Allreduce(&plaq_value);
 		plaq_value /= numnodes();
@@ -159,7 +164,7 @@ template <class Real>
 complex Plaquette<Real>::Value() {
     if(!reduced){
 		plaq_value = reduction<complex>(sum, size, 0);
-		plaq_value /= (Real)(3 * NCOLORS * size);
+		plaq_value /= (Real)(NCOLORS * size);
 		#ifdef MULTI_GPU
 		comm_Allreduce(&plaq_value);
 		plaq_value /= numnodes();
@@ -177,7 +182,7 @@ complex Plaquette<Real>::Reduce(const cudaStream_t &stream){
 		    plaqtime.start();
 		#endif
 			plaq_value = reduction<complex>(sum, size, stream);
-			plaq_value /= (Real)(3 * NCOLORS * size);
+			plaq_value /= (Real)(NCOLORS * size);
 			#ifdef MULTI_GPU
 			comm_Allreduce(&plaq_value);
 			plaq_value /= numnodes();

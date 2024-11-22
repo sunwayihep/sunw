@@ -4,6 +4,7 @@ VERSION  = V1_$(shell date "+%d_%m_%Y_%H-%M-%S")
 STANDARD = c99
 ############################################################################################################
 USE_NUMBER_OF_COLORS = 2 				#Set N of SU(N), needs make cleanall before recompile
+USE_NUMBER_OF_DIMS = 2					#Set space-time dimension of the lattice
 BUILD_MULTI_GPU = $(MGPU) 				#no Multi-GPU: make or make MGPU=no, for Multi-GPU: make MGPU=yes / change "$(MGPU)" to no/yes
 MEASURE_TIMMINGS = yes 					#report timing, gb/s and gflops
 USE_CUDARNG = MRG32k3a 					#XORWOW/MRG32k3a  #CURAND type random generator
@@ -130,11 +131,21 @@ ifeq ($(strip $(USE_NUMBER_OF_COLORS)),)
 #$(error USE_NUMBER_OF_COLORS is not set)
 $(warning USE_NUMBER_OF_COLORS is not set. Setting default value: 3)
 USE_NUMBER_OF_COLORS = 3
-SUNPROPERTIES= -DNCOLORS=$(USE_NUMBER_OF_COLORS)
+SUNPROPERTIES= -DNCOLORS=$(strip $(USE_NUMBER_OF_COLORS))
 $(warning USE_NUMBER_OF_COLORS: $(USE_NUMBER_OF_COLORS))
 else
-SUNPROPERTIES= -DNCOLORS=$(USE_NUMBER_OF_COLORS)
+SUNPROPERTIES= -DNCOLORS=$(strip $(USE_NUMBER_OF_COLORS))
 $(warning USE_NUMBER_OF_COLORS: $(USE_NUMBER_OF_COLORS))
+endif
+
+ifeq ($(strip $(USE_NUMBER_OF_DIMS)),)
+$(warning USE_NUMBER_OF_DIMS is not set. Setting default value: 4)
+USE_NUMBER_OF_DIMS = 4
+SUNPROPERTIES += -DNDIMS=$(strip $(USE_NUMBER_OF_DIMS))
+$(warning USE_NUMBER_OF_DIMS: $(USE_NUMBER_OF_DIMS))
+else
+SUNPROPERTIES += -DNDIMS=$(strip $(USE_NUMBER_OF_DIMS))
+$(warning USE_NUMBER_OF_DIMS: $(USE_NUMBER_OF_DIMS))
 endif
 
 ifeq ($(strip $(USE_GPU_FAST_MATH)), yes)
@@ -233,8 +244,8 @@ HASH = \"cpu_arch=$(strip $(OS_ARCH)),gpu_arch=$(strip $(GPU_ARCH)),cuda_version
 ############################################################################################################
 ############################################################################################################
 
-HEATBATH_OBJ=heatbath_su$(strip $(USE_NUMBER_OF_COLORS)).o
-HEATBATH_EXE=heatbath_su$(strip $(USE_NUMBER_OF_COLORS))
+HEATBATH_OBJ=heatbath_su$(strip $(USE_NUMBER_OF_COLORS))_nd$(strip $(USE_NUMBER_OF_DIMS)).o
+HEATBATH_EXE=heatbath_su$(strip $(USE_NUMBER_OF_COLORS))_nd$(strip $(USE_NUMBER_OF_DIMS))
 # Target rules
 all: lib  $(PROJECTNAME) $(HEATBATH_EXE)
 ############################################################################################################

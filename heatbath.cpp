@@ -16,6 +16,7 @@
 #include <stdio.h>  // defines FILENAME_MAX
 #include <unistd.h> // for getcwd()
 #include <iostream>
+#include <vector>
 
 using namespace std;
 using namespace CULQCD;
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
 
   COUT << "####################################################################"
           "###########" << endl;
-  COUT << "Start generating SU(" << NCOLORS << ") gauge configurations" << endl;
+  COUT << "Start generating SU(" << NCOLORS << ") gauge configurations in " << NDIMS << " spacetime dimensions" << endl;
   const ArrayType mygauge = SOA; // SOA/SOA12/SOA8 for SU(3) and SOA for N>3
   runHeatBath<double, mygauge>(argc, argv);
   COUT << "####################################################################"
@@ -46,17 +47,25 @@ int main(int argc, char **argv) {
 // heatbath test module
 template <class Real, ArrayType mygaugein>
 void runHeatBath(int argc, char **argv) {
-  int ns = atoi(argv[1]);
-  int nt = atoi(argv[2]);
-  float beta0 = atof(argv[3]);
+  if((argc-1) != (NDIMS+2)) {
+        cerr << "Number of input arguments should be (NDIMS + 2) = " << (NDIMS + 2) << endl;
+        exit(0);
+  }
+  vector<int> lattice_size;
+  lattice_size.reserve(NDIMS);
+  for(int i=1; i<=NDIMS; i++) lattice_size.push_back(atoi(argv[i]));
+  //int ns = atoi(argv[1]);
+  //int nt = atoi(argv[2]);
+  float beta0 = atof(argv[NDIMS+1]);
   PARAMS::UseTex = false;
-  int ntraj = atoi(argv[4]);
+  int ntraj = atoi(argv[NDIMS+2]);
+
 
   // init the MPI environment, gpuid not used for multi-GPU, while can be set
   // for single-GPU run.
   // if TUNE_YES user must set export CULQCD_RESOURCE_PATH="path to folder where
   // the tuning parameters are saved..."
-  initCULQCD(0, SUMMARIZE, TUNE_YES);
+  initCULQCD(0, SUMMARIZE, TUNE_NO);
 
   // Create timer
   Timer t0;
@@ -68,9 +77,10 @@ void runHeatBath(int argc, char **argv) {
   // also sets some kernel launch parameters
   // true for verbosity
   //---------------------------------------------------------------------------------------
-  SETPARAMS(PARAMS::UseTex, beta0, ns, ns, ns, nt, true);
+  //SETPARAMS(PARAMS::UseTex, beta0, ns, ns, ns, nt, true);
+  SETPARAMS(PARAMS::UseTex, beta0, lattice_size, true);
 
-  gauge conf(mygaugein, Device, PARAMS::Volume * 4, true);
+  gauge conf(mygaugein, Device, PARAMS::Volume * NDIMS, true);
   conf.Details();
 
   // init the random number generator

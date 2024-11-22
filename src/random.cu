@@ -70,7 +70,7 @@ RNG::RNG(){
     state = NULL;
     arg.seed = 0;
     arg.size = 1;
-    for(int d=0; d < 4; d++){
+    for(int d=0; d < NDIMS; d++){
         #ifdef MULTI_GPU
         arg.log_cord[d] = PARAMS::logical_coordinate[d];
         arg.X[d] = PARAMS::Grid[d];
@@ -110,11 +110,11 @@ void RNG::INITRNG(){
 	}
 	if(state != NULL){
         int size = 1;
-        for(int d=0; d < 4; d++) size *= PARAMS::Grid[d];
+        for(int d=0; d < NDIMS; d++) size *= PARAMS::Grid[d];
         size = size >> 1;
         if(size != arg.size){
             arg.size = 1;
-            for(int d=0; d < 4; d++){
+            for(int d=0; d < NDIMS; d++){
                 #ifdef MULTI_GPU
                 arg.log_cord[d] = PARAMS::logical_coordinate[d];
                 arg.X[d] = PARAMS::Grid[d];

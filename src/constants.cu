@@ -31,34 +31,34 @@ namespace PARAMS{
     int	 	volume = 0;
     /*! \brief Size of the total gauge field, Nx x Ny x Nz x Nt x 4 */
     int		size = 0;
-
+	std::vector<int> lattice_size;
 	int 	NX, NY, NZ, NT;
 
 
-    int      Grid[4];
-    int      GridWGhost[4];
+    int      Grid[NDIMS];
+    int      GridWGhost[NDIMS];
     int 	 Volume;
     int 	 VolumeG;
     int 	 HalfVolume;
     int 	 HalfVolumeG;
-    int	 	Border[4];
+    int	 	Border[NDIMS];
 
-	int logical_coordinate[4];
-	int FaceSize[4];
-	int FaceSizeG[4];
+	int logical_coordinate[NDIMS];
+	int FaceSize[NDIMS];
+	int FaceSizeG[NDIMS];
 	//bool activeFace[4];
 
 	//Number of active faces to exchange borders, 4 faces, means exchanges in X,Y,Z and T
 	int NActiveFaces = 0;
-	int FaceId[4];
+	int FaceId[NDIMS];
 
     /*! @brief GPU grid size in x dimension */
     uint GPUGridDimX = 0;
 
 	cudaDeviceProp deviceProp;
 
-	int NodeIdRight[4];
-	int NodeIdLeft[4];
+	int NodeIdRight[NDIMS];
+	int NodeIdLeft[NDIMS];
 
 
 
@@ -122,9 +122,13 @@ dim3 GetBlockDim(size_t threads, size_t size){
 
 void PrintDetails(){
 	COUT << "----------------------------------------------------------------" << std::endl;
+	COUT << "Nd: " << NDIMS << std::endl;
 	COUT << "Nc: " << NCOLORS << std::endl;
 	COUT << "beta: " << PARAMS::Beta << std::endl;
-	COUT << "Lattice Dimensions: " << PARAMS::NX << "x" <<PARAMS::NY<<"x"<<PARAMS::NZ<<"x"<<PARAMS::NT<<std::endl;
+	COUT << "Lattice Dimensions: ";
+	for(auto i: PARAMS::lattice_size) COUT << i << ' ';
+	COUT << std::endl; 
+	
 	#ifdef MULTI_GPU
 	COUT << "Local Lattice Dimension: " << PARAMS::Grid[0] << "x" <<PARAMS::Grid[1]<<"x"<<PARAMS::Grid[2]<<"x"<<PARAMS::Grid[3]<<std::endl;
 	COUT << "Local Lattice Dimensions with ghost links: " \
@@ -270,6 +274,130 @@ void SETPARAMS(bool _usetex, double beta, int nx, int ny, int nz, int nt, bool v
 }
 
 
+void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size, bool verbose){
+	PARAMS::Beta = beta;
+	PARAMS::lattice_size = lattice_size;
+
+	COUT << "Setting up lattice parameters..." << std::endl;
+	// Set Host parameters
+	PARAMS::UseTex = _usetex;
+	if(lattice_size.size() < 2){
+		std::cerr << "Number of space-time dimension NDIMS = "<<lattice_size.size()<< ", should no less than 2"<<std::endl;
+		exit(0);
+	}
+	//setup_hyper_prime(nx,ny,nz,nt);
+	//PARAMS::NX = nx;
+	//PARAMS::NY = ny;
+	//PARAMS::NZ = nz;
+	//PARAMS::NT = nt;
+	for(int i=0; i<NDIMS; i++) PARAMS::Grid[i] = lattice_size[i];
+	//PARAMS::Grid[0] = nx;
+	//PARAMS::Grid[1] = ny;
+	//PARAMS::Grid[2] = nz;
+	//PARAMS::Grid[3] = nt;
+	////////////////////////////////////////////
+	for(int i = 0; i < NDIMS; i++) 
+		if( ((PARAMS::Grid[i] / nodes_per_dim(i)) % 2) != 0){
+			COUT << "GPU code does not support odd lattice dimensions." << std::endl;
+			exit(1);
+		}
+	for(int i = 0; i < NDIMS; i++) PARAMS::Grid[i] /= nodes_per_dim(i);
+	logical_coordinate(PARAMS::logical_coordinate);
+
+
+	PARAMS::NActiveFaces = 0;
+	for(int i = 0; i < NDIMS; i++){
+		if(nodes_per_dim(i) > 1 ) {
+			PARAMS::Border[i] = RADIUS_BORDER;
+			PARAMS::GridWGhost[i] = PARAMS::Grid[i] + 2 * PARAMS::Border[i];
+			PARAMS::FaceId[PARAMS::NActiveFaces] = i;
+			PARAMS::NActiveFaces++;
+		}
+		else {
+			PARAMS::GridWGhost[i] = PARAMS::Grid[i];
+			PARAMS::Border[i] = 0;
+		}
+	}
+	PARAMS::FaceSize[0] = PARAMS::Grid[1] * PARAMS::Grid[2] * PARAMS::Grid[3];
+	PARAMS::FaceSize[1] = PARAMS::Grid[0] * PARAMS::Grid[2] * PARAMS::Grid[3];
+	PARAMS::FaceSize[2] = PARAMS::Grid[0] * PARAMS::Grid[1] * PARAMS::Grid[3];
+	PARAMS::FaceSize[3] = PARAMS::Grid[0] * PARAMS::Grid[1] * PARAMS::Grid[2];
+	PARAMS::FaceSizeG[0] = PARAMS::GridWGhost[1] * PARAMS::GridWGhost[2] * PARAMS::GridWGhost[3];
+	PARAMS::FaceSizeG[1] = PARAMS::GridWGhost[0] * PARAMS::GridWGhost[2] * PARAMS::GridWGhost[3];
+	PARAMS::FaceSizeG[2] = PARAMS::GridWGhost[0] * PARAMS::GridWGhost[1] * PARAMS::GridWGhost[3];
+	PARAMS::FaceSizeG[3] = PARAMS::GridWGhost[0] * PARAMS::GridWGhost[1] * PARAMS::GridWGhost[2];
+
+//MPI_Barrier(MPI_COMM_WORLD);
+	/*printf("---->>>>>>>%d::%d:::::%d:%d:%d:%d:::::%d:%d:%d:%d\n",mynode(), numnodes(),PARAMS::GridWGhost[0],PARAMS::GridWGhost[1],\
+		PARAMS::GridWGhost[2],PARAMS::GridWGhost[3],param_border(0),param_border(1),param_border(2),param_border(3));
+	printf("---->>>>>>>%d::%d:::::%d:%d:%d:%d:::::%d:%d:%d:%d\n",mynode(), numnodes(),PARAMS::logical_coordinate[0],PARAMS::logical_coordinate[1],\
+		PARAMS::logical_coordinate[2],PARAMS::logical_coordinate[3],nodes_per_dim(0),nodes_per_dim(1),nodes_per_dim(2),nodes_per_dim(3));*/
+//MPI_Barrier(MPI_COMM_WORLD);
+	int temp[4];
+	for(int i = 0; i < 4; i++) temp[i] = PARAMS::logical_coordinate[i];
+	for(int fc = 0; fc < PARAMS::NActiveFaces; fc++){
+		int i = PARAMS::FaceId[fc];
+		temp[i] = (PARAMS::logical_coordinate[i] + 1) % nodes_per_dim(i);
+		PARAMS::NodeIdRight[fc] = temp[0] + temp[1] * nodes_per_dim(0);
+		PARAMS::NodeIdRight[fc] += temp[2] * nodes_per_dim(0) * nodes_per_dim(1);
+		PARAMS::NodeIdRight[fc] += temp[3] * nodes_per_dim(0) * nodes_per_dim(1) * nodes_per_dim(2);
+		temp[i] = PARAMS::logical_coordinate[i];
+
+		temp[i] = (PARAMS::logical_coordinate[i] - 1 + nodes_per_dim(i)) % nodes_per_dim(i);
+		PARAMS::NodeIdLeft[fc] = temp[0] + temp[1] * nodes_per_dim(0);
+		PARAMS::NodeIdLeft[fc] += temp[2] * nodes_per_dim(0) * nodes_per_dim(1);
+		PARAMS::NodeIdLeft[fc] += temp[3] * nodes_per_dim(0) * nodes_per_dim(1) * nodes_per_dim(2);
+		temp[i] = PARAMS::logical_coordinate[i];
+
+		//printf("##%d:::%d:%d:%d:%d\n",mynode(), fc,PARAMS::NodeIdLeft[fc],PARAMS::NodeIdRight[fc],i);
+	}
+
+	PARAMS::kstride = PARAMS::Grid[0] * PARAMS::Grid[1];
+	PARAMS::tstride = PARAMS::kstride * PARAMS::Grid[2];    
+
+	PARAMS::Volume = 1;
+	PARAMS::VolumeG = 1;
+	for(int i = 0; i < NDIMS; i++){
+		PARAMS::Volume *= PARAMS::Grid[i];
+		PARAMS::VolumeG *= PARAMS::GridWGhost[i];
+	}
+	PARAMS::HalfVolume = PARAMS::Volume / 2;
+	PARAMS::HalfVolumeG = PARAMS::VolumeG / 2;
+	PARAMS::size = PARAMS::Volume  * NDIMS;
+
+
+	if(verbose) PrintDetails();
+	//Set Device parameters
+	//Copy to GPU constant memory
+	copyConstantsToGPU();
+	int dev;
+	CUDA_SAFE_CALL(cudaGetDevice( &dev));
+	cudaGetDeviceProperties(&PARAMS::deviceProp, dev);
+	PARAMS::GPUGridDimX = PARAMS::deviceProp.maxGridSize[0];
+
+	 
+
+
+	PARAMS::nthreadsPHB = dim3(64,1,1);
+	PARAMS::nblocksPHB = GetBlockDim(PARAMS::nthreadsPHB.x, PARAMS::HalfVolume);
+	PARAMS::nthreadsOVR = dim3(128,1,1);
+	PARAMS::nblocksOVR = GetBlockDim(PARAMS::nthreadsOVR.x, PARAMS::HalfVolume);
+	PARAMS::nthreadsINIT = dim3(128,1,1); 
+	PARAMS::nblocksINIT = GetBlockDim(PARAMS::nthreadsINIT.x, PARAMS::Volume);
+	PARAMS::nthreadsINITHALF = dim3(128,1,1); 
+	PARAMS::nblocksINITHALF = GetBlockDim(PARAMS::nthreadsINITHALF.x, PARAMS::HalfVolume);
+	PARAMS::nthreadsREU = dim3(128,1,1);
+	PARAMS::nblocksREU = GetBlockDim(PARAMS::nthreadsREU.x, PARAMS::size);
+	PARAMS::nthreadsPLAQ = dim3(64,1,1); //best 32^4 -> 64, next was for 128
+	PARAMS::nblocksPLAQ =GetBlockDim(PARAMS::nthreadsPLAQ.x, PARAMS::Volume);
+
+
+	//setparams = true;
+	#ifdef MULTI_GPU
+	FreeTempBuffersAndStreams();
+	#endif
+}
+
 
 
 void SETPARAMS(bool _usetex, int latticedim[4], const int nodesperdim[4], \
@@ -410,13 +538,13 @@ namespace DEVPARAMS{
     /*! \brief Size of the total gauge field, Nx x Ny x Nz x Nt x 4 */
     __constant__	int		size;
 
-    __constant__	int	 	Grid[4];
+    __constant__	int	 	Grid[NDIMS];
     /*! \brief Size = Nx x Ny x Nz x Nt */
     __constant__	int	 	Volume;
     /*! \brief Size = Nx x Ny x Nz x Nt / 2 */
     __constant__	int	 	HalfVolume;
-    __constant__	int	 	GridWGhost[4];
-    __constant__	int	 	Border[4];
+    __constant__	int	 	GridWGhost[NDIMS];
+    __constant__	int	 	Border[NDIMS];
     __constant__	int	 	VolumeG;
     __constant__	int	 	HalfVolumeG;
 
@@ -442,9 +570,9 @@ void copyConstantsToGPU(){
 	memcpyToSymbol(DEVPARAMS::Beta, &PARAMS::Beta, double);
 	double _betaOverNc = PARAMS::Beta / (double) NCOLORS;
 	memcpyToSymbol(DEVPARAMS::BetaOverNc, &_betaOverNc, double);
-	memcpyToArraySymbol( DEVPARAMS::Grid, &PARAMS::Grid, int, 4);
-	memcpyToArraySymbol( DEVPARAMS::GridWGhost, &PARAMS::GridWGhost, int, 4);
-	memcpyToArraySymbol( DEVPARAMS::Border, &PARAMS::Border, int, 4);
+	memcpyToArraySymbol( DEVPARAMS::Grid, &PARAMS::Grid, int, NDIMS);
+	memcpyToArraySymbol( DEVPARAMS::GridWGhost, &PARAMS::GridWGhost, int, NDIMS);
+	memcpyToArraySymbol( DEVPARAMS::Border, &PARAMS::Border, int, NDIMS);
 	memcpyToSymbol( DEVPARAMS::kstride, &PARAMS::kstride, int);
 	memcpyToSymbol( DEVPARAMS::tstride, &PARAMS::tstride, int) ;
 	memcpyToSymbol( DEVPARAMS::size, &PARAMS::size, int);

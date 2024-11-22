@@ -2,6 +2,7 @@
 #define CONSTANTS_H_DEF
 
 #include <complex.h>
+#include <vector>
 
 namespace CULQCD {
 
@@ -23,6 +24,13 @@ DIRS:
 #ifndef PII
 #define PII 6.2831853071795864769252867665590 // 2 * pi
 #endif
+
+// the total number of spatial and time plaqs per lattice sites
+#define TOTAL_NUM_PLAQS ((NDIMS * (NDIMS-1))/2)
+// total number of time component plaqs per lattice sites
+#define TOTAL_NUM_TPLAQS (NDIMS - 1)
+// total number of spatial component plaqs per lattice sites
+#define TOTAL_NUM_SPLAQS (TOTAL_NUM_PLAQS - TOTAL_NUM_TPLAQS)
 
 /**
     @brief Macro to copy a variable to GPU constant memory
@@ -51,6 +59,7 @@ namespace PARAMS {
 extern bool UseTex;
 
 extern double Beta;
+extern std::vector<int> lattice_size;
 /*! \brief Number of lattice points in X, Y, Z, T direction */
 extern int NX, NY, NZ, NT;
 /*! \brief Number of lattice points on this node in X, Y, Z, T direction */
@@ -65,29 +74,29 @@ extern int tstride;
 extern int size;
 
 /*! \brief Mesh coordinates of this node */
-extern int logical_coordinate[4];
+extern int logical_coordinate[NDIMS];
 /*! \brief Number of nodes per lattice dimension, machine dimensions */
-extern int Grid[4];
-extern int GridWGhost[4];
+extern int Grid[NDIMS];
+extern int GridWGhost[NDIMS];
 extern int Volume;
 extern int HalfVolume;
 extern int VolumeG;
 extern int HalfVolumeG;
 /*! \brief Face size for each dimension */
-extern int FaceSize[4];
-extern int FaceSizeG[4];
+extern int FaceSize[NDIMS];
+extern int FaceSizeG[NDIMS];
 // extern bool     activeFace[4];
 extern int NActiveFaces;
-extern int FaceId[4];
+extern int FaceId[NDIMS];
 // Node id +1 for active faces
-extern int NodeIdRight[4];
+extern int NodeIdRight[NDIMS];
 // Node id -1 for active faces
-extern int NodeIdLeft[4];
+extern int NodeIdLeft[NDIMS];
 //#endif
 /*! \brief store the max gpu grid size in x dimension */
 extern uint GPUGridDimX;
 
-extern int Border[4];
+extern int Border[NDIMS];
 
 extern cudaDeviceProp deviceProp;
 
@@ -124,6 +133,8 @@ void PrintDetails();
 */
 void SETPARAMS(bool _usetex, double beta, int nx, int ny, int nz, int nt,
                bool verbose);
+
+void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size, bool verbose);
 
 void SETPARAMS(bool _usetex, int latticedim[4], const int nodesperdim[4],
                const int logical_coordinate[4], bool verbose);
@@ -214,15 +225,15 @@ extern __constant__ int tstride;
 /*! \brief Size of the total gauge field, Nx x Ny x Nz x Nt x 4 */
 extern __constant__ int size;
 
-extern __constant__ int Grid[4];
-extern __constant__ int GridWGhost[4];
+extern __constant__ int Grid[NDIMS];
+extern __constant__ int GridWGhost[NDIMS];
 /*! \brief Size = Nx x Ny x Nz x Nt */
 extern __constant__ int Volume;
 /*! \brief Size = Nx x Ny x Nz x Nt / 2 */
 extern __constant__ int HalfVolume;
 extern __constant__ int VolumeG;
 extern __constant__ int HalfVolumeG;
-extern __constant__ int Border[4];
+extern __constant__ int Border[NDIMS];
 /*! \brief HYP smearing constant: alpha1 */
 extern __constant__ float hypalpha1;
 /*! \brief HYP smearing constant: alpha2 */

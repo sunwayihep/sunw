@@ -63,7 +63,7 @@ kernel_PHeatBath_evenodd(complex *array, cuRNGState *state, int oddbit, int mu){
 
 	msun staple = msu3::zero();
 	int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
-	for(int nu = 0; nu < 4; nu++){ if(mu == nu) continue;
+	for(int nu = 0; nu < NDIMS; nu++){ if(mu == nu) continue;
 		msun link;	
 		int nuvolume = nu * mustride;
 		//UP	
@@ -104,7 +104,7 @@ kernel_PHeatBath_evenodd_SOA12(complex *array, cuRNGState *state, int oddbit, in
 		int muvolume = mu * mustride;
 		int offset = mustride * 4;
 	#else
-		int x[4];
+		int x[NDIMS];
 		Index_4D_EO(x, id, oddbit);
 		int idxoddbit = id + oddbit  * param_HalfVolume();
 		int mustride = DEVPARAMS::Volume;
@@ -113,8 +113,8 @@ kernel_PHeatBath_evenodd_SOA12(complex *array, cuRNGState *state, int oddbit, in
 	#endif
 	msun staple = msu3::zero();
 	int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
-	for(int nu = 0; nu < 4; nu++)  if(mu != nu) {
-      	int dx[4] = {0, 0, 0, 0};
+	for(int nu = 0; nu < NDIMS; nu++)  if(mu != nu) {
+      	int dx[NDIMS] = {0};
 		msun link;	
 		int nuvolume = nu * mustride;
 		link = GAUGE_LOAD<UseTex, atype, Real>( array,  idxoddbit + nuvolume, offset);
@@ -152,7 +152,7 @@ template <class Real>
 HeatBath<Real>::HeatBath(gauge &array, RNG &randstates):array(array), randstates(randstates){
 	SetFunctionPtr();
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		grid[i]=PARAMS::Grid[i];
 		size *= PARAMS::Grid[i];
 	} 
@@ -203,7 +203,7 @@ void HeatBath<Real>::Run(const cudaStream_t &stream){
     } 
     GAUGE_TEXTURE(array.GetPtr(), true);
 	for(parity=0; parity < 2; parity++)
-	for(dir = 0; dir < 4; dir++){
+	for(dir = 0; dir < NDIMS; dir++){
 		apply(stream);	
 		//EXCHANGE DATA!!!!!
 	    #ifdef MULTI_GPU
