@@ -29,17 +29,17 @@ __device__ void inline Staple(complex *array, msun &staple, int idx, int mu,
   link = GAUGE_LOAD<UseTex, atype, Real>(
       array, idx + oddbit * DEVPARAMS::HalfVolume + nuvolume);
   link *= GAUGE_LOAD<UseTex, atype, Real>(
-      array, Index_4D_Neig_EO(idx, oddbit, nu, 1) + muvolume);
+      array, Index_ND_Neig_EO(idx, oddbit, nu, 1) + muvolume);
   link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
-      array, Index_4D_Neig_EO(idx, oddbit, mu, 1) + nuvolume);
+      array, Index_ND_Neig_EO(idx, oddbit, mu, 1) + nuvolume);
   staple += link;
   // DOWN
   link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
-      array, Index_4D_Neig_EO(idx, oddbit, nu, -1) + nuvolume);
+      array, Index_ND_Neig_EO(idx, oddbit, nu, -1) + nuvolume);
   link *= GAUGE_LOAD<UseTex, atype, Real>(
-      array, Index_4D_Neig_EO(idx, oddbit, nu, -1) + muvolume);
+      array, Index_ND_Neig_EO(idx, oddbit, nu, -1) + muvolume);
   link *= GAUGE_LOAD<UseTex, atype, Real>(
-      array, Index_4D_Neig_EO(idx, oddbit, mu, 1, nu, -1) + nuvolume);
+      array, Index_ND_Neig_EO(idx, oddbit, mu, 1, nu, -1) + nuvolume);
   staple += link;
 }
 

@@ -24,7 +24,7 @@ private:
   complex poly_value;
   double timesec;
   bool tex;
-  int grid[4];
+  int grid[NDIMS];
 #ifdef TIMMINGS
   Timer mtime;
 #endif
@@ -54,10 +54,8 @@ public:
 
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << grid[0] << "x";
-    vol << grid[1] << "x";
-    vol << grid[2] << "x";
-    vol << grid[3];
+    for(int i=0; i<NDIMS; i++) vol << grid[i] << "x";
+    vol << grid[NDIMS-1];
     aux << "threads=" << size << ",prec=" << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(),
                    array.ToStringArrayType().c_str(), aux.str().c_str());

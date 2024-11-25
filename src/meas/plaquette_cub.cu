@@ -29,13 +29,14 @@ namespace CULQCD{
 
 
 inline  __host__   __device__ int neighborNormalIndex(int id, int mu, int lmu){
-	int x[4];
-	Index_4D_NM(id, x);
+	int x[NDIMS];
+	Index_ND_NM(id, x);
 	#ifdef MULTI_GPU
-	for(int i=0; i<4;i++)x[i]+=param_border(i);
+	for(int i=0; i<NDIMS;i++)x[i]+=param_border(i);
 	#endif
 	x[mu] = (x[mu]+lmu) % param_GridG(mu);
-	return (((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1] ) * param_GridG(0) + x[0];
+
+	return Index_ND_NM(x);
 }
 
 
@@ -55,14 +56,14 @@ __global__ void kernel_calc_plaquette_normal_cub(PlaqArg<Real> arg ){
 
 	if(id < param_Volume()) {
 		#ifdef MULTI_GPU
-			int x[4];
-			Index_4D_NM(id, x);
-			for(int i=0; i<4;i++) x[i] += param_border(i);
+			int x[NDIMS];
+			Index_ND_NM(id, x);
+			for(int i=0; i<NDIMS;i++) x[i] += param_border(i);
 			int mustride = DEVPARAMS::VolumeG;
-			int offset = mustride * 4;
+			int offset = mustride * NDIMS;
 		#else
 			int mustride = DEVPARAMS::Volume;
-			int offset = mustride * 4;
+			int offset = mustride * NDIMS;
 
 		#endif
 		//------------------------------------------------------------------------
@@ -70,27 +71,27 @@ __global__ void kernel_calc_plaquette_normal_cub(PlaqArg<Real> arg ){
 		//------------------------------------------------------------------------
 		msun link, link1;
 		//#pragma unroll
-		for(int mu = 0; mu < 3; mu++){	
+		for(int mu = 0; mu < NDIMS; mu++){	
 			link1 = GAUGE_LOAD<UseTex, atype,Real>( arg.pgauge, id + mu * mustride, offset);
 			int newidmu1 = neighborNormalIndex(id, mu, 1);
 			//#pragma unroll
-			for (int nu = (mu+1); nu < 4; nu++){
+			for (int nu = (mu+1); nu < NDIMS; nu++){
 				link = GAUGE_LOAD<UseTex, atype,Real>( arg.pgauge,  newidmu1 + nu * mustride, offset);	      
 				link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( arg.pgauge, neighborNormalIndex(id, nu, 1) + mu * mustride, offset);			
 				link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( arg.pgauge, id + nu * mustride, offset);
-				if(nu == 3) plaq.imag() += (link1 * link).realtrace();
+				if(nu == (NDIMS-1)) plaq.imag() += (link1 * link).realtrace();
 				else plaq.real() += (link1 * link).realtrace();
 			}
 		}
+		// average plaqs over different spatial and time directions
+		#if (NDIMS > 2)
+		plaq.imag() /= TOTAL_NUM_TPLAQS
+		plaq.real() /= TOTAL_NUM_SPLAQS
+		#endif
 	}
 	complex aggregate = BlockReduce(temp_storage).Reduce(plaq, Summ<complex>());
 	if (threadIdx.x == 0) CudaAtomicAdd(arg.plaq, aggregate);	  
 }
-
-
-
-
-
 
 //kernel to calculate the plaquette at each site of the lattice in EvenOdd order 
 template <int blockSize, bool UseTex, ArrayType atype, class Real> 
@@ -121,7 +122,7 @@ __global__ void kernel_calc_plaquette_evenodd_cub(PlaqArg<Real> arg ){
 			int offset = mustride * 4;
 		#else
 			int mustride = DEVPARAMS::Volume;
-			int offset = mustride * 4;
+			int offset = mustride * NDIMS;
 			int idxoddbit = id + oddbit  * param_HalfVolume();
 			//int idxoddbit = idd; //cuda reports error: misaligned address LOL
 
@@ -131,39 +132,35 @@ __global__ void kernel_calc_plaquette_evenodd_cub(PlaqArg<Real> arg ){
 		//------------------------------------------------------------------------
 		msun link, link1;
 		//#pragma unroll
-		for(int mu = 0; mu < 3; mu++){	
+		for(int mu = 0; mu < NDIMS; mu++){	
 			link1 = GAUGE_LOAD<UseTex, atype,Real>( arg.pgauge, idxoddbit + mu * mustride, offset);
-			int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
+			int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
 			//#pragma unroll
-			for (int nu = (mu+1); nu < 4; nu++){
+			for (int nu = (mu+1); nu < NDIMS; nu++){
 				link = GAUGE_LOAD<UseTex, atype,Real>( arg.pgauge,  newidmu1 + nu * mustride, offset);	      
-				link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( arg.pgauge, Index_4D_Neig_EO(id, oddbit, nu, 1) + mu * mustride, offset);			
+				link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( arg.pgauge, Index_ND_Neig_EO(id, oddbit, nu, 1) + mu * mustride, offset);			
 				link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( arg.pgauge, idxoddbit + nu * mustride, offset);
-				if(nu == 3) plaq.imag() += (link1 * link).realtrace();
+				if(nu == (NDIMS-1)) plaq.imag() += (link1 * link).realtrace();
 				else plaq.real() += (link1 * link).realtrace();
 			}
 		}
+		// average plaqs over different spatial and time directions
+		#if (NDIMS > 2)
+		plaq.imag() /= TOTAL_NUM_TPLAQS
+		plaq.real() /= TOTAL_NUM_SPLAQS
+		#endif
 	}
 	complex aggregate = BlockReduce(temp_storage).Reduce(plaq, Summ<complex>());
 	if (threadIdx.x == 0) CudaAtomicAdd(arg.plaq, aggregate);	  
 }
 
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <class Real> 
 PlaquetteCUB<Real>::PlaquetteCUB(gauge &array):array(array){
 
 	functionName = "Plaquette";
 	plaq_value = complex::zero();
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		grid[i]=PARAMS::Grid[i];
 		size *= PARAMS::Grid[i];
 	} 
@@ -172,6 +169,7 @@ PlaquetteCUB<Real>::PlaquetteCUB(gauge &array):array(array){
 	arg.plaq = (complex *)dev_malloc(sizeof(complex));
 
 }
+
 template <class Real> 
 void PlaquetteCUB<Real>::apply(const cudaStream_t &stream){
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
@@ -231,7 +229,7 @@ complex PlaquetteCUB<Real>::Run(const cudaStream_t &stream){
     CUDA_SAFE_DEVICE_SYNC();//
     CUT_CHECK_ERROR("Kernel execution failed");
     CUDA_SAFE_CALL(cudaMemcpy(&plaq_value, arg.plaq, sizeof(complex), cudaMemcpyDeviceToHost));
-	plaq_value /= (Real)(3 * NCOLORS * size);
+	plaq_value /= (Real)(NCOLORS * size);
 	#ifdef MULTI_GPU
 	comm_Allreduce(&plaq_value);
 	plaq_value /= numnodes();

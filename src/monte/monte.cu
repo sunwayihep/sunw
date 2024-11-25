@@ -62,20 +62,20 @@ kernel_PHeatBath_evenodd(complex *array, cuRNGState *state, int oddbit, int mu){
 	#endif
 
 	msun staple = msu3::zero();
-	int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
+	int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
 	for(int nu = 0; nu < NDIMS; nu++){ if(mu == nu) continue;
 		msun link;	
 		int nuvolume = nu * mustride;
 		//UP	
 		link = GAUGE_LOAD<UseTex, atype, Real>( array,  idxoddbit + nuvolume, offset);
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);	
 		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, newidmu1 + nuvolume, offset);
 		staple += link;
 		//DOWN	
-		int newidnum1 = Index_4D_Neig_EO(id, oddbit, nu, -1);
+		int newidnum1 = Index_ND_Neig_EO(id, oddbit, nu, -1);
 		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  newidnum1 + nuvolume, offset);	
 		link *= GAUGE_LOAD<UseTex, atype, Real>( array, newidnum1  + muvolume, offset);
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(id, oddbit, mu, 1, nu,  -1) + nuvolume, offset);
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(id, oddbit, mu, 1, nu,  -1) + nuvolume, offset);
 		staple += link;
 	}
 	//Copy state to local memory for efficiency
@@ -105,32 +105,32 @@ kernel_PHeatBath_evenodd_SOA12(complex *array, cuRNGState *state, int oddbit, in
 		int offset = mustride * 4;
 	#else
 		int x[NDIMS];
-		Index_4D_EO(x, id, oddbit);
+		Index_ND_EO(x, id, oddbit);
 		int idxoddbit = id + oddbit  * param_HalfVolume();
 		int mustride = DEVPARAMS::Volume;
 		int muvolume = mu * mustride;
 		int offset = DEVPARAMS::size;
 	#endif
 	msun staple = msu3::zero();
-	int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
+	int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
 	for(int nu = 0; nu < NDIMS; nu++)  if(mu != nu) {
       	int dx[NDIMS] = {0};
 		msun link;	
 		int nuvolume = nu * mustride;
 		link = GAUGE_LOAD<UseTex, atype, Real>( array,  idxoddbit + nuvolume, offset);
 		dx[nu]++;
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + muvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + muvolume, offset);	
 		dx[nu]--;
 		dx[mu]++;
-		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);
+		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);
 		staple += link;
 
 		dx[mu]--;
 		dx[nu]--;
-		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);	
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG()  + muvolume, offset);
+		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG()  + muvolume, offset);
 		dx[mu]++;
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + oddbit * param_HalfVolumeG() + nuvolume, offset);
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + oddbit * param_HalfVolumeG() + nuvolume, offset);
 		staple += link;
 	}
 	//Copy state to local memory for efficiency

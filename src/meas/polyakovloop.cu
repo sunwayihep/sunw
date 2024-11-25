@@ -64,7 +64,7 @@ __global__ void kernel_calc_polyakovloop_evenodd(complex *array, complex *ploop)
 			id = idd - DEVPARAMS::tstride / 2;
 		}
 			int x[4];
-			Index_4D_EO(x, id, oddbit);
+			Index_ND_EO(x, id, oddbit);
 		#ifdef MULTI_GPU
 			int idl= (x[0] + x[1] + x[2]);
 			for(int i=0; i<3;i++) x[i] += param_border(i);
@@ -282,7 +282,7 @@ kernel_calc_polyakovloop_evenodd00(complex *array, msun *ploop){
 		id = idd - DEVPARAMS::tstride / 2;
 	}
 		int x[4];
-		Index_4D_EO(x, id, oddbit);
+		Index_ND_EO(x, id, oddbit);
 	#ifdef MULTI_GPU
 		for(int i=0; i<4;i++) x[i] += param_border(i);
 		int idx = ((((x[2]) * param_GridG(1)) + x[1] ) * param_GridG(0) + x[0]);
@@ -527,9 +527,9 @@ OnePolyakovLoop<Real>::OnePolyakovLoop(gauge &array):array(array){
 	functionName = "Polyakov Loop";
 	poly_value = complex::zero();
 	size = 1;
-	for(int i=0;i<4;i++) grid[i]=PARAMS::Grid[i];
+	for(int i=0;i<NDIMS;i++) grid[i]=PARAMS::Grid[i];
 	size = 1;
-	for(int i=0;i<3;i++) size*=PARAMS::Grid[i];
+	for(int i=0;i<NDIMS-1;i++) size*=PARAMS::Grid[i];
 	timesec = 0.0;
 	SetFunctionPtr();
 	sum = (complex*)dev_malloc(sizeof(complex));
@@ -792,15 +792,20 @@ void OnePolyakovLoop<Real>::printValue(){
 
 template <class Real> 
 long long OnePolyakovLoop<Real>::flop() const { 
+	size_t spacial_volume = 1;
+	for(int i=0; i<NDIMS-1; i++) spacial_volume *= grid[i];
+
 	#if (NCOLORS == 3)
-    return (4LL + 198LL * grid[3] ) * grid[0] * grid[1] * grid[2] * numnodes();
+    return (4LL + 198LL * grid[NDIMS-1] ) * spacial_volume * numnodes();
 	#else
-    return ((NCOLORS-1) * 2LL + NCOLORS * NCOLORS * NCOLORS * 8LL * grid[3]) * grid[0] * grid[1] * grid[2] * numnodes();
+    return ((NCOLORS-1) * 2LL + NCOLORS * NCOLORS * NCOLORS * 8LL * grid[NDIMS-1]) * spacial_volume * numnodes();
 	#endif
 }
 template <class Real> 
 long long OnePolyakovLoop<Real>::bytes() const { 
-	return grid[0] * grid[1] * grid[2] * (array.getNumParams() * grid[3] + 2LL) * numnodes() * sizeof(Real);
+	size_t spacial_volume = 1;
+	for(int i=0; i<NDIMS-1; i++) spacial_volume *= grid[i];
+	return spacial_volume * (array.getNumParams() * grid[NDIMS-1] + 2LL) * numnodes() * sizeof(Real);
 }
 
 

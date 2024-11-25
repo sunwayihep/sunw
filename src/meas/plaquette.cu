@@ -60,11 +60,11 @@ __global__ void kernel_calc_plaquette_evenodd(complex *array, complex *plaquette
 	//#pragma unroll
 	for(int mu = 0; mu < NDIMS; mu++){	
 		link1 = GAUGE_LOAD<UseTex, atype,Real>( array, idxoddbit + mu * mustride, offset);
-		int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
+		int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
 		//#pragma unroll
 		for (int nu = (mu+1); nu < NDIMS; nu++){
 			link = GAUGE_LOAD<UseTex, atype,Real>( array,  newidmu1 + nu * mustride, offset);	      
-			link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, Index_4D_Neig_EO(id, oddbit, nu, 1) + mu * mustride, offset);			
+			link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, Index_ND_Neig_EO(id, oddbit, nu, 1) + mu * mustride, offset);			
 			link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, idxoddbit + nu * mustride, offset);
 			if(nu == (NDIMS-1)) plaq.imag() += (link1 * link).realtrace();
 			else plaq.real() += (link1 * link).realtrace();

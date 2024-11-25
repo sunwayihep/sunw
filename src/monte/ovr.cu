@@ -57,20 +57,20 @@ kernel_overrelaxation_evenodd(complex *array, int oddbit, int mu){
 		int offset = DEVPARAMS::size;
 	#endif
 	msun staple = msu3::zero();
-	int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
-	for(int nu = 0; nu < 4; nu++)  if(mu != nu) {
+	int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
+	for(int nu = 0; nu < NDIMS; nu++)  if(mu != nu) {
 		msun link;	
 		int nuvolume = nu * mustride;
 		//UP	
 		link = GAUGE_LOAD<UseTex, atype, Real>( array,  idxoddbit + nuvolume, offset);
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);	
 		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, newidmu1 + nuvolume, offset);
 		staple += link;
 		//DOWN	
-		int newidnum1 = Index_4D_Neig_EO(id, oddbit, nu, -1);
+		int newidnum1 = Index_ND_Neig_EO(id, oddbit, nu, -1);
 		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  newidnum1 + nuvolume, offset);	
 		link *= GAUGE_LOAD<UseTex, atype, Real>( array, newidnum1  + muvolume, offset);
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(id, oddbit, mu, 1, nu,  -1) + nuvolume, offset);
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(id, oddbit, mu, 1, nu,  -1) + nuvolume, offset);
 		staple += link;
 	}
     idxoddbit += muvolume;
@@ -97,33 +97,33 @@ kernel_overrelaxation_evenodd_SOA12(complex *array, int oddbit, int mu){
 		int muvolume = mu * mustride;
 		int offset = mustride * 4;
 	#else
-		int x[4];
-		Index_4D_EO(x, id, oddbit);
+		int x[NDIMS];
+		Index_ND_EO(x, id, oddbit);
 		int idxoddbit = id + oddbit  * param_HalfVolume();
 		int mustride = DEVPARAMS::Volume;
 		int muvolume = mu * mustride;
 		int offset = DEVPARAMS::size;
 	#endif
 	msun staple = msu3::zero();
-	int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
-	for(int nu = 0; nu < 4; nu++)  if(mu != nu) {
-      	int dx[4] = {0, 0, 0, 0};
+	int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
+	for(int nu = 0; nu < NDIMS; nu++)  if(mu != nu) {
+      	int dx[NDIMS] = {0};
 		msun link;	
 		int nuvolume = nu * mustride;
 		link = GAUGE_LOAD<UseTex, atype, Real>( array,  idxoddbit + nuvolume, offset);
 		dx[nu]++;
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + muvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + muvolume, offset);	
 		dx[nu]--;
 		dx[mu]++;
-		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);
+		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);
 		staple += link;
 
 		dx[mu]--;
 		dx[nu]--;
-		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);	
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG()  + muvolume, offset);
+		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG() + nuvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + (1-oddbit) * param_HalfVolumeG()  + muvolume, offset);
 		dx[mu]++;
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + oddbit * param_HalfVolumeG() + nuvolume, offset);
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_EO(x,dx,DEVPARAMS::GridWGhost) + oddbit * param_HalfVolumeG() + nuvolume, offset);
 		staple += link;
 	}
     idxoddbit += muvolume;
@@ -139,7 +139,7 @@ template <class Real>
 OverRelaxation<Real>::OverRelaxation(gauge &array):array(array){
 	SetFunctionPtr();
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		grid[i]=PARAMS::Grid[i];
 		size *= PARAMS::Grid[i];
 	} 
@@ -189,7 +189,7 @@ void OverRelaxation<Real>::Run(const cudaStream_t &stream){
     } 
     GAUGE_TEXTURE(array.GetPtr(), true);
 	for(parity=0; parity < 2; parity++)
-	for(dir = 0; dir < 4; dir++){
+	for(dir = 0; dir < NDIMS; dir++){
 		apply(stream);	
 		//EXCHANGE DATA!!!!!
 	    #ifdef MULTI_GPU

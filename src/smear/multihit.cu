@@ -129,20 +129,20 @@ __global__ void kernel_evenodd(
 	int idxoddbit = id + oddbit  * param_HalfVolume();
 
 	msun staple = msu3::zero();
-	int newidmu1 = Index_4D_Neig_EO(id, oddbit, mu, 1);
+	int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
 	for(int nu = 0; nu < 4; nu++){ if(mu == nu) continue;
 		msun link;	
 		int nuvolume = nu * mustride;
 		//UP	
 		link = GAUGE_LOAD<UseTex, atype, Real>( arrayin,  idxoddbit + nuvolume, offset);
-		link *= GAUGE_LOAD<UseTex, atype, Real>( arrayin, Index_4D_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( arrayin, Index_ND_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);	
 		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arrayin, newidmu1 + nuvolume, offset);
 		staple += link;
 		//DOWN	
-		int newidnum1 = Index_4D_Neig_EO(id, oddbit, nu, -1);
+		int newidnum1 = Index_ND_Neig_EO(id, oddbit, nu, -1);
 		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arrayin,  newidnum1 + nuvolume, offset);	
 		link *= GAUGE_LOAD<UseTex, atype, Real>( arrayin, newidnum1  + muvolume, offset);
-		link *= GAUGE_LOAD<UseTex, atype, Real>( arrayin, Index_4D_Neig_EO(id, oddbit, mu, 1, nu,  -1) + nuvolume, offset);
+		link *= GAUGE_LOAD<UseTex, atype, Real>( arrayin, Index_ND_Neig_EO(id, oddbit, mu, 1, nu,  -1) + nuvolume, offset);
 		staple += link;
 	}
     idxoddbit += muvolume;

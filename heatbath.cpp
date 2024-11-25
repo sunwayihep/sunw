@@ -109,7 +109,7 @@ void runHeatBath(int argc, char **argv) {
     COUT << endl;
 
     PlaquetteCUB<Real> plaqCUB(conf);
-    OnePolyakovLoop<Real> poly(conf);
+    //OnePolyakovLoop<Real> poly(conf);
 
     // Reunitarize gauge field
     Reunitarize<Real> reu(conf);
@@ -121,13 +121,13 @@ void runHeatBath(int argc, char **argv) {
     COUT << endl;
 
     // Calculate polyakov loop
-    poly.Run();
-    poly.printValue();
+    //poly.Run();
+    //poly.printValue();
     COUT << endl;
 
     // Print performance
     plaqCUB.stat();
-    poly.stat();
+    //poly.stat();
     COUT << endl;
   }
   randstates.Release();
