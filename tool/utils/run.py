@@ -4,119 +4,152 @@ import os
 import sys
 import socket
 import numpy as np
-
 import insert_point
-# Nc = 6
-# Ns = 16
-# Nt = 16
-max_traj = 2000
+from pathlib import Path
+import sunw_name_generator
+
 
 pattern = 'Plaquette: <'
 
-
-
 # 检查文件夹存在，不存在则创建
-# 检查文件夹是否存在
-def check_mkdir (folder_path):
-    if not os.path.exists(folder_path):  # 如果文件夹不存在，则创建它
-        os.makedirs(folder_path)
-        print(f"folder path '{folder_path}' added.")
-    else:
-        print(f"folder path '{folder_path}' already exists.")
+from pathlib import Path
 
-# 检查文件存在，并且超过200行
-def file_exists_and_over_200_lines(file_path):
-    if os.path.isfile(file_path) and os.stat(file_path).st_size != 0:
+def check_mkdir(folder_path):
+    path = Path(folder_path)
+    path.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        print(f"folder path '{folder_path}' already exists or created.")
+
+# 检查文件存在，并且超过指定行数
+def file_exists_and_over_lines(file_path, min_lines=200):
+    try:
         with open(file_path, 'r') as file:
-            return len(file.readlines()) > 200
-    return False
+            return sum(1 for _ in file) > min_lines
+    except (OSError, IOError):
+        return False
 
+class Config:
+    def __init__(self, proc_name: str, Nc: int, Ns: int, Nt: int, lambda_pair: list, traj_pair: list, file_path: dict):
+        log_name_generator = sunw_name_generator.SunwLogFileName()
+        csv_name_generator =  sunw_name_generator.SunwCsvFileName()
 
-def run_a_round (const_lst: list, Nc, run_log_path, res_log_path, csv_dir, max_traj) :
+        self.proc_name = proc_name
+        self.Nc = Nc
+        self.Ns = Ns
+        self.Nt = Nt
+        self.lambda_pair = lambda_pair
+        self.beta = [1 / lambda_pair[0] * Nc * Nc, 1 / lambda_pair[1] * Nc * Nc]
+        self.traj_pair = traj_pair
+        self.log_dir = file_path['log_dir']
+        # self.res_path = file_path['res_path']
+        self.csv_dir = file_path['csv_dir']
+        self.log_file = log_name_generator.generate_log_filename(self.lambda_pair[0], self.traj_pair[0], self.lambda_pair[1], self.traj_pair[1])
+        self.csv_file = csv_name_generator.generate_csv_filename(self.lambda_pair[0], self.traj_pair[0], self.lambda_pair[1], self.traj_pair[1])
 
-    exec_proc_name = f'../heatbath_su{Nc}'
+        self.cmd = f'./{self.proc_name} {self.Ns} {self.Nt} {self.beta[0]} {self.beta[1]} {self.traj_pair[0]} {self.traj_pair[1]} > {self.log_dir}/{self.log_file} 2>&1'
 
-    print(f'#######  your config: color = {Nc}, Ns = {Ns}, Nt = {Nt}')
-
-    const = np.array(const_lst)
-    print(const)
-    beta = const * Nc * Nc / 3
-    print('#########\n', 'host_name = ', socket.gethostname(), '\n##############\n')
-    for i, x in enumerate(beta):
-
-        file_name = os.path.join(run_log_path, f'const_{const[i]}.txt')
-        res_file_name = os.path.join(res_log_path, f'res_const_{const[i]}.txt')
+    def run(self):
+        import pandas as pd
+        log_file_name = os.path.join(self.log_dir, self.log_file)
+        csv_file_name = os.path.join(self.csv_dir, self.csv_file)
         
-        if file_exists_and_over_200_lines(file_name): 
-            print(f'file {file_name} already exists')
-
-        else :
-            print(f'beta = {beta[i]} begin=====================')
-            cmd = f'./{exec_proc_name} {Ns} {Nt} {beta[i]} {max_traj} > {file_name} 2>&1'
-            print(cmd)
-            os.system(cmd)
-
-        # export res_log
-        try:
-            with open(file_name, "r") as file_name:
-                lines = [line.strip() for line in file_name if line.startswith(pattern)]
+        print (f'##################### \n cmd {self.cmd} begin ......')
+       
+        if file_exists_and_over_lines(csv_file_name, self.traj_pair[0] + self.traj_pair[1]):
+            print(f'file {csv_file_name} already has enough lines')
+            df = pd.read_csv(csv_file_name)
+            return df['plaquette'].values[-1]
+        else:
+            os.system(self.cmd)
+            try:
+                plaquettes = [
+                    float(line.split()[-1])
+                    for line in open(log_file_name, 'r') if line.startswith(pattern)
+                ]
                 
-            with open(res_file_name, "w") as out_file:
-                out_file.write('\n'.join(lines) + '\n')
-        except IOError as e:
-            print(f"Error processing file {file_name}: {e}")
+                # 构建 DataFrame
+                lambda_values = [self.lambda_pair[0]] * self.traj_pair[0] + [self.lambda_pair[1]] * self.traj_pair[1]
+                # beta_values = [self.beta[0]] * self.traj_pair[0] + [self.beta[1]] * self.traj_pair[1]
+                traj_numbers = list(range(self.traj_pair[0])) + list(range(self.traj_pair[0], self.traj_pair[0] + self.traj_pair[1]))
+                df = pd.DataFrame({
+                    'lambda': lambda_values,
+                    'traj': traj_numbers,
+                    'plaquette': plaquettes
+                })
+                
+                # 保存 CSV
+                df.to_csv(csv_file_name, index=False)
+                print(f'CSV has been saved to {csv_file_name}')
+            except Exception as e:
+                print(f"Error processing log file: {e}")
+            print(f'##################### cmd {self.cmd} end ......')
+            return plaquettes[-1]
+            
 
-        # end    
-        print(f'beta = {beta[i]} end =====================')
+# lambda_lst  =  [lambda1[], lambda2[]]
+# traj_lst = [traj1, traj2]
+# file_path = {log_path: xx, csv_path: xx}
+def run_all (Nc: int, Ns: int, Nt: int, lambda_lst: list, traj_lst: list, file_path: dict) :
+    
+    print(f'#######  your config: color = {Nc}, Ns = {Ns}, Nt = {Nt}')
+    
+    exec_proc_name = f'../heatbath_su{Nc}'
+    process_numbers = len(lambda_lst[0])
 
+    plaquettes = []
+    for i in range(process_numbers):
+        lambda_pair = [lambda_lst[0][i], lambda_lst[1][i]]
+        traj_pair = [traj_lst[0], traj_lst[1]]
+        
+        config = Config(exec_proc_name, Nc, Ns, Nt, lambda_pair, traj_pair, file_path)
+        plaquettes.append(config.run())
+
+    return plaquettes
+
+def run_all_with_insert_point(Nc: int, Ns: int, Nt: int, lambda_lst: list, traj_lst: list, file_path: dict, interpolate_policy: dict) :
+    plaquettes = run_all(Nc, Ns, Nt, lambda_lst, traj_lst, file_path)
+    insert_points = insert_point.interpolate(lambda_lst[1], plaquettes, interpolate_policy['threshold_x'], interpolate_policy['threshold_slope'])
+
+    while insert_points:
+        insert_lambda = [[lbd if interpolate_policy['same_lambda'] else interpolate_policy['init_lambda'], lbd] for lbd in insert_points]
+        plaquettes = run_all(Nc, Ns, Nt, insert_lambda, traj_lst, file_path)
+
+        lambda_lst[0] += insert_lambda[0]
+        lambda_lst[1] += insert_lambda[1]
+        insert_lambda[0].sort()
+        insert_lambda[1].sort()
+
+        insert_points = insert_point.interpolate(lambda_lst[1], plaquettes, interpolate_policy['threshold_x'], interpolate_policy['threshold_slope'])
+
+    return lambda_lst
 
 if __name__ == '__main__':
     if len(sys.argv) < 4: 
         print('you must input your color first')
         print("your cmd should be 'run.py color ns nt' ")
         sys.exit(-1)
+    print('#########\n', 'host_name = ', socket.gethostname(), '\n##############\n')
+
     Nc = int(sys.argv[1])
     Ns = int(sys.argv[2])
     Nt = int(sys.argv[3])
-    run_log_path = '../run_log/'
-    res_log_path = '../res_log/'
+    run_log_dir = '../run_log/'
     csv_dir = '../csv_dir/'
 
     threshold_x = 1e-4
-    threshold_y = 2
-    from my_csv import read_csv, generate_csv
+    threshold_slope = 2
+    # from my_csv import read_csv, generate_csv
 
+    init_points = 10
+    max_lambda = 5
+    lambda_ = [0 + max_lambda / init_points * i for i in range(0, init_points)]
 
-    check_mkdir(run_log_path)
-    check_mkdir(res_log_path)
+    check_mkdir(run_log_dir)
     check_mkdir(csv_dir)
-    const_lst = [
-        0.6, 0.8, 1, 1.25, 1.5, 1.6, 1.7, 1.75, 1.8, 1.9, 1.92, 
-        1.94, 1.96, 1.98, 1.985, 1.99, 1.995, 1.996, 1.997, 1.998, 
-        1.999, 2, 2.02, 2.04, 2.044, 2.04401, 2.0442, 2.1, 2.25, 
-        2.5, 3, 4, 10, 20, 40
-    ]
-    run_a_round(const_lst, Nc, run_log_path, res_log_path, csv_dir, max_traj=2000)
-    
-    csv_file = f'plaq_traj_{Nc}_{Ns}x{Nt}.csv'
-    generate_csv (color=Nc, Ns=Ns, Nt=Nt, lst=const_lst, csv_path=csv_dir+csv_file, log_path=res_log_path)
+    lambda_lst = [[5, 4]] * 2
+    traj_lst = [100, 100]
+    file_path = {'log_dir': run_log_dir, 'csv_dir': csv_dir}
 
-    _, lambda_, plaquette_ = read_csv(csv_dir + csv_file)
-
-    insrt = insert_point.interpolate(lambda_, plaquette_, threshold_x=threshold_x, threshold_y=threshold_y)
-    print(f'insrt = {insrt}')
-    while insrt:
-        print('insert points: ', insrt)
-        run_a_round(insrt, Nc, run_log_path, res_log_path, csv_dir, max_traj=5000)
-        for elem in insrt:
-            const_lst.append(elem)
-        
-        # repeat
-        const_lst.sort()
-        generate_csv (color=Nc, Ns=Ns, Nt=Nt, lst=const_lst, csv_path=csv_dir+csv_file, log_path=res_log_path)
-        _, lambda_, plaquette_ = read_csv(csv_dir + csv_file)
-        insrt = insert_point.interpolate(lambda_, plaquette_, threshold_x=threshold_x, threshold_y=threshold_y)
-
-    with open('consts', 'w') as f:
-        for elem in const_lst:
-            f.write(str(elem) + '\n')
+    interpolate_policy = {'threshold_x': 1e-4, 'threshold_slope': 2, 'same_lambda': True, 'init_lambda': 0.6}
+    lambda_lst = run_all_with_insert_point(Nc, Ns, Nt, lambda_lst, traj_lst, file_path, interpolate_policy)
+    print(lambda_lst)
