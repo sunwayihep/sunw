@@ -44,11 +44,10 @@ static int gpuid = -1;
 static int nx, ny, nz, nt;
 
 static int squaresize[NDIMS];                /* dimensions of hypercubes */
-static int nsquares[NDIMS] = {1};            /* number of hypercubes in each direction */
+static int nsquares[NDIMS];                  /* number of hypercubes in each direction */
 static int machine_coordinates[NDIMS] = {0}; /* logical machine coordinates */
-
-static int nodes_per_ionode[NDIMS];    /* dimensions of ionode partition */
-static int *ionodegeomvals = NULL; /* ionode partitions */
+static int nodes_per_ionode[NDIMS];          /* dimensions of ionode partition */
+static int *ionodegeomvals = NULL;           /* ionode partitions */
 
 int prime[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53 };
 #define MAXPRIMES (sizeof(prime) / sizeof(int))
@@ -89,6 +88,8 @@ void setTuning(TuneMode kerneltunein) { kerneltune = kerneltunein; }
 void setVerbosity(Verbosity verbosein) { verbose = verbosein; }
 
 void initCULQCD(int gpuidin, Verbosity verbosein, TuneMode tune) {
+  // initialize the nsquares array
+  for(int i=0; i<NDIMS; i++) nsquares[i] = 1;
 #ifdef MULTI_GPU
 #ifdef MPI_GPU_DIRECT
   /* set CUDA-aware features environment variables enabled to "1" */
@@ -210,7 +211,7 @@ void comm_broadcast(void *data, size_t nbytes) {
 }
 
 int nodes_per_dim(int dim) { return nsquares[dim]; }
-void logical_coordinate(int coords[]) {
+void logical_coordinate(int coords[NDIMS]) {
   for (int d = 0; d < NDIMS; d++)
     coords[d] = machine_coordinates[d];
 }

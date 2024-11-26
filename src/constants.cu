@@ -366,7 +366,6 @@ void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size, bool ve
 	PARAMS::HalfVolumeG = PARAMS::VolumeG / 2;
 	PARAMS::size = PARAMS::Volume  * NDIMS;
 
-
 	if(verbose) PrintDetails();
 	//Set Device parameters
 	//Copy to GPU constant memory

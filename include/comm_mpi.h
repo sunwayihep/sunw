@@ -34,8 +34,8 @@ void initCULQCD(int gpuidin, Verbosity verbosein = SILENT,
 
 void EndCULQCD(int status);
 
-void SetMPIParam_MILC(const int latticedim[4], const int logical_coordinate[4],
-                      const int nodesperdim[4]);
+void SetMPIParam_MILC(const int latticedim[NDIMS], const int logical_coordinate[NDIMS],
+                      const int nodesperdim[NDIMS]);
 
 #ifdef MULTI_GPU
 void comm_abort(int status);
@@ -59,7 +59,7 @@ bool comm_dim_partitioned(int dim);
 
 void comm_broadcast(void *data, size_t nbytes);
 
-void logical_coordinate(int coords[]);
+void logical_coordinate(int coords[NDIMS]);
 int nodes_per_dim(int dim);
 void setup_hyper_prime(int _nx, int _ny, int _nz, int _nt);
 

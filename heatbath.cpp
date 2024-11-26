@@ -53,8 +53,6 @@ void runHeatBath(int argc, char **argv) {
   vector<int> lattice_size;
   lattice_size.reserve(NDIMS);
   for(int i=1; i<=NDIMS; i++) lattice_size.push_back(atoi(argv[i]));
-  //int ns = atoi(argv[1]);
-  //int nt = atoi(argv[2]);
   float beta0 = atof(argv[NDIMS+1]);
   PARAMS::UseTex = false;
   int ntraj = atoi(argv[NDIMS+2]);
@@ -78,7 +76,6 @@ void runHeatBath(int argc, char **argv) {
   //---------------------------------------------------------------------------------------
   //SETPARAMS(PARAMS::UseTex, beta0, ns, ns, ns, nt, true);
   SETPARAMS(PARAMS::UseTex, beta0, lattice_size, true);
-
   gauge conf(mygaugein, Device, PARAMS::Volume * NDIMS, true);
   conf.Details();
 
