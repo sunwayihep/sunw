@@ -333,8 +333,8 @@ void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size, bool ve
 	printf("---->>>>>>>%d::%d:::::%d:%d:%d:%d:::::%d:%d:%d:%d\n",mynode(), numnodes(),PARAMS::logical_coordinate[0],PARAMS::logical_coordinate[1],\
 		PARAMS::logical_coordinate[2],PARAMS::logical_coordinate[3],nodes_per_dim(0),nodes_per_dim(1),nodes_per_dim(2),nodes_per_dim(3));*/
 //MPI_Barrier(MPI_COMM_WORLD);
-	int temp[4];
-	for(int i = 0; i < 4; i++) temp[i] = PARAMS::logical_coordinate[i];
+	int temp[NDIMS];
+	for(int i = 0; i < NDIMS; i++) temp[i] = PARAMS::logical_coordinate[i];
 	for(int fc = 0; fc < PARAMS::NActiveFaces; fc++){
 		int i = PARAMS::FaceId[fc];
 		temp[i] = (PARAMS::logical_coordinate[i] + 1) % nodes_per_dim(i);
@@ -353,7 +353,8 @@ void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size, bool ve
 	}
 
 	PARAMS::kstride = PARAMS::Grid[0] * PARAMS::Grid[1];
-	PARAMS::tstride = PARAMS::kstride * PARAMS::Grid[2];    
+	PARAMS::tstride = 1;
+	for(int i=0; i<NDIMS-1; i++) PARAMS::tstride *= PARAMS::Grid[i];
 
 	PARAMS::Volume = 1;
 	PARAMS::VolumeG = 1;

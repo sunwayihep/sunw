@@ -85,8 +85,8 @@ __global__ void kernel_calc_plaquette_normal_cub(PlaqArg<Real> arg ){
 		}
 		// average plaqs over different spatial and time directions
 		#if (NDIMS > 2)
-		plaq.imag() /= TOTAL_NUM_TPLAQS
-		plaq.real() /= TOTAL_NUM_SPLAQS
+		plaq.imag() /= TOTAL_NUM_TPLAQS;
+		plaq.real() /= TOTAL_NUM_SPLAQS;
 		#endif
 	}
 	complex aggregate = BlockReduce(temp_storage).Reduce(plaq, Summ<complex>());
@@ -146,8 +146,8 @@ __global__ void kernel_calc_plaquette_evenodd_cub(PlaqArg<Real> arg ){
 		}
 		// average plaqs over different spatial and time directions
 		#if (NDIMS > 2)
-		plaq.imag() /= TOTAL_NUM_TPLAQS
-		plaq.real() /= TOTAL_NUM_SPLAQS
+		plaq.imag() /= TOTAL_NUM_TPLAQS;
+		plaq.real() /= TOTAL_NUM_SPLAQS;
 		#endif
 	}
 	complex aggregate = BlockReduce(temp_storage).Reduce(plaq, Summ<complex>());

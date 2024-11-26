@@ -48,8 +48,7 @@ int main(int argc, char **argv) {
 template <class Real, ArrayType mygaugein>
 void runHeatBath(int argc, char **argv) {
   if((argc-1) != (NDIMS+2)) {
-        cerr << "Number of input arguments should be (NDIMS + 2) = " << (NDIMS + 2) << endl;
-        exit(0);
+        errorCULQCD("Number of input arguments is %d, should be (NDIMS + 2) = %d", argc - 1, NDIMS + 2);
   }
   vector<int> lattice_size;
   lattice_size.reserve(NDIMS);

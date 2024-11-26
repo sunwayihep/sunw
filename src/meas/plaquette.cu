@@ -72,8 +72,8 @@ __global__ void kernel_calc_plaquette_evenodd(complex *array, complex *plaquette
 	}
 	// average plaqs over different spatial and time directions
 	#if (NDIMS > 2)
-	plaq.imag() /= TOTAL_NUM_TPLAQS
-	plaq.real() /= TOTAL_NUM_SPLAQS
+	plaq.imag() /= TOTAL_NUM_TPLAQS;
+	plaq.real() /= TOTAL_NUM_SPLAQS;
 	#endif
 	plaquette[idd] = plaq;
 		  

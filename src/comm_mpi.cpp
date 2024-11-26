@@ -43,13 +43,11 @@ static int size = -1;
 static int gpuid = -1;
 static int nx, ny, nz, nt;
 
-static int squaresize[4];                /* dimensions of hypercubes */
-static int nsquares[4] = { 1, 1, 1, 1 }; /* number of hypercubes in each
-                                            direction */
-static int machine_coordinates[4] = { 0, 0, 0, 0 }; /* logical machine
-                                                       coordinates */
+static int squaresize[NDIMS];                /* dimensions of hypercubes */
+static int nsquares[NDIMS] = {1};            /* number of hypercubes in each direction */
+static int machine_coordinates[NDIMS] = {0}; /* logical machine coordinates */
 
-static int nodes_per_ionode[4];    /* dimensions of ionode partition */
+static int nodes_per_ionode[NDIMS];    /* dimensions of ionode partition */
 static int *ionodegeomvals = NULL; /* ionode partitions */
 
 int prime[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53 };
@@ -58,9 +56,9 @@ int prime[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53 };
 static cudaDeviceProp deviceProp;
 ;
 
-void SetMPIParam_MILC(const int latticedim[4], const int logical_coordinate[4],
-                      const int nodesperdim[4]) {
-  for (int i = 0; i < 4; i++) {
+void SetMPIParam_MILC(const int latticedim[NDIMS], const int logical_coordinate[NDIMS],
+                      const int nodesperdim[NDIMS]) {
+  for (int i = 0; i < NDIMS; i++) {
     machine_coordinates[i] = logical_coordinate[i];
     nsquares[i] = nodesperdim[i];
     squaresize[i] = latticedim[i] / nodesperdim[i];
@@ -213,7 +211,7 @@ void comm_broadcast(void *data, size_t nbytes) {
 
 int nodes_per_dim(int dim) { return nsquares[dim]; }
 void logical_coordinate(int coords[]) {
-  for (int d = 0; d < 4; d++)
+  for (int d = 0; d < NDIMS; d++)
     coords[d] = machine_coordinates[d];
 }
 
