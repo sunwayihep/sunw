@@ -39,11 +39,11 @@ template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
 __global__ void kernel_calc_Mpolyakovloop(complex *array, complex *ploop){
 	int id = INDEX1D();
 	if(id < DEVPARAMS::tstride){			
-		int index = id + 3 * DEVPARAMS::Volume;
-		int offset = DEVPARAMS::Volume * 4;
+		int index = id + (NDIMS-1) * DEVPARAMS::Volume;
+		int offset = DEVPARAMS::Volume * NDIMS;
 
 		msun L = GAUGE_LOAD<UseTex, atypein,Real>(array, index, offset);
-		for( int t = 1; t < DEVPARAMS::Grid[3]; t++)
+		for( int t = 1; t < DEVPARAMS::Grid[NDIMS-1]; t++)
 			L *= GAUGE_LOAD<UseTex, atypein,Real>(array, index + t * DEVPARAMS::tstride, offset);
 			
 		GAUGE_SAVE<atypeout, Real>(ploop, L, id, DEVPARAMS::tstride );
@@ -78,7 +78,7 @@ public:
    MPloop(gauge &arrayin, gauge &arrayout):arrayin(arrayin), arrayout(arrayout){
 		size = 1;
 		//Number of threads is equal to the number of space points!
-		for(int i=0;i<3;i++){
+		for(int i=0;i<NDIMS-1;i++){
 		  size *= PARAMS::Grid[i];
 		} 
 		timesec = 0.0;
@@ -93,10 +93,8 @@ public:
 	double bandwidth(){	return (double)bytes() / (timesec * (double)(1 << 30));}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+	for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string typear = arrayin.ToStringArrayType() + arrayout.ToStringArrayType();
     return TuneKey(vol.str().c_str(), typeid(*this).name(), typear.c_str(), aux.str().c_str());
@@ -228,10 +226,8 @@ public:
 
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+	for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(), array.ToStringArrayType().c_str(), aux.str().c_str());
   }
@@ -257,11 +253,11 @@ __global__ void kernel_calc_polyakovloop(PLoopArg<Real> arg){
   complex value = complex::zero();
     
 	if(id < DEVPARAMS::tstride){			
-		int index = id + 3 * DEVPARAMS::Volume;
-		int offset = DEVPARAMS::Volume * 4;
+		int index = id + (NDIMS-1) * DEVPARAMS::Volume;
+		int offset = DEVPARAMS::Volume * NDIMS;
 
 		msun L = GAUGE_LOAD<UseTex, atypein,Real>(arg.array, index, offset);
-		for( int t = 1; t < DEVPARAMS::Grid[3]; t++)
+		for( int t = 1; t < DEVPARAMS::Grid[NDIMS-1]; t++)
 			L *= GAUGE_LOAD<UseTex, atypein,Real>(arg.array, index + t * DEVPARAMS::tstride, offset);
 			
 		value = L.trace();
@@ -289,19 +285,21 @@ __global__ void kernel_calc_polyakovloopEO(PLoopArg<Real> arg){
 		  oddbit = 1;
 		  id = idd - DEVPARAMS::tstride / 2;
 	  }
-		  int x[4];
-		  Index_4D_EO(x, id, oddbit, DEVPARAMS::Grid);
-		  int idx = (((x[2] * param_Grid(1)) + x[1] ) * param_Grid(0) + x[0]);
-		  int idl= (x[0] + x[1] + x[2]);
-		  int mustride = DEVPARAMS::Volume;
-		  int stride = param_Grid(2) * param_Grid(1) * param_Grid(0);
-		  int offset = DEVPARAMS::size;
+	  int x[NDIMS];
+	  Index_ND_EO(x, id, oddbit, DEVPARAMS::Grid);
+	  int idx = Index_NDs_NM(x);
+	  int idl = 0;
+	  for(int i=0; i<NDIMS-1; i++) idl += x[i];
+	  int mustride = DEVPARAMS::Volume;
+	  int stride = 1;
+	  for(int i=0; i<NDIMS-1; i++) stride *= param_Grid(i);
+	  int offset = DEVPARAMS::size;
 
 	  msun L = msun::unit();	
-	  for( int t = 0; t < DEVPARAMS::Grid[3]; t++){
+	  for( int t = 0; t < DEVPARAMS::Grid[NDIMS-1]; t++){
 		  int id0 = (idx + t * stride) >> 1;
 		  id0 += ( (idl+t) & 1 ) * param_HalfVolumeG();
-		  L *= GAUGE_LOAD<UseTex, atypein,Real>(arg.array, id0 + 3 * mustride, offset);
+		  L *= GAUGE_LOAD<UseTex, atypein,Real>(arg.array, id0 + (NDIMS-1) * mustride, offset);
 	  }
 		value = L.trace();
 	}
@@ -320,7 +318,7 @@ PLoop<Real>::PLoop(gauge &array):array(array){
   //if(array.EvenOdd() == true) errorCULQCD("Not defined for EvenOdd arrays...\n");
 	value = complex::zero();
 	size = 1;
-	for(int i=0;i<3;i++){
+	for(int i=0;i<NDIMS-1;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;

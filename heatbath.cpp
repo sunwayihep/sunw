@@ -65,7 +65,7 @@ void runHeatBath(int argc, char **argv) {
   // for single-GPU run.
   // if TUNE_YES user must set export CULQCD_RESOURCE_PATH="path to folder where
   // the tuning parameters are saved..."
-  initCULQCD(0, SUMMARIZE, TUNE_NO);
+  initCULQCD(0, SUMMARIZE, TUNE_YES);
 
   // Create timer
   Timer t0;
@@ -109,7 +109,7 @@ void runHeatBath(int argc, char **argv) {
     COUT << endl;
 
     PlaquetteCUB<Real> plaqCUB(conf);
-    //OnePolyakovLoop<Real> poly(conf);
+    OnePolyakovLoop<Real> poly(conf);
 
     // Reunitarize gauge field
     Reunitarize<Real> reu(conf);
@@ -121,13 +121,13 @@ void runHeatBath(int argc, char **argv) {
     COUT << endl;
 
     // Calculate polyakov loop
-    //poly.Run();
-    //poly.printValue();
+    poly.Run();
+    poly.printValue();
     COUT << endl;
 
     // Print performance
     plaqCUB.stat();
-    //poly.stat();
+    poly.stat();
     COUT << endl;
   }
   randstates.Release();

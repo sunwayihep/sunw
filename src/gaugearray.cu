@@ -357,13 +357,13 @@ kernel_hot_start1(complex *array, cuRNGState *state, int size, int rngsize){
 	if(id < DEVPARAMS::HalfVolume){
 		cuRNGState localState = state[ id ];
 		for(int parity = 0; parity < 2; parity++){
-			int x[4];
-			Index_4D_EO(x, id, parity, DEVPARAMS::Grid);
-			for(int i=0; i<4;i++) x[i] += param_border(i);
-			int idxoddbit = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1] ) * param_GridG(0) + x[0]) >> 1 ;
+			int x[NDIMS];
+			Index_ND_EO(x, id, parity, DEVPARAMS::Grid);
+			for(int i=0; i<NDIMS;i++) x[i] += param_border(i);
+			int idxoddbit = Index_ND_NM(x, DEVPARAMS::GridWGhost) >> 1;
 			idxoddbit += parity  * param_HalfVolumeG();
-			int offset = DEVPARAMS::VolumeG * 4;
-			for(int mu = 0; mu < 4; mu++){
+			int offset = DEVPARAMS::VolumeG * NDIMS;
+			for(int mu = 0; mu < NDIMS; mu++){
 				msun U = randomize<Real>(localState );
 				reunit_link<Real>(&U);
 				GAUGE_SAVE<atype, Real>(array, U, idxoddbit + mu * DEVPARAMS::VolumeG, offset);

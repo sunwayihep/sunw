@@ -37,11 +37,11 @@ __global__ void kernel_calc_polyakovloop_1D(complex *array, complex *ploop){
 		int index = id + DEVPARAMS::tstride + 3 * DEVPARAMS::tstride*(DEVPARAMS::Grid[3]+2);
 		int offset = DEVPARAMS::tstride*(DEVPARAMS::Grid[3]+2) * 4;
 		#else		
-		int index = id + 3 * DEVPARAMS::Volume;
-		int offset = DEVPARAMS::Volume * 4;
+		int index = id + (NDIMS-1) * DEVPARAMS::Volume;
+		int offset = DEVPARAMS::Volume * NDIMS;
 		#endif
 		msun L = GAUGE_LOAD<UseTex, atypein,Real>(array, index, offset);//msun::unit();	
-		for( int t = 1; t < DEVPARAMS::Grid[3]; t++)
+		for( int t = 1; t < DEVPARAMS::Grid[NDIMS-1]; t++)
 			L *= GAUGE_LOAD<UseTex, atypein,Real>(array, index + t * DEVPARAMS::tstride, offset);
 		GAUGE_SAVE<atypeout, Real>(ploop, L, id, DEVPARAMS::tstride );
 	}
@@ -63,7 +63,7 @@ __global__ void kernel_calc_polyakovloop_evenodd(complex *array, complex *ploop)
 			oddbit = 1;
 			id = idd - DEVPARAMS::tstride / 2;
 		}
-			int x[4];
+			int x[NDIMS];
 			Index_ND_EO(x, id, oddbit);
 		#ifdef MULTI_GPU
 			int idl= (x[0] + x[1] + x[2]);
@@ -73,22 +73,24 @@ __global__ void kernel_calc_polyakovloop_evenodd(complex *array, complex *ploop)
 			int stride = param_GridG(2) * param_GridG(1) * param_GridG(0);
 			int offset = mustride * 4;
 		#else
-			int idx = (((x[2] * param_Grid(1)) + x[1] ) * param_Grid(0) + x[0]);
-			int idl= (x[0] + x[1] + x[2]);
+			int idx = Index_NDs_NM(x);
+			int idl = 0;
+			for(int i=0; i<NDIMS-1; i++) idl += x[i];
 			int mustride = DEVPARAMS::Volume;
-			int stride = param_Grid(2) * param_Grid(1) * param_Grid(0);
+			int stride = 1;
+			for(int i=0; i<NDIMS-1; i++) stride *= param_Grid(i);
 			int offset = DEVPARAMS::size;
 		#endif
 
 		msun L = msun::unit();	
-		for( int t = 0; t < DEVPARAMS::Grid[3]; t++){
+		for( int t = 0; t < DEVPARAMS::Grid[NDIMS-1]; t++){
 			#ifdef MULTI_GPU
 			int id0 = (idx + (t + param_border(3)) * stride) >> 1;
 			#else
 			int id0 = (idx + t * stride) >> 1;
 			#endif
 			id0 += ( (idl+t) & 1 ) * param_HalfVolumeG();
-			L *= GAUGE_LOAD<UseTex, atypein,Real>(array, id0 + 3 * mustride, offset);
+			L *= GAUGE_LOAD<UseTex, atypein,Real>(array, id0 + (NDIMS-1) * mustride, offset);
 		}
 		if(savePLMatrix){
 			GAUGE_SAVE<SOA, Real>(ploop, L, idd, DEVPARAMS::tstride);
@@ -156,9 +158,9 @@ __global__ void kernel_calc_polyakovloopTR_1D(complex *array, complex *ploop){
 	int id = INDEX1D();
 	complex pl = complex::zero();
 	if(id < DEVPARAMS::tstride){	
-		int index = id + 3 * DEVPARAMS::Volume;
+		int index = id + (NDIMS-1) * DEVPARAMS::Volume;
 		msun L = GAUGE_LOAD<UseTex, atype,Real>(array, index);	
-		for( int t = 1; t < DEVPARAMS::Grid[3]; t++)
+		for( int t = 1; t < DEVPARAMS::Grid[NDIMS-1]; t++)
 			L *= GAUGE_LOAD<UseTex, atype,Real>(array, index + t * DEVPARAMS::tstride);				
 		pl = L.trace();
 	}
@@ -281,7 +283,7 @@ kernel_calc_polyakovloop_evenodd00(complex *array, msun *ploop){
 		oddbit = 1;
 		id = idd - DEVPARAMS::tstride / 2;
 	}
-		int x[4];
+		int x[NDIMS];
 		Index_ND_EO(x, id, oddbit);
 	#ifdef MULTI_GPU
 		for(int i=0; i<4;i++) x[i] += param_border(i);
@@ -290,22 +292,24 @@ kernel_calc_polyakovloop_evenodd00(complex *array, msun *ploop){
 		int stride = param_GridG(2) * param_GridG(1) * param_GridG(0);
 		int offset = mustride * 4;
 	#else
-		int idx = ((((x[2]) * param_Grid(1)) + x[1] ) * param_Grid(0) + x[0]);
+		int idx = Index_NDs_NM(x);
 		int mustride = DEVPARAMS::Volume;
-		int stride = param_Grid(2) * param_Grid(1) * param_Grid(0);
+		int stride = 1;
+		for(int i=0; i<NDIMS-1; i++) stride *= param_Grid(i);
 		int offset = DEVPARAMS::size;
 	#endif
 
 	msun L = msun::unit();	
-	int idl= (x[0] + x[1] + x[2] + x[3]);
-	for( int t = 0; t < DEVPARAMS::Grid[3]; t++){
+	int idl = 0;
+	for(int i=0; i<NDIMS; i++) idl += x[i];
+	for( int t = 0; t < DEVPARAMS::Grid[NDIMS-1]; t++){
 		#ifdef MULTI_GPU
 		int id0 = (idx + (t + param_border(3)) * stride) >> 1;
 		#else
 		int id0 = (idx + t * stride) >> 1;
 		#endif
 		id0 += ( (idl+t) & 1 ) * param_HalfVolumeG();
-		L *= GAUGE_LOAD<UseTex, atypein,Real>(array, id0 + 3 * mustride, offset);
+		L *= GAUGE_LOAD<UseTex, atypein,Real>(array, id0 + (NDIMS-1) * mustride, offset);
 	}
 	if(evenoddorder){
 		ploop[idd] = L;
@@ -491,11 +495,13 @@ complex PolyakovLoop(gauge array){
 	printfCULQCD("Polyakov Loop: < %.12e : %.12e : %.12e >\n", res.real(), res.imag(), res.abs());
 	pltime.stop();
 	//NEED TO RECOUNT SINCE FLOPS will be DEPENDING ON HOW LATTICE IS PARTITIONED!!!!! 
-  	long long ThreadReadWrites = PARAMS::Grid[0] * PARAMS::Grid[1] * PARAMS::Grid[2] * (array.getNumParams() * PARAMS::Grid[3] + 2LL);
+	long long size_space = 1;
+	for(int i=0; i<NDIMS-1; i++) size_space *= PARAMS::Grid[i];
+  	long long ThreadReadWrites = size_space * (array.getNumParams() * PARAMS::Grid[NDIMS-1] + 2LL);
 #if (NCOLORS == 3)
-    long long ThreadFlop = (4LL + 198. * PARAMS::Grid[3] ) * PARAMS::Grid[0] * PARAMS::Grid[1] * PARAMS::Grid[2];
+    long long ThreadFlop = (4LL + 198. * PARAMS::Grid[NDIMS-1] ) * size_space;
 #else
-    long long ThreadFlop =  ((NCOLORS-1) * 2LL + NCOLORS * NCOLORS * NCOLORS * 8LL * PARAMS::Grid[3]) * PARAMS::Grid[0] * PARAMS::Grid[1] * PARAMS::Grid[2];
+    long long ThreadFlop =  ((NCOLORS-1) * 2LL + NCOLORS * NCOLORS * NCOLORS * 8LL * PARAMS::Grid[NDIMS-1]) * size_space;
 #endif
 
     //NEED TO RECOUNT!!!!!! 

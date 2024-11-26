@@ -54,7 +54,7 @@ public:
 
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    for(int i=0; i<NDIMS; i++) vol << grid[i] << "x";
+    for(int i=0; i<NDIMS-1; i++) vol << grid[i] << "x";
     vol << grid[NDIMS-1];
     aux << "threads=" << size << ",prec=" << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(),

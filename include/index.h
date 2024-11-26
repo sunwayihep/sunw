@@ -29,6 +29,14 @@ __host__ __device__ inline void Index_ND_NM(const int id, int x[NDIMS]) {
   }
 }
 
+__host__ __device__ inline void Index_ND_NM(const int id, int x[NDIMS], const int X[NDIMS]) {
+  int temp = id;
+  for(int i=0; i<NDIMS; i++){
+    x[i] = temp % X[i];
+    temp /= X[i];
+  }
+}
+
 __device__ __host__ inline int Index_4D_NM(const int y[]) {
   return (((y[3] * param_Grid(2) + y[2]) * param_Grid(1) + y[1]) *
               param_Grid(0) +
@@ -42,6 +50,17 @@ __host__ __device__ inline int Index_ND_NM(const int y[NDIMS]) {
   for(int i=0; i<NDIMS; i++){
     index += y[i] * factor;
     factor *= param_Grid(i);
+  }
+  
+  return index;
+}
+
+__host__ __device__ inline int Index_ND_NM(const int x[NDIMS], const int X[NDIMS]) {
+  int index = 0;
+  int factor = 1;
+  for(int i=0; i<NDIMS; i++){
+    index += x[i] * factor;
+    factor *= X[i];
   }
   
   return index;
@@ -269,7 +288,6 @@ __host__ __device__ inline int Index_NDs_Neig_NM(const int x[NDIMS-1], int mu,
 //  x[0] = (2 * id + xodd) - za * param_Grid(0);
 //}
 
-// TODO
 __host__ __device__ inline void Index_ND_EO(int x[NDIMS], const int id,
                                             const int oddbit) {
   int factor = id / (param_Grid(0) / 2);
@@ -284,16 +302,30 @@ __host__ __device__ inline void Index_ND_EO(int x[NDIMS], const int id,
   x[0] = (id * 2 + xodd) - id / (param_Grid(0) / 2) * param_Grid(0);
 }
 
-__device__ __host__ inline void Index_4D_EO(int x[4], const int id,
-                                            const int parity, const int X[4]) {
-  int za = (id / (X[0] / 2));
-  int zb = (za / X[1]);
-  x[1] = za - zb * X[1];
-  x[3] = (zb / X[2]);
-  x[2] = zb - x[3] * X[2];
-  int x1odd = (x[1] + x[2] + x[3] + parity) & 1;
-  x[0] = (2 * id + x1odd) - za * X[0];
-  return;
+//__device__ __host__ inline void Index_4D_EO(int x[4], const int id,
+//                                            const int parity, const int X[4]) {
+//  int za = (id / (X[0] / 2));
+//  int zb = (za / X[1]);
+//  x[1] = za - zb * X[1];
+//  x[3] = (zb / X[2]);
+//  x[2] = zb - x[3] * X[2];
+//  int x1odd = (x[1] + x[2] + x[3] + parity) & 1;
+//  x[0] = (2 * id + x1odd) - za * X[0];
+//  return;
+//}
+
+__host__ __device__ inline void Index_ND_EO(int x[NDIMS], const int id,
+                                            const int oddbit, const int X[NDIMS]) {
+  int factor = id / (X[0] / 2);
+  for(int i=0; i<NDIMS; i++){
+    int factor1 = factor / X[i];
+    x[i] = factor - factor1 * X[i];
+    factor = factor1;
+  }
+  int sum = 0;
+  for(int i=1; i<NDIMS; i++) sum += x[i];
+  int xodd = (sum + oddbit) & 1;
+  x[0] = (id * 2 + xodd) - id / (X[0] / 2) *X[0];                                       
 }
 
 __device__ __host__ inline int Index_4D_Neig_EO(const int x[], const int dx[],
