@@ -39,11 +39,11 @@ template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
 __global__ void kernel_calc_Mpolyakovloop(complex *array, complex *ploop){
 	int id = INDEX1D();
 	if(id < DEVPARAMS::tstride){			
-		int index = id + 3 * DEVPARAMS::Volume;
-		int offset = DEVPARAMS::Volume * 4;
+		int index = id + (NDIMS-1) * DEVPARAMS::Volume;
+		int offset = DEVPARAMS::Volume * NDIMS;
 
 		msun L = GAUGE_LOAD<UseTex, atypein,Real>(array, index, offset);
-		for( int t = 1; t < DEVPARAMS::Grid[3]; t++)
+		for( int t = 1; t < DEVPARAMS::Grid[NDIMS-1]; t++)
 			L *= GAUGE_LOAD<UseTex, atypein,Real>(array, index + t * DEVPARAMS::tstride, offset);
 			
 		GAUGE_SAVE<atypeout, Real>(ploop, L, id, DEVPARAMS::tstride );
@@ -78,7 +78,7 @@ public:
    MPloop(gauge &arrayin, gauge &arrayout):arrayin(arrayin), arrayout(arrayout){
 		size = 1;
 		//Number of threads is equal to the number of space points!
-		for(int i=0;i<NDIMS;i++){
+		for(int i=0;i<NDIMS-1;i++){
 		  size *= PARAMS::Grid[i];
 		} 
 		timesec = 0.0;

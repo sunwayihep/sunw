@@ -1,4 +1,4 @@
-
+#if (NDIMS == 4)
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -617,14 +617,5 @@ void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
 template void CalcChromoField<float>(complexs *ploop, complexs *plaqfield, float *field, float *pl, int radius, int nx, int ny, bool ppdagger, bool chargeplane);
 template void CalcChromoField<double>(complexd *ploop, complexd *plaqfield, double *field, double *pl, int radius, int nx, int ny, bool ppdagger, bool chargeplane);
 
-
-
-
-
-
-
-
-
-
-
 }
+#endif

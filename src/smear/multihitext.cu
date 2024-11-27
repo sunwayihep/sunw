@@ -1,4 +1,4 @@
-
+#if(NDIMS == 4)
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -457,3 +457,4 @@ template void ApplyMultiHitExt<double>(gauged array, gauged arrayout, RNG &rands
 
 
 }
+#endif

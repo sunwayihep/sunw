@@ -59,7 +59,7 @@ __global__ void kernel_linkdetsum(DetArg<Real> arg){
 		int id = idd;
 		#endif
 		//#pragma unroll
-        for(int mu = 0; mu < 4; mu++) res +=  GAUGE_LOAD<UseTex, atype, Real>( arg.array, id + mu * mustride, offset).det();
+        for(int mu = 0; mu < NDIMS; mu++) res +=  GAUGE_LOAD<UseTex, atype, Real>( arg.array, id + mu * mustride, offset).det();
     }
 	complex aggregate = BlockReduce(temp_storage).Reduce(res, Summ<complex>());
 	if (threadIdx.x == 0) CudaAtomicAdd(arg.value, aggregate);		
@@ -73,7 +73,7 @@ GaugeDetCUB<Real>::GaugeDetCUB(gauge &array):array(array){
 	arg.value = (complex*)dev_malloc(sizeof(complex));
 	arg.array = array.GetPtr();
 	size = 1;
-	for(int i=0;i<4;i++) size *= PARAMS::Grid[i];
+	for(int i=0;i<NDIMS;i++) size *= PARAMS::Grid[i];
 	timesec = 0.0;
 }
 template <class Real> 
@@ -112,7 +112,7 @@ complex GaugeDetCUB<Real>::Run(const cudaStream_t &stream){
     CUDA_SAFE_DEVICE_SYNC();//
 	CUT_CHECK_ERROR("Link Determinant Sum: Kernel execution failed"); 
     CUDA_SAFE_CALL(cudaMemcpy(&value, arg.value, sizeof(complex), cudaMemcpyDeviceToHost));
-	value /= (Real)(4 * size);
+	value /= (Real)(NDIMS * size);
 	#ifdef MULTI_GPU
 	comm_Allreduce(&value);
 	value /= numnodes();
@@ -211,7 +211,7 @@ __global__ void kernel_linkdetsum(DetArg<Real> arg){
 		int id = idd;
 		#endif
 		//#pragma unroll
-        for(int mu = 0; mu < 4; mu++) res +=  GAUGE_LOAD<UseTex, atype, Real>( arg.array, id + mu * mustride, offset).det();
+        for(int mu = 0; mu < NDIMS; mu++) res +=  GAUGE_LOAD<UseTex, atype, Real>( arg.array, id + mu * mustride, offset).det();
     }		
 	reduce_block_1d<complex>(arg.value, res);
 }
@@ -222,7 +222,7 @@ GaugeDet<Real>::GaugeDet(gauge &array):array(array){
 	arg.value = (complex*) dev_malloc(sizeof(complex));
 	arg.array = array.GetPtr();
 	size = 1;
-	for(int i=0;i<4;i++) size *= PARAMS::Grid[i];
+	for(int i=0;i<NDIMS;i++) size *= PARAMS::Grid[i];
 }
 template <class Real> 
 GaugeDet<Real>::~GaugeDet(){  dev_free(arg.value); }
@@ -261,7 +261,7 @@ complex GaugeDet<Real>::Run(const cudaStream_t &stream){
 #endif
     apply(stream);
 	CUDA_SAFE_CALL(cudaMemcpy(&value, arg.value, sizeof(complex), cudaMemcpyDeviceToHost));
-	value /= (Real)(4 * size);
+	value /= (Real)(NDIMS * size);
 	#ifdef MULTI_GPU
 	comm_Allreduce(&value);
 	value /= numnodes();

@@ -1,4 +1,4 @@
-
+#if (NDIMS == 4) // compile only for 4D lattice
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -256,4 +256,4 @@ template void PotPL3D<double>(gauged array, complexd *pot, int radius, int pts);
 
 
 } //namespace CULQCD
-
+#endif

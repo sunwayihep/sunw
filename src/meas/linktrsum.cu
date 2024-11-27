@@ -89,7 +89,7 @@ __global__ void kernel_linktracesum(TraceArg<Real> arg){
 			int id = idd;
 		#endif
 		#pragma unroll
-	    for(int mu = 0; mu < 4; mu++) res += dev_linktracesum<UseTex, atype, Real>( arg.array, id + mu * mustride, offset);
+	    for(int mu = 0; mu < NDIMS; mu++) res += dev_linktracesum<UseTex, atype, Real>( arg.array, id + mu * mustride, offset);
 	}		
   complex aggregate = BlockReduce(temp_storage).Reduce(res, Summ<complex>());
   if (threadIdx.x == 0) CudaAtomicAdd(arg.value, aggregate);
@@ -104,7 +104,7 @@ GaugeTraceCUB<Real>::GaugeTraceCUB(gauge &array):array(array){
 	arg.value = (complex*)dev_malloc(sizeof(complex));
 	arg.array = array.GetPtr();
 	size = 1;
-	for(int i=0;i<4;i++) size *= PARAMS::Grid[i];
+	for(int i=0;i<NDIMS;i++) size *= PARAMS::Grid[i];
 	timesec = 0.0;
 }
 template <class Real> 
@@ -143,7 +143,7 @@ complex GaugeTraceCUB<Real>::Run(const cudaStream_t &stream){
     CUDA_SAFE_DEVICE_SYNC();//
 	CUT_CHECK_ERROR("Link Determinant Sum: Kernel execution failed"); 
     CUDA_SAFE_CALL(cudaMemcpy(&value, arg.value, sizeof(complex), cudaMemcpyDeviceToHost));
-	value /= (Real)(4 * NCOLORS * size);
+	value /= (Real)(NDIMS * NCOLORS * size);
 	#ifdef MULTI_GPU
 	comm_Allreduce(&value);
 	value /= numnodes();
@@ -218,10 +218,8 @@ double GaugeTraceCUB<Real>::bandwidth(){
 template <class Real> 
   TuneKey GaugeTraceCUB<Real>::tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+	for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(), array.ToStringArrayType().c_str(), aux.str().c_str());
   }
@@ -268,7 +266,7 @@ __global__ void kernel_linktracesum(TraceArg<Real> arg){
 		#endif
         complex res = complex:: zero();
 		#pragma unroll
-        for(int mu = 0; mu < 4; mu++) res += dev_linktracesum<UseTex, atype, Real>( arg.array, id + mu * mustride, offset);
+        for(int mu = 0; mu < NDIMS; mu++) res += dev_linktracesum<UseTex, atype, Real>( arg.array, id + mu * mustride, offset);
         arg.value[idd] = res;
     }		
 }
@@ -279,7 +277,7 @@ GaugeTrace<Real>::GaugeTrace(gauge &array, complex *sum):array(array){
 	arg.value = sum;
 	arg.array = array.GetPtr();
 	size = 1;
-	for(int i=0;i<4;i++) size *= PARAMS::Grid[i];
+	for(int i=0;i<NDIMS;i++) size *= PARAMS::Grid[i];
 	timesec = 0.0;
 }
 template <class Real> 
@@ -317,7 +315,7 @@ complex GaugeTrace<Real>::Run(const cudaStream_t &stream){
 #endif
     apply(stream);
 	value = reduction<complex>(arg.value, size, stream);
-	value /= (Real)(4 * NCOLORS * size);
+	value /= (Real)(NDIMS * NCOLORS * size);
 	#ifdef MULTI_GPU
 	comm_Allreduce(&value);
 	value /= numnodes();
@@ -392,10 +390,8 @@ double GaugeTrace<Real>::bandwidth(){
 template <class Real> 
   TuneKey GaugeTrace<Real>::tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+	for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(), array.ToStringArrayType().c_str(), aux.str().c_str());
   }

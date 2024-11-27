@@ -1,4 +1,4 @@
-
+#if(NDIMS == 4)
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -580,3 +580,4 @@ template void CalcWLOPs_A0<double>(gauged array, Sigma_g_plus<double> *arg, int 
 
 
 }
+#endif

@@ -1,4 +1,4 @@
-
+#if (NDIMS == 4)
 
 #include <stdio.h>
 #include <string.h>
@@ -257,9 +257,5 @@ void PlaquetteField(gauge array, complex *plaq, complex *meanplaq){
 template void PlaquetteField<float>(gauges array, complexs *plaq, complexs *meanplaq);
 template void PlaquetteField<double>(gauged array, complexd *plaq, complexd *meanplaq);
 
-
-
-
-
-
 }
+#endif

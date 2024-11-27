@@ -1,4 +1,4 @@
-
+#if(NDIMS == 4)
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -1004,3 +1004,4 @@ template void CalcWLOPs_dg_33<double>(gauged array, gauged fieldOp, int radius, 
 
 
 }
+#endif

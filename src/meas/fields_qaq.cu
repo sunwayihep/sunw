@@ -1,4 +1,4 @@
-
+#if (NDIMS == 4)
 #include <stdio.h>
 #include <string.h>
 #include <iostream>
@@ -513,10 +513,5 @@ void CalcFieldWilsonLoop_dg(gauge array, gauge wilson_spaceline, Real *plaqfield
 
 template void CalcFieldWilsonLoop_dg<double>(gauged array, gauged wilson_spaceline, double *plaqfield, double *wloop, double *field, int radius, int Tmax, int nx, int ny, bool planexy);
 
-
-
-
-
-
-
 }
+#endif

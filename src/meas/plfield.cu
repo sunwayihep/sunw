@@ -56,11 +56,11 @@ __global__ void kernel_calc_Tpolyakovloop(TPloopArg<Real> arg){
 	int id = INDEX1D();
   complex value = complex::zero();
 	if(id < DEVPARAMS::tstride) {			
-  	int index = id + 3 * DEVPARAMS::Volume;
-  	int offset = DEVPARAMS::Volume * 4;
+  	int index = id + (NDIMS-1) * DEVPARAMS::Volume;
+  	int offset = DEVPARAMS::Volume * NDIMS;
 
   	msun L = GAUGE_LOAD<UseTex, atypein,Real>(arg.array, index, offset);
-  	for( int t = 1; t < DEVPARAMS::Grid[3]; t++)
+  	for( int t = 1; t < DEVPARAMS::Grid[NDIMS-1]; t++)
   		L *= GAUGE_LOAD<UseTex, atypein,Real>(arg.array, index + t * DEVPARAMS::tstride, offset);
     value = L.trace();
   	arg.ploop[id] = value;
@@ -99,7 +99,7 @@ public:
    TPloop(gauge &arrayin, complex *ploop):arrayin(arrayin){
 		size = 1;
 		//Number of threads is equal to the number of space points!
-		for(int i=0;i<3;i++){
+		for(int i=0;i<NDIMS-1;i++){
 		  size *= PARAMS::Grid[i];
 		} 
 		timesec = 0.0;
@@ -117,10 +117,8 @@ public:
 	double bandwidth(){	return (double)bytes() / (timesec * (double)(1 << 30));}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string typear = arrayin.ToStringArrayType();
     return TuneKey(vol.str().c_str(), typeid(*this).name(), typear.c_str(), aux.str().c_str());
