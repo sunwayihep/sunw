@@ -46,14 +46,14 @@ kernel_PHeatBath_evenodd(complex *array, cuRNGState *state, int oddbit, int mu){
 	if(id >= DEVPARAMS::HalfVolume) return;
 
 	#ifdef MULTI_GPU
-		int x[4];
-		Index_4D_EO(x, id, oddbit);
-		for(int i=0; i<4;i++)x[i]+=param_border(i);
-		int idxoddbit = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1] ) * param_GridG(0) + x[0]) >> 1 ;
+		int x[NDIMS];
+		Index_ND_EO(x, id, oddbit);
+		for(int i=0; i<NDIMS;i++)x[i]+=param_border(i);
+		int idxoddbit = Index_ND_NM(x, DEVPARAMS::GridWGhost) >> 1;
 		idxoddbit += oddbit  * param_HalfVolumeG();
 		int mustride = DEVPARAMS::VolumeG;
 		int muvolume = mu * mustride;
-		int offset = mustride * 4;
+		int offset = mustride * NDIMS;
 	#else
 		int mustride = DEVPARAMS::Volume;
 		int muvolume = mu * mustride;
@@ -95,14 +95,14 @@ kernel_PHeatBath_evenodd_SOA12(complex *array, cuRNGState *state, int oddbit, in
 	if(id >= param_HalfVolume()) return;	
 	#ifdef MULTI_GPU
 
-		int x[4];
-		Index_4D_EO(x, id, oddbit);
-		for(int i=0; i<4;i++)x[i]+=param_border(i);
-		int idxoddbit = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1] ) * param_GridG(0) + x[0]) >> 1 ;
+		int x[NDIMS];
+		Index_ND_EO(x, id, oddbit);
+		for(int i=0; i<NDIMS;i++)x[i]+=param_border(i);
+		int idxoddbit = Index_ND_NM(x, DEVPARAMS::GridWGhost) >> 1;
 		idxoddbit += oddbit  * param_HalfVolumeG();
 		int mustride = DEVPARAMS::VolumeG;
 		int muvolume = mu * mustride;
-		int offset = mustride * 4;
+		int offset = mustride * NDIMS;
 	#else
 		int x[NDIMS];
 		Index_ND_EO(x, id, oddbit);

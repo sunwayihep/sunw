@@ -38,10 +38,10 @@ kernel_random(cuRNGState *state, randArg arg ){
 #endif
     if(id >= arg.size) return;
     #ifdef MULTI_GPU
-    int x[4];
-    Index_4D_EO(x, id, 0, DEVPARAMS::Grid);
-    for(int i=0; i<4;i++) x[i] += arg.log_cord[i] * arg.X[i];
-    int idd = ((((x[3] * arg.grid[2] + x[2]) * arg.grid[1]) + x[1] ) * arg.grid[0] + x[0]) >> 1 ;
+    int x[NDIMS];
+    Index_ND_EO(x, id, 0, DEVPARAMS::Grid);
+    for(int i=0; i<NDIMS;i++) x[i] += arg.log_cord[i] * arg.X[i];
+    int idd = Index_ND_NM(x, arg.grid) >> 1;
     curand_init(arg.seed, idd, 0, &state[id]);
     #else
     curand_init(arg.seed, id, 0, &state[id]);

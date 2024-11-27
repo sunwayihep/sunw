@@ -76,13 +76,13 @@ __global__ void kernel_linktracesum(TraceArg<Real> arg){
 			oddbit = 1;
 			id = idd - DEVPARAMS::HalfVolume;
 		}
-			int x[4];
-			Index_4D_EO(x, id, oddbit);
-			for(int i=0; i<4;i++) x[i] += param_border(i);
-			id = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1] ) * param_GridG(0) + x[0]) >> 1 ;
+			int x[NDIMS];
+			Index_ND_EO(x, id, oddbit);
+			for(int i=0; i<NDIMS;i++) x[i] += param_border(i);
+			id = Index_ND_NM(x, DEVPARAMS::GridWGhost) >> 1;
 			id += oddbit  * param_HalfVolumeG();
 			int mustride = DEVPARAMS::VolumeG;
-			int offset = mustride * 4;
+			int offset = mustride * NDIMS;
 		#else
 			int mustride = DEVPARAMS::Volume;
 			int offset = DEVPARAMS::size;
@@ -252,13 +252,13 @@ __global__ void kernel_linktracesum(TraceArg<Real> arg){
 			oddbit = 1;
 			id = idd - DEVPARAMS::HalfVolume;
 		}
-			int x[4];
-			Index_4D_EO(x, id, oddbit);
-			for(int i=0; i<4;i++) x[i] += param_border(i);
-			id = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1] ) * param_GridG(0) + x[0]) >> 1 ;
+			int x[NDIMS];
+			Index_ND_EO(x, id, oddbit);
+			for(int i=0; i<NDIMS;i++) x[i] += param_border(i);
+			id = Index_ND_NM(x, DEVPARAMS::GridWGhost) >> 1;
 			id += oddbit  * param_HalfVolumeG();
 			int mustride = DEVPARAMS::VolumeG;
-			int offset = mustride * 4;
+			int offset = mustride * NDIMS;
 		#else
 			int mustride = DEVPARAMS::Volume;
 			int offset = DEVPARAMS::size;
