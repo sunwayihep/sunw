@@ -41,31 +41,31 @@ CalcStaple(
 	int idx, 
 	int mu
 ){
-  int x[4];
-  Index_4D_NM(idx, x);
+  int x[NDIMS];
+  Index_ND_NM(idx, x);
   int mustride = DEVPARAMS::Volume;
   int muvolume = mu * mustride;
   int offset = DEVPARAMS::size;
 	//int newidmu1 = Index_4D_Neig_NM(idx, mu, 1);
-	for(int nu = 0; nu < 4; nu++)  if(mu != nu) {
-    	int dx[4] = {0, 0, 0, 0};
+	for(int nu = 0; nu < NDIMS; nu++)  if(mu != nu) {
+    	int dx[NDIMS] = {0};
 		int nuvolume = nu * mustride;
 		msun link;	
 		//UP
 		link = GAUGE_LOAD<UseTex, atype, Real>( array,  idx + nuvolume, offset);
 		dx[nu]++;
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx) + muvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx) + muvolume, offset);	
 		dx[nu]--;
 		dx[mu]++;
-		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx) + nuvolume, offset);
+		link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx) + nuvolume, offset);
 		staple += link;
 		dx[mu]--;
     	//DOWN
 		dx[nu]--;
-		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_4D_Neig_NM(x,dx) + nuvolume, offset);	
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx)  + muvolume, offset);
+		link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_ND_Neig_NM(x,dx) + nuvolume, offset);	
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx)  + muvolume, offset);
 		dx[mu]++;
-		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx) + nuvolume, offset);
+		link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx) + nuvolume, offset);
 		staple += link;
 	}
 }
@@ -130,7 +130,7 @@ __global__ void kernel_evenodd(
 
 	msun staple = msu3::zero();
 	int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
-	for(int nu = 0; nu < 4; nu++){ if(mu == nu) continue;
+	for(int nu = 0; nu < NDIMS; nu++){ if(mu == nu) continue;
 		msun link;	
 		int nuvolume = nu * mustride;
 		//UP	
@@ -224,7 +224,7 @@ public:
    MultiHit(gauge &arrayin, gauge &arrayout, RNG &randstates, int mu, int nhit):arrayin(arrayin), arrayout(arrayout), randstates(randstates), mu(mu), nhit(nhit){
 		size = 1;
 		//Number of threads is equal to the number of space points!
-		for(int i=0;i<4;i++){
+		for(int i=0;i<NDIMS;i++){
 		  size *= PARAMS::Grid[i];
 		} 
 		size = size /2 ;
@@ -240,10 +240,8 @@ public:
 	double bandwidth(){	return (double)bytes() / (timesec * (double)(1 << 30));}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+	for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string typear = arrayin.ToStringArrayType() + arrayout.ToStringArrayType();
     return TuneKey(vol.str().c_str(), typeid(*this).name(), typear.c_str(), aux.str().c_str());
@@ -282,12 +280,12 @@ void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit){
 	Timer mtime;
 	mtime.start();
 	if(array.EvenOdd() && arrayout.EvenOdd()){
-		MultiHit<tex, atypein, atypeout, Real, true> mhit(array, arrayout, randstates, 3, nhit);
+		MultiHit<tex, atypein, atypeout, Real, true> mhit(array, arrayout, randstates, NDIMS-1, nhit);
 		mhit.Run();
 		mhit.stat();
 	}
 	else if(!array.EvenOdd() && !arrayout.EvenOdd()){
-		MultiHit<tex, atypein, atypeout, Real, false> mhit(array, arrayout, randstates, 3, nhit);
+		MultiHit<tex, atypein, atypeout, Real, false> mhit(array, arrayout, randstates, NDIMS-1, nhit);
 		mhit.Run();
 		mhit.stat();
 	}

@@ -41,33 +41,33 @@ __global__ void kernel_linkUF(GaugeUFArg<Real> arg){
 	if(id < param_Volume()) {
         
   
-	  int x[4];
-	  Index_4D_NM(id, x);
+	  int x[NDIMS];
+	  Index_ND_NM(id, x);
 	  int mustride = DEVPARAMS::Volume;
 	  int offset = DEVPARAMS::size;
   
   
-	for(int mu = 0; mu < 4; mu++){
+	for(int mu = 0; mu < NDIMS; mu++){
     int muvolume = mu * mustride;
 	  msun link;
 	  msun staple = msu3::zero();
-	  for(int nu = 0; nu < 4; nu++)  if(mu != nu) {
-      int dx[4] = {0, 0, 0, 0};	
+	  for(int nu = 0; nu < NDIMS; nu++)  if(mu != nu) {
+      int dx[NDIMS] = {0};	
 		  int nuvolume = nu * mustride;
 		  link = GAUGE_LOAD<UseTex, atype, Real>( arg.array,  id + nuvolume, offset);
 		  dx[nu]++;
-		  link *= GAUGE_LOAD<UseTex, atype, Real>( arg.array, Index_4D_Neig_NM(x,dx) + muvolume, offset);	
+		  link *= GAUGE_LOAD<UseTex, atype, Real>( arg.array, Index_ND_Neig_NM(x,dx) + muvolume, offset);	
 		  dx[nu]--;
 		  dx[mu]++;
-		  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.array, Index_4D_Neig_NM(x,dx) + nuvolume, offset);
+		  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.array, Index_ND_Neig_NM(x,dx) + nuvolume, offset);
 		  staple += link;
 
 		  dx[mu]--;
 		  dx[nu]--;
-		  link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.array,  Index_4D_Neig_NM(x,dx) + nuvolume, offset);	
-		  link *= GAUGE_LOAD<UseTex, atype, Real>( arg.array, Index_4D_Neig_NM(x,dx)  + muvolume, offset);
+		  link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.array,  Index_ND_Neig_NM(x,dx) + nuvolume, offset);	
+		  link *= GAUGE_LOAD<UseTex, atype, Real>( arg.array, Index_ND_Neig_NM(x,dx)  + muvolume, offset);
 		  dx[mu]++;
-		  link *= GAUGE_LOAD<UseTex, atype, Real>( arg.array, Index_4D_Neig_NM(x,dx) + nuvolume, offset);
+		  link *= GAUGE_LOAD<UseTex, atype, Real>( arg.array, Index_ND_Neig_NM(x,dx) + nuvolume, offset);
 		  staple += link;
 	  }
 	  msun U = GAUGE_LOAD<UseTex, atype, Real>( arg.array,  id + muvolume, offset);
@@ -87,7 +87,7 @@ GaugeUFCUB<Real>::GaugeUFCUB(gauge &array):array(array){
 	arg.value = (complex*)dev_malloc(sizeof(complex));
 	arg.array = array.GetPtr();
 	size = 1;
-	for(int i=0;i<4;i++) size *= PARAMS::Grid[i];
+	for(int i=0;i<NDIMS;i++) size *= PARAMS::Grid[i];
 	timesec = 0.0;
 }
 template <class Real> 
@@ -126,7 +126,7 @@ complex GaugeUFCUB<Real>::Run(const cudaStream_t &stream){
     CUDA_SAFE_DEVICE_SYNC();//
 	CUT_CHECK_ERROR("Link Sum: Kernel execution failed"); 
     CUDA_SAFE_CALL(cudaMemcpy(&value, arg.value, sizeof(complex), cudaMemcpyDeviceToHost));
-	value /= (Real)(4 * 3 * size);
+	value /= (Real)(NDIMS * (NDIMS-1) * size);
 	#ifdef MULTI_GPU
 	comm_Allreduce(&value);
 	value /= numnodes();

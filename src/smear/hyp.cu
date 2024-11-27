@@ -56,43 +56,43 @@ template <bool UseTex, ArrayType atype, class Real>
 __device__ msun inline 
 CalcStaple(
   complex *array, 
-  int x[4], 
+  int x[NDIMS], 
   int mu,
   int nu
 ){
   int muvolume = mu * DEVPARAMS::Volume;
-  int dx[4] = {0, 0, 0, 0};
+  int dx[NDIMS] = {0};
   int nuvolume = nu * DEVPARAMS::Volume;
   msun link;  
   //UP
-  link = GAUGE_LOAD<UseTex, atype, Real>( array,  Index_4D_NM(x) + nuvolume, DEVPARAMS::size);
+  link = GAUGE_LOAD<UseTex, atype, Real>( array,  Index_ND_NM(x) + nuvolume, DEVPARAMS::size);
   dx[nu]++;
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx) + muvolume, DEVPARAMS::size); 
+  link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx) + muvolume, DEVPARAMS::size); 
   dx[nu]--;
   dx[mu]++;
-  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx) + nuvolume, DEVPARAMS::size);
+  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx) + nuvolume, DEVPARAMS::size);
   msun staple = link;
   dx[mu]--;
   //DOWN
   dx[nu]--;
-  link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_4D_Neig_NM(x,dx) + nuvolume, DEVPARAMS::size);  
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx)  + muvolume, DEVPARAMS::size);
+  link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( array,  Index_ND_Neig_NM(x,dx) + nuvolume, DEVPARAMS::size);  
+  link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx)  + muvolume, DEVPARAMS::size);
   dx[mu]++;
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_Neig_NM(x,dx) + nuvolume, DEVPARAMS::size);
+  link *= GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_Neig_NM(x,dx) + nuvolume, DEVPARAMS::size);
   staple += link;
   return staple;
 }
 
 
 template <bool UseTex, ArrayType atype, class Real> 
-__device__ msun HYPSmearVbar(complex* array, int idx[4], int mu, int nu, int rho, int nhits, Real tol){
+__device__ msun HYPSmearVbar(complex* array, int idx[NDIMS], int mu, int nu, int rho, int nhits, Real tol){
   int eta = 0;
-  for( int i = 0; i < 4; ++i )
+  for( int i = 0; i < NDIMS; ++i )
   if ( i != mu && i != nu && i != rho )
     eta = i;
   msun vbar = CalcStaple<UseTex, atype, Real>(array, idx, mu, eta);
   vbar *= (0.5 * DEVPARAMS::hypalpha3);
-  msun link = GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
+  msun link = GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
   vbar += link * (1.0 - DEVPARAMS::hypalpha3);
 #if defined(PROJECT_LINK_START_WREUNIT)
   link = vbar;
@@ -103,26 +103,26 @@ return link;
 }
 
 template <bool UseTex, ArrayType atype, class Real> 
-__device__ msun HYPSmearVtil(complex* array, int idx[4], int mu, int nu, int nhits, Real tol){
+__device__ msun HYPSmearVtil(complex* array, int idx[NDIMS], int mu, int nu, int nhits, Real tol){
   msun link;
   msun vtil = msun::zero();
-  for( int rho = 0; rho < 4; ++rho ) 
+  for( int rho = 0; rho < NDIMS; ++rho ) 
   if ( rho != mu && rho != nu  ){
     link = HYPSmearVbar<UseTex, atype, Real>( array, idx, rho, nu, mu, nhits, tol );
-    int y[4];
-    Index_4D_Neig_NM(y, idx, rho, 1);
+    int y[NDIMS];
+    Index_ND_Neig_NM(y, idx, rho, 1);
     link *= HYPSmearVbar<UseTex, atype, Real>( array, y, mu, rho, nu, nhits, tol );
-    Index_4D_Neig_NM(y, idx, mu, 1);
+    Index_ND_Neig_NM(y, idx, mu, 1);
     link *=HYPSmearVbar<UseTex, atype, Real>( array, y, rho, nu, mu, nhits, tol ).dagger( );
     vtil += link;
-    Index_4D_Neig_NM(y, idx, rho, -1);
+    Index_ND_Neig_NM(y, idx, rho, -1);
     link = HYPSmearVbar<UseTex, atype, Real>( array, y, rho, nu, mu, nhits, tol ).dagger();
     link *= HYPSmearVbar<UseTex, atype, Real>( array, y, mu, rho, nu, nhits, tol );
-    Index_4D_Neig_NM(y, idx, rho, -1, mu, 1);
+    Index_ND_Neig_NM(y, idx, rho, -1, mu, 1);
     link *= HYPSmearVbar<UseTex, atype, Real>( array, y, rho, nu, mu, nhits, tol );
     vtil += link;
   }
-  link = GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
+  link = GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
   vtil *= (0.25 * DEVPARAMS::hypalpha2);
   vtil += link  * ( 1.0 - DEVPARAMS::hypalpha2 );
 #if defined(PROJECT_LINK_START_WREUNIT)
@@ -134,28 +134,28 @@ return link;
 }
 
 template <bool UseTex, ArrayType atype, class Real> 
-__device__ msun HYPSmearV(complex* array, int idx[4], int mu, int nhits, Real tol){
+__device__ msun HYPSmearV(complex* array, int idx[NDIMS], int mu, int nhits, Real tol){
 
   msun v = msun::zero();
   msun link;
-  for( int nu = 0; nu < 4; ++nu ) {
+  for( int nu = 0; nu < NDIMS; ++nu ) {
     if ( mu != nu ){
       link = HYPSmearVtil<UseTex, atype, Real>( array, idx, nu, mu, nhits, tol);
-      int y[4];
-      Index_4D_Neig_NM(y, idx, nu, 1);
+      int y[NDIMS];
+      Index_ND_Neig_NM(y, idx, nu, 1);
       link *= HYPSmearVtil<UseTex, atype, Real>( array, y, mu, nu, nhits, tol );
-      Index_4D_Neig_NM(y, idx, mu, 1);
+      Index_ND_Neig_NM(y, idx, mu, 1);
       link *= HYPSmearVtil<UseTex, atype, Real>( array, y, nu, mu, nhits, tol ).dagger();
       v += link;
-      Index_4D_Neig_NM(y, idx, nu, -1);
+      Index_ND_Neig_NM(y, idx, nu, -1);
       link = HYPSmearVtil<UseTex, atype, Real>( array, y, nu, mu, nhits, tol ).dagger();
       link *= HYPSmearVtil<UseTex, atype, Real>( array, y, mu, nu, nhits, tol );
-      Index_4D_Neig_NM(y, idx, nu, -1, mu, 1);
+      Index_ND_Neig_NM(y, idx, nu, -1, mu, 1);
       link *= HYPSmearVtil<UseTex, atype, Real>( array, y, nu, mu, nhits, tol );
       v +=link;
     }
   }
-  link = GAUGE_LOAD<UseTex, atype, Real>( array, Index_4D_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
+  link = GAUGE_LOAD<UseTex, atype, Real>( array, Index_ND_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
   v *= DEVPARAMS::hypalpha1/6.0;
   v += link * ( 1.0 - DEVPARAMS::hypalpha1 );
   #if defined(PROJECT_LINK_START_WREUNIT)
@@ -182,8 +182,8 @@ template <bool UseTex, ArrayType atype, class Real>
 __global__ void kernel_HYPSmear(HYPArg<Real> arg, int mu){
   int id = INDEX1D();
   if(id >= DEVPARAMS::Volume) return;
-  int x[4];
-  Index_4D_NM(id, x);
+  int x[NDIMS];
+  Index_ND_NM(id, x);
   msun vhyp = HYPSmearV<UseTex, atype, Real>(arg.arrayin, x, mu, arg.nhits, arg.tol);
   GAUGE_SAVE<atype, Real>( arg.arrayout, vhyp, id + mu * DEVPARAMS::Volume, DEVPARAMS::size);
 }
@@ -215,7 +215,7 @@ public:
    ApplyHYP(gauge &arrayin, gauge & arrayout, int nhits, Real tol):arrayin(arrayin),arrayout(arrayout){
 		size = 1;
 		//Number of threads is equal to the number of space points!
-		for(int i=0;i<4;i++){
+		for(int i=0;i<NDIMS;i++){
 		  size *= PARAMS::Grid[i];
 		} 
 		size = size;
@@ -238,10 +238,8 @@ public:
 	double bandwidth(){	return (double)bytes() / (timesec * (double)(1 << 30));}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string typear = arrayin.ToStringArrayType()+arrayout.ToStringArrayType();
     return TuneKey(vol.str().c_str(), typeid(*this).name(), typear.c_str(), aux.str().c_str());
@@ -294,7 +292,7 @@ void ApplyHYPinSpace(gauge array, int steps, int nhits, Real tol, ParamHYP hyp){
 	  GAUGE_TEXTURE(array.GetPtr(), true);
     ApplyHYP<true, atypein, Real> hyp(array, arrayout, nhits, tol);
     for(int st = 0; st < steps; st++){
-      for(int mu = 0; mu < 3; mu++){
+      for(int mu = 0; mu < NDIMS-1; mu++){
         hyp.SetDir(mu);
         hyp.Run();
       }
@@ -305,7 +303,7 @@ void ApplyHYPinSpace(gauge array, int steps, int nhits, Real tol, ParamHYP hyp){
   else{
     ApplyHYP<false, atypein, Real> hyp(array, arrayout, nhits, tol);
     for(int st = 0; st < steps; st++){
-      for(int mu = 0; mu < 3; mu++){
+      for(int mu = 0; mu < NDIMS-1; mu++){
         hyp.SetDir(mu);
         hyp.Run();
       }
@@ -344,7 +342,7 @@ void ApplyHYPinTime(gauge array, int steps, int nhits, Real tol, ParamHYP hyp){
   if(PARAMS::UseTex){
     GAUGE_TEXTURE(array.GetPtr(), true);
     ApplyHYP<true, atypein, Real> hyp(array, arrayout, nhits, tol);
-    hyp.SetDir(3);
+    hyp.SetDir(NDIMS-1);
     for(int st = 0; st < steps; st++){
       hyp.Run();
       array.Copy(arrayout);
@@ -353,7 +351,7 @@ void ApplyHYPinTime(gauge array, int steps, int nhits, Real tol, ParamHYP hyp){
   }
   else{
     ApplyHYP<false, atypein, Real> hyp(array, arrayout, nhits, tol);
-    hyp.SetDir(3);
+    hyp.SetDir(NDIMS-1);
     for(int st = 0; st < steps; st++){
       hyp.Run();
       array.Copy(arrayout);

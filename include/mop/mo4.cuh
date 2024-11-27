@@ -25,18 +25,18 @@ DEVICE msun MO4_q1(WLOPArg<Real> arg,int id,int dir1,int dir2, int lx,int ly){
 	link=msun::identity();
 	for(int ix=0;ix<lx;ix++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[0],1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],1);
 	}
 	for(int iy=0; iy<ly;iy++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[1],1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],1);
 	}
 	for(int ix=0;ix<lx;ix++){
-		ids=Index_4D_Neig_NM(ids,dmu[0],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	for(int iy=0; iy<ly;iy++){
-		ids=Index_4D_Neig_NM(ids,dmu[1],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	return link;
@@ -51,19 +51,19 @@ DEVICE msun MO4_q2(WLOPArg<Real> arg,int id,int dir1, int dir2, int lx,int ly){
 	// to keep it anticlockwise
 	for(int iy=0; iy<ly;iy++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[1],1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],1);
 	}
 	for(int ix=0;ix<lx;ix++){
-		ids=Index_4D_Neig_NM(ids,dmu[0],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	for(int iy=0; iy<ly;iy++){
-		ids=Index_4D_Neig_NM(ids,dmu[1],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	for(int ix=0;ix<lx;ix++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[0],1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],1);
 	}
 	return link;
 }
@@ -76,20 +76,20 @@ DEVICE msun MO4_q3(WLOPArg<Real> arg,int id,int dir1, int dir2, int lx,int ly){
 	link=msun::identity();
 	// to keep it anticlockwise
 	for(int ix=0;ix<lx;ix++){
-		ids=Index_4D_Neig_NM(ids,dmu[0],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	for(int iy=0; iy<ly;iy++){
-		ids=Index_4D_Neig_NM(ids,dmu[1],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	for(int ix=0;ix<lx;ix++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[0],1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],1);
 	}
 	for(int iy=0; iy<ly;iy++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[1],1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],1);
 	}
 	return link;
 }
@@ -102,19 +102,19 @@ DEVICE msun MO4_q4(WLOPArg<Real> arg,int id,int dir1, int dir2, int lx,int ly){
 	link=msun::identity();
 	// to keep it anticlockwise
 	for(int iy=0; iy<ly;iy++){
-		ids=Index_4D_Neig_NM(ids,dmu[1],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	for(int ix=0;ix<lx;ix++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[0],1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],1);
 	}
 	for(int iy=0; iy<ly;iy++){
 		link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+dmu[1]*DEVPARAMS::Volume, DEVPARAMS::size);
-		ids=Index_4D_Neig_NM(ids,dmu[1],1);
+		ids=Index_ND_Neig_NM(ids,dmu[1],1);
 	}
 	for(int ix=0;ix<lx;ix++){
-		ids=Index_4D_Neig_NM(ids,dmu[0],-1);
+		ids=Index_ND_Neig_NM(ids,dmu[0],-1);
 		link*=GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arg.gaugefield, ids+dmu[0]*DEVPARAMS::Volume, DEVPARAMS::size);
 	}
 	return link;
@@ -126,7 +126,7 @@ DEVICE msun MO4(WLOPArg<Real> arg,int id, int lx, int ly, msun link ,int muvolum
 		{
 		int dir1=arg.mu;
 		int mu[2]={(dir1+1)%3, (dir1+2)%3};
-		int ids=Index_4D_Neig_NM(id, dir1, arg.radius);
+		int ids=Index_ND_Neig_NM(id, dir1, arg.radius);
 //		msun link=msun::identity();
 //		for(int ir=0;ir<arg.radius;ir++){
 //			link*=GAUGE_LOAD< UseTex, atype, Real>(arg.gaugefield, ids+muvolume, DEVPARAMS::size);

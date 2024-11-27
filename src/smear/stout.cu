@@ -559,31 +559,31 @@ __global__ void kernel_Stout(StoutArg<Real> arg, int mu){
   int id = INDEX1D();
   if(id >= DEVPARAMS::Volume) return;
   
-  int x[4];
-  Index_4D_NM(id, x);
+  int x[NDIMS];
+  Index_ND_NM(id, x);
   int mustride = DEVPARAMS::Volume;
   int offset = DEVPARAMS::size;
   
   int muvolume = mu * mustride;
   msun link;
   msun staple = msu3::zero();
-  for(int nu = 0; nu < 3; nu++)  if(mu != nu) {
-    int dx[4] = {0, 0, 0, 0}; 
+  for(int nu = 0; nu < NDIMS-1; nu++)  if(mu != nu) {
+    int dx[NDIMS] = {0}; 
     int nuvolume = nu * mustride;
     link = GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin,  id + nuvolume, offset);
     dx[nu]++;
-    link *= GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin, Index_4D_Neig_NM(x, dx) + muvolume, offset); 
+    link *= GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin, Index_ND_Neig_NM(x, dx) + muvolume, offset); 
     dx[nu]--;
     dx[mu]++;
-    link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.arrayin, Index_4D_Neig_NM(x, dx) + nuvolume, offset);
+    link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
     staple += link;
 
     dx[mu]--;
     dx[nu]--;
-    link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.arrayin,  Index_4D_Neig_NM(x, dx) + nuvolume, offset);  
-    link *= GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin, Index_4D_Neig_NM(x, dx)  + muvolume, offset);
+    link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>( arg.arrayin,  Index_ND_Neig_NM(x, dx) + nuvolume, offset);  
+    link *= GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin, Index_ND_Neig_NM(x, dx)  + muvolume, offset);
     dx[mu]++;
-    link *= GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin, Index_4D_Neig_NM(x, dx) + nuvolume, offset);
+    link *= GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
     staple += link;
   }
   msun U = GAUGE_LOAD<UseTex, atype, Real>( arg.arrayin,  id + muvolume, offset);
@@ -627,7 +627,7 @@ public:
    ApplyStout(gauge &arrayin, gauge & arrayout, Real w):arrayin(arrayin),arrayout(arrayout){
     size = 1;
     //Number of threads is equal to the number of space points!
-    for(int i=0;i<4;i++){
+    for(int i=0;i<NDIMS;i++){
       size *= PARAMS::Grid[i];
     } 
     size = size;
@@ -649,10 +649,8 @@ public:
   double bandwidth(){ return (double)bytes() / (timesec * (double)(1 << 30));}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string typear = arrayin.ToStringArrayType()+arrayout.ToStringArrayType();
     return TuneKey(vol.str().c_str(), typeid(*this).name(), typear.c_str(), aux.str().c_str());
@@ -691,14 +689,14 @@ void ApplyStoutinSpace(gauge array, Real w, int steps){
   if(array.EvenOdd() == true)
     errorCULQCD("Not defined for EvenOdd arrays...\n");
     
-  gauge arrayout(array.Type(), Device, 4*PARAMS::Volume, array.EvenOdd());
+  gauge arrayout(array.Type(), Device, NDIMS*PARAMS::Volume, array.EvenOdd());
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
   if(PARAMS::UseTex){
     GAUGE_TEXTURE(array.GetPtr(), true);
     ApplyStout<true, atypein, Real> Stout(array, arrayout, w);
     for(int st = 0; st < steps; st++){
-      for(int mu = 0; mu < 3; mu++){
+      for(int mu = 0; mu < NDIMS-1; mu++){
         Stout.SetDir(mu);
         Stout.Run();
       }
@@ -709,7 +707,7 @@ void ApplyStoutinSpace(gauge array, Real w, int steps){
   else{
     ApplyStout<false, atypein, Real> Stout(array, arrayout, w);
     for(int st = 0; st < steps; st++){
-      for(int mu = 0; mu < 3; mu++){
+      for(int mu = 0; mu < NDIMS-1; mu++){
         Stout.SetDir(mu);
         Stout.Run();
       }
@@ -744,7 +742,7 @@ void ApplyStoutinTime(gauge array, Real w, int steps){
   if(PARAMS::UseTex){
     GAUGE_TEXTURE(array.GetPtr(), true);
     ApplyStout<true, atypein, Real> Stout(array, arrayout, w);
-    Stout.SetDir(3);
+    Stout.SetDir(NDIMS-1);
     for(int st = 0; st < steps; st++){
       Stout.Run();
       array.Copy(arrayout);
@@ -753,7 +751,7 @@ void ApplyStoutinTime(gauge array, Real w, int steps){
   }
   else{
     ApplyStout<false, atypein, Real> Stout(array, arrayout, w);
-    Stout.SetDir(3);
+    Stout.SetDir(NDIMS-1);
     for(int st = 0; st < steps; st++){
       Stout.Run();
       array.Copy(arrayout);

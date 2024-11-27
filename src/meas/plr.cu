@@ -78,7 +78,7 @@ public:
    MPloop(gauge &arrayin, gauge &arrayout):arrayin(arrayin), arrayout(arrayout){
 		size = 1;
 		//Number of threads is equal to the number of space points!
-		for(int i=0;i<3;i++){
+		for(int i=0;i<NDIMS;i++){
 		  size *= PARAMS::Grid[i];
 		} 
 		timesec = 0.0;
@@ -93,10 +93,8 @@ public:
 	double bandwidth(){	return (double)bytes() / (timesec * (double)(1 << 30));}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string typear = arrayin.ToStringArrayType() + arrayout.ToStringArrayType();
     return TuneKey(vol.str().c_str(), typeid(*this).name(), typear.c_str(), aux.str().c_str());
@@ -180,10 +178,8 @@ public:
 
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(), array.ToStringArrayType().c_str(), aux.str().c_str());
   }
@@ -214,8 +210,8 @@ __global__ void kernel_calc_polyakovloop(PotPLoopArg<Real> arg){
   for(int r = 0; r <= arg.radius; r++){
     complex value = complex::zero();
     if(id < DEVPARAMS::tstride){	
-      for(int mu = 0; mu < 3; mu++){
-        msun pldown = GAUGE_LOAD<UseTex, atypein,Real>(arg.array, Index_3D_Neig_NM(id, mu, r), DEVPARAMS::tstride);;
+      for(int mu = 0; mu < NDIMS-1; mu++){
+        msun pldown = GAUGE_LOAD<UseTex, atypein,Real>(arg.array, Index_NDs_Neig_NM(id, mu, r), DEVPARAMS::tstride);;
         if( ppdagger ) value += plup.trace() * pldown.dagger().trace();
         else value += plup.trace() * pldown.trace();
       }
@@ -231,7 +227,7 @@ PotPLoop<Real, ppdagger>::PotPLoop(gauge &array, complex *pot, int radius):array
   if(array.EvenOdd() == true) errorCULQCD("Not defined for EvenOdd arrays...\n");
 
 	size = 1;
-	for(int i=0;i<3;i++){
+	for(int i=0;i<NDIMS-1;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;
@@ -278,7 +274,7 @@ void PotPLoop<Real, ppdagger>::Run(const cudaStream_t &stream){
     CUDA_SAFE_CALL(cudaMemcpy(pot, arg.pot, (arg.radius+1)*sizeof(complex), cudaMemcpyDeviceToHost));
     //normalize!!!!!!
     for(int r = 0; r <= arg.radius; r++)
-      pot[r] /= (Real)(3 * NCOLORS * NCOLORS * size);
+      pot[r] /= (Real)((NDIMS-1) * NCOLORS * NCOLORS * size);
 
 #ifdef TIMMINGS
 	CUDA_SAFE_DEVICE_SYNC( );

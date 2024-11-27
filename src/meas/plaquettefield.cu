@@ -47,24 +47,24 @@ struct PlaquettedArg{
 
 template<bool UseTex, ArrayType atype, class Real>
 inline   __device__ complex Plaquette(const complex *array, const int idx, const int mu, const int nu){
-  int x[4];
-  Index_4D_NM(idx, x);
+  int x[NDIMS];
+  Index_ND_NM(idx, x);
   int mustride = DEVPARAMS::Volume;
   int muvolume = mu * mustride;
 	int nuvolume = nu * mustride;
   int offset = DEVPARAMS::size;
-  int dx[4] = {0, 0, 0, 0};
+  int dx[NDIMS] = {0};
   msun link = GAUGE_LOAD<UseTex, atype, Real>( array, idx + muvolume, offset);
   dx[mu]++;
-	link *= GAUGE_LOAD<UseTex, atype, Real>( array,  Index_4D_Neig_NM(x,dx) + nuvolume, offset);
+	link *= GAUGE_LOAD<UseTex, atype, Real>( array,  Index_ND_Neig_NM(x,dx) + nuvolume, offset);
   dx[mu]--;
 	dx[nu]++;
-	link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, Index_4D_Neig_NM(x,dx) + muvolume, offset);		
+	link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, Index_ND_Neig_NM(x,dx) + muvolume, offset);		
 	dx[nu]--;	
 	link *= GAUGE_LOAD_DAGGER<UseTex, atype,Real>( array, idx + nuvolume, offset);
 
   //return -link.trace() / 3.0 + 1.0;
-  return (link.trace() / 3.0);
+  return (link.trace() / NCOLORS);
 }  
 
 
@@ -105,10 +105,10 @@ __global__ void kernel_calc_plaquette(PlaquettedArg<Real> arg){
   }
   else {
 	  if(id < DEVPARAMS::tstride) {
-		for(int it = 0; it < DEVPARAMS::Grid[3]; it++) {
+		for(int it = 0; it < DEVPARAMS::Grid[NDIMS-1]; it++) {
 		  SixPlaquette<UseTex, atypein, Real>(arg.array, plaq, id + it * DEVPARAMS::tstride);
 		}
-		for(int d=0; d<6; d++) plaq[d] /= (Real)DEVPARAMS::Grid[3];
+		for(int d=0; d<6; d++) plaq[d] /= (Real)DEVPARAMS::Grid[NDIMS-1];
 		for(int d=0; d<6; d++) arg.plaq[id + d * DEVPARAMS::tstride] = plaq[d];
 	  }
   }
@@ -152,10 +152,10 @@ public:
    PlaqField(gauge &arrayin, complex *plaq, complex *meanplaq):arrayin(arrayin){
 		size = 1;
 		//Number of threads is equal to the number of space points!
-		for(int i=0;i<3;i++){
+		for(int i=0;i<NDIMS-1;i++){
 		  size *= PARAMS::Grid[i];
 		} 
-		if( spacetime ) size *= PARAMS::Grid[3];
+		if( spacetime ) size *= PARAMS::Grid[NDIMS-1];
 		size = size;
 		timesec = 0.0;
 	  arg.array = arrayin.GetPtr();
@@ -172,10 +172,8 @@ public:
 	double bandwidth(){	return (double)bytes() / (timesec * (double)(1 << 30));}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string typear = arrayin.ToStringArrayType();
     return TuneKey(vol.str().c_str(), typeid(*this).name(), typear.c_str(), aux.str().c_str());

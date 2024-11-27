@@ -59,18 +59,18 @@ __device__ void inline Staple(complex *array, msun &staple, int idx, int mu,
   int muvolume = mu * DEVPARAMS::Volume;
   // UP
   link = GAUGE_LOAD<UseTex, atype, Real>(array, idx + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(array, Index_4D_Neig_NM(idx, nu, 1) +
+  link *= GAUGE_LOAD<UseTex, atype, Real>(array, Index_ND_Neig_NM(idx, nu, 1) +
                                                      muvolume);
   link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
-      array, Index_4D_Neig_NM(idx, mu, 1) + nuvolume);
+      array, Index_ND_Neig_NM(idx, mu, 1) + nuvolume);
   staple += link;
   // DOWN
   link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
-      array, Index_4D_Neig_NM(idx, nu, -1) + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(array, Index_4D_Neig_NM(idx, nu, -1) +
+      array, Index_ND_Neig_NM(idx, nu, -1) + nuvolume);
+  link *= GAUGE_LOAD<UseTex, atype, Real>(array, Index_ND_Neig_NM(idx, nu, -1) +
                                                      muvolume);
   link *= GAUGE_LOAD<UseTex, atype, Real>(
-      array, Index_4D_Neig_NM(idx, mu, 1, nu, -1) + nuvolume);
+      array, Index_ND_Neig_NM(idx, mu, 1, nu, -1) + nuvolume);
   staple += link;
 }
 

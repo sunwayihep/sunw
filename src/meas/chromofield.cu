@@ -67,32 +67,32 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg){
   complex plup = complex::zero();
   if(id < DEVPARAMS::tstride)   plup = arg.ploop[id];
   Real value = 0.0;
-  for(int dir2 = 0; dir2 < 3; dir2++){
+  for(int dir2 = 0; dir2 < NDIMS-1; dir2++){
     Real loop = 0.0;
     if(id < DEVPARAMS::tstride){  
-      complex pldown = arg.ploop[Index_3D_Neig_NM(id, dir2, arg.radius)];
+      complex pldown = arg.ploop[Index_NDs_Neig_NM(id, dir2, arg.radius)];
       if(ppdagger) loop = (plup * pldown.conj()).real() / (Real)(NCOLORS * NCOLORS);
       else loop = (plup * pldown).real() / (Real)(NCOLORS * NCOLORS);
     }
     
-    int x[3];
-    Index_3D_NM(id, x);
+    int x[NDIMS-1];
+    Index_NDs_NM(id, x);
     x[dir2] = (x[dir2] + arg.radius / 2) % DEVPARAMS::Grid[dir2];
     
 
     for( int ix = 0; ix < arg.nx; ++ix )
     for( int iy = 0; iy < arg.ny; ++iy ) {
     
-      Real field[6];
-      for(int dd = 0; dd < 6; dd++) field[dd] = 0.0;
+      Real field[TOTAL_NUM_PLAQS];
+      for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++) field[dd] = 0.0;
 
       	if(EvenRadius){
-		  for(int dir1 = 0; dir1 < 3; dir1++){
+		  for(int dir1 = 0; dir1 < NDIMS-1; dir1++){
 		    if(dir1==dir2) continue;
 		    int dir3 = 0;
-		    for(int dir33 = 0; dir33 < 3; dir33++) if(dir1 != dir33 && dir2 != dir33) dir3 = dir33;
+		    for(int dir33 = 0; dir33 < NDIMS-1; dir33++) if(dir1 != dir33 && dir2 != dir33) dir3 = dir33;
 		  
-	  		  int s = Index_3D_Neig_NM(x, dir1, ix - arg.nx / 2, dir2, iy - arg.ny / 2);
+	  		int s = Index_NDs_Neig_NM(x, dir1, ix - arg.nx / 2, dir2, iy - arg.ny / 2);
 		    
 		    if(id < DEVPARAMS::tstride){
 		      //Ex^2
@@ -104,7 +104,7 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg){
 		      plaq = ELEM_LOAD<UseTex, Real>(arg.plaq, s + dir2 * DEVPARAMS::tstride).real();
 		      field[1] += plaq;
 		      //Ez^2
-		      int s1 = Index_3D_Neig_NM(s, dir3, -1);
+		      int s1 = Index_NDs_Neig_NM(s, dir3, -1);
 		      /*plaq = arg.plaq[s + dir3 * DEVPARAMS::tstride].real();
 		      plaq += arg.plaq[s1 + dir3 * DEVPARAMS::tstride].real();*/
 		      plaq = ELEM_LOAD<UseTex, Real>(arg.plaq, s + dir3 * DEVPARAMS::tstride).real();
@@ -128,9 +128,9 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg){
 		      field[5] += plaq;
 		    }
 		  }
-		  for(int dd = 0; dd < 6; dd++) field[dd] *= loop;
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++) field[dd] *= loop;
 		  Real aggregate[6];
-		  for(int dd = 0; dd < 6; dd++){
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++){
 		    aggregate[dd] = BlockReduce(temp_storage).Reduce(field[dd], Summ<Real>());
       		__syncthreads();
 		  }
@@ -167,12 +167,12 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg){
 		  } 
 	  }
 	  else{
-		  for(int dir1 = 0; dir1 < 3; dir1++){
+		  for(int dir1 = 0; dir1 < NDIMS-1; dir1++){
 			if(dir1==dir2) continue;
 			int dir3 = 0;
-			for(int dir33 = 0; dir33 < 3; dir33++) if(dir1 != dir33 && dir2 != dir33) dir3 = dir33;
+			for(int dir33 = 0; dir33 < NDIMS-1; dir33++) if(dir1 != dir33 && dir2 != dir33) dir3 = dir33;
 		  
-	  		  int s = Index_3D_Neig_NM(x, dir1, ix - arg.nx / 2, dir2, iy - arg.ny / 2);
+	  		int s = Index_NDs_Neig_NM(x, dir1, ix - arg.nx / 2, dir2, iy - arg.ny / 2);
 			
 			if(id < DEVPARAMS::tstride){
 		      //Ex^2
@@ -183,7 +183,7 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg){
 		      field[1] += plaq;
 		      //Ez^2
 		      plaq = ELEM_LOAD<UseTex, Real>(arg.plaq, s + dir3 * DEVPARAMS::tstride).real();
-		      int s1 = Index_3D_Neig_NM(s, dir3, -1);
+		      int s1 = Index_NDs_Neig_NM(s, dir3, -1);
 		      plaq += ELEM_LOAD<UseTex, Real>(arg.plaq, s1 + dir3 * DEVPARAMS::tstride).real();
 		      field[2] += plaq * 0.25;
 		      //Bx^2
@@ -199,9 +199,9 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg){
 		      field[5] += plaq * 0.5;	    
 		    }
 		  }
-		  for(int dd = 0; dd < 6; dd++) field[dd] *= loop;
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++) field[dd] *= loop;
 		  Real aggregate[6];
-		  for(int dd = 0; dd < 6; dd++){
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++){
 		    aggregate[dd] = BlockReduce(temp_storage).Reduce(field[dd], Summ<Real>());
       		__syncthreads();
 		  }	    
@@ -260,39 +260,39 @@ __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg){
   complex plup = complex::zero();
   if(id < DEVPARAMS::tstride)   plup = arg.ploop[id];
   Real value = 0.0;
-  for(int dir2 = 0; dir2 < 3; dir2++){
+  for(int dir2 = 0; dir2 < NDIMS-1; dir2++){
     Real loop = 0.0;
     if(id < DEVPARAMS::tstride){  
-      complex pldown = arg.ploop[Index_3D_Neig_NM(id, dir2, arg.radius)];
+      complex pldown = arg.ploop[Index_NDs_Neig_NM(id, dir2, arg.radius)];
       if(ppdagger) loop = (plup * pldown.conj()).real() / (Real)(NCOLORS * NCOLORS);
       else loop = (plup * pldown).real() / (Real)(NCOLORS * NCOLORS);
     }
     
-    int x[3];
-    Index_3D_NM(id, x);
+    int x[NDIMS-1];
+    Index_ND_NM(id, x);
     x[dir2] = (x[dir2] + arg.radius / 2) % DEVPARAMS::Grid[dir2];
     
 
     for( int ix = 0; ix < arg.nx; ++ix )
     for( int iy = 0; iy < arg.ny; ++iy ) {
     
-      Real field[6];
-      for(int dd = 0; dd < 6; dd++) field[dd] = 0.0;
+      Real field[TOTAL_NUM_PLAQS];
+      for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++) field[dd] = 0.0;
 
       	if(EvenRadius){      
-		  for(int dir1 = 0; dir1 < 3; dir1++){
+		  for(int dir1 = 0; dir1 < NDIMS-1; dir1++){
 		    if(dir1==dir2) continue;
 		    int dir3 = 0;
-		    for(int dir33 = 0; dir33 < 3; dir33++) if(dir1 != dir33 && dir2 != dir33) dir3 = dir33;
+		    for(int dir33 = 0; dir33 < NDIMS-1; dir33++) if(dir1 != dir33 && dir2 != dir33) dir3 = dir33;
 		    
-	  		  int s = Index_3D_Neig_NM(x, dir1, ix - arg.nx / 2, dir3, iy - arg.ny / 2);
+	  		int s = Index_NDs_Neig_NM(x, dir1, ix - arg.nx / 2, dir3, iy - arg.ny / 2);
 		    
 		    if(id < DEVPARAMS::tstride){
 		      //Ex^2
 		      Real plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,s + dir1 * DEVPARAMS::tstride).real();
 		      field[0] += plaq;
 		      //Ey^2
-		      int s1 = Index_3D_Neig_NM(s, dir2, -1);
+		      int s1 = Index_NDs_Neig_NM(s, dir2, -1);
 		      plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,s + dir2 * DEVPARAMS::tstride).real();
 		      plaq += ELEM_LOAD<UseTex, Real>(arg.plaq,s1 + dir2 * DEVPARAMS::tstride).real();
 		      field[1] += plaq * 0.5;
@@ -334,9 +334,9 @@ __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg){
 		      field[5] += loop * plaq * 0.5;*/
 		    }
 		  }
-		  for(int dd = 0; dd < 6; dd++) field[dd] *= loop;
-		  Real aggregate[6];
-		  for(int dd = 0; dd < 6; dd++){
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++) field[dd] *= loop;
+		  Real aggregate[TOTAL_NUM_PLAQS];
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++){
 		    aggregate[dd] = BlockReduce(temp_storage).Reduce(field[dd], Summ<Real>());
       		__syncthreads();
 		  }
@@ -374,17 +374,17 @@ __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg){
 		  } 
 	  }
 	  else{
-		  for(int dir1 = 0; dir1 < 3; dir1++){
+		  for(int dir1 = 0; dir1 < NDIMS-1; dir1++){
 			if(dir1==dir2) continue;
 			int dir3 = 0;
 			for(int dir33 = 0; dir33 < 3; dir33++) if(dir1 != dir33 && dir2 != dir33) dir3 = dir33;
 		  
-	  		  int s = Index_3D_Neig_NM(x, dir1, ix - arg.nx / 2, dir3, iy - arg.ny / 2);
+	  		int s = Index_NDs_Neig_NM(x, dir1, ix - arg.nx / 2, dir3, iy - arg.ny / 2);
 			
 			if(id < DEVPARAMS::tstride){
 		      //Ex^2
 		      Real plaq = ELEM_LOAD<UseTex, Real>(arg.plaq, s + dir1 * DEVPARAMS::tstride).real();
-		      int s1 = Index_3D_Neig_NM(s, dir2, 1);
+		      int s1 = Index_NDs_Neig_NM(s, dir2, 1);
 		      plaq += ELEM_LOAD<UseTex, Real>(arg.plaq, s1 + dir1 * DEVPARAMS::tstride).real();
 		      field[0] += plaq * 0.25;
 		      //Ey^2
@@ -406,9 +406,9 @@ __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg){
 		      field[5] += plaq * 0.5;
 		    }
 		  }
-		  for(int dd = 0; dd < 6; dd++) field[dd] *= loop;
-		  Real aggregate[6];
-		  for(int dd = 0; dd < 6; dd++){
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++) field[dd] *= loop;
+		  Real aggregate[TOTAL_NUM_PLAQS];
+		  for(int dd = 0; dd < TOTAL_NUM_PLAQS; dd++){
 		    aggregate[dd] = BlockReduce(temp_storage).Reduce(field[dd], Summ<Real>());
       		__syncthreads();
 		  }
@@ -480,7 +480,7 @@ private:
    unsigned int minThreads() const { return size; }
    void apply(const cudaStream_t &stream){
 	TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-  CUDA_SAFE_CALL(cudaMemset(arg.field, 0, 6 * arg.nx * arg.ny * sizeof(Real)));
+  CUDA_SAFE_CALL(cudaMemset(arg.field, 0, TOTAL_NUM_PLAQS * arg.nx * arg.ny * sizeof(Real)));
   CUDA_SAFE_CALL(cudaMemset(arg.pl, 0, sizeof(Real)));
   if(chargeplane){ LAUNCH_KERNEL(kernel_ChromoField, tp, stream, arg, UseTex, Real, ppdagger, EvenRadius);}  
   else {LAUNCH_KERNEL(kernel_ChromoFieldMidFluxTube, tp, stream, arg, UseTex, Real, ppdagger, EvenRadius);  }
@@ -489,13 +489,13 @@ private:
 public:
    ChromoField(complex *ploop, complex *plaqfield, Real *chromofield, Real *pl, int radius, int nx, int ny):chromofield(chromofield), pl(pl){
 	size = 1;
-	for(int i=0;i<3;i++){
+	for(int i=0;i<NDIMS-1;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;
 	arg.ploop = ploop;
 	arg.plaq = plaqfield;
-	arg.field = (Real *)dev_malloc( 6 * nx * ny * sizeof(Real));
+	arg.field = (Real *)dev_malloc(TOTAL_NUM_PLAQS * nx * ny * sizeof(Real));
 	arg.pl = (Real *)dev_malloc( sizeof(Real));
 	arg.radius = radius;
 	arg.nx = nx;
@@ -511,10 +511,10 @@ public:
     CUDA_SAFE_DEVICE_SYNC();
     CUT_CHECK_ERROR("Kernel execution failed");
     CUDA_SAFE_CALL(cudaMemcpy(pl, arg.pl, sizeof(Real), cudaMemcpyDeviceToHost));
-    CUDA_SAFE_CALL(cudaMemcpy(chromofield, arg.field, 6 * arg.nx * arg.ny * sizeof(Real), cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(chromofield, arg.field, TOTAL_NUM_PLAQS * arg.nx * arg.ny * sizeof(Real), cudaMemcpyDeviceToHost));
     //normalize!!!!!!
 	if(EvenRadius){
-		for(int r = 0; r < 6 * arg.nx * arg.ny; r++)
+		for(int r = 0; r < TOTAL_NUM_PLAQS * arg.nx * arg.ny; r++)
 		  chromofield[r] /= (Real)(12 * size);
 		if(chargeplane){
 		  for(int r = 2 * arg.nx * arg.ny; r < 3 * arg.nx * arg.ny; r++) //Ez^2
@@ -530,8 +530,8 @@ public:
 		}
 	}
 	else{
-		for(int r = 0; r < 6 * arg.nx * arg.ny; r++)
-		  chromofield[r] /= (Real)(6 * size);
+		for(int r = 0; r < TOTAL_NUM_PLAQS * arg.nx * arg.ny; r++)
+		  chromofield[r] /= (Real)(TOTAL_NUM_PLAQS * size);
 	}
 #ifdef TIMMINGS
 	CUDA_SAFE_DEVICE_SYNC( );
@@ -549,10 +549,8 @@ public:
    void printValue(){}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+	for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string tmp = "None";
     return TuneKey(vol.str().c_str(), typeid(*this).name(), tmp.c_str(), aux.str().c_str());

@@ -50,15 +50,15 @@ template<bool UseTex, class Real, ArrayType atype>
 __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg){
   	int id = INDEX1D();
 	if(id >= DEVPARAMS::Volume) return;
-	int x[4];
-	Index_4D_NM(id, x);
+	int x[NDIMS];
+	Index_ND_NM(id, x);
 	int muvolume = arg.mu * DEVPARAMS::Volume;
 	//int gfoffset = arg.opN * DEVPARAMS::Volume;
 
 	int gfoffset1 = arg.opN * DEVPARAMS::Volume;
 	msun link = msun::identity();
 	for(int r = 0; r < arg.radius; r++){
-		int idx = Index_4D_Neig_NM(x, arg.mu, r);
+		int idx = Index_ND_Neig_NM(x, arg.mu, r);
 		link *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, idx + muvolume, DEVPARAMS::size);
 	}
 	if(arg.opN == 1){
@@ -241,7 +241,7 @@ private:
 public:
    CalcOPsF_A0(WLOPArg<Real> arg, gauge array, gauge fieldOp): arg(arg), array(array), fieldOp(fieldOp){
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;  
@@ -280,10 +280,8 @@ return tmp;}
    void stat(){	COUT << "CalcOPsF_A0:  " <<  time() << " s\t"  << bandwidth() << " GB/s\t" << flops() << " GFlops"  << endl;}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+	for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string tmp = "None";
     return TuneKey(vol.str().c_str(), typeid(*this).name(), tmp.c_str(), aux.str().c_str());

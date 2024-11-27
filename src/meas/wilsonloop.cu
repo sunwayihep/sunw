@@ -62,11 +62,11 @@ __global__ void kernel_WilsonLineSP(WLArgR<Real> arg){
 
     if(id >= DEVPARAMS::Volume) return;
 
-    for(int mu = 0; mu < 3; mu++){
+    for(int mu = 0; mu < NDIMS-1; mu++){
         msun link = msun::identity();
         for(int radius = 0; radius < arg.radius; radius++){
-            link *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_4D_Neig_NM(id, mu, radius) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
-	        GAUGE_SAVE<atype, Real>( arg.WLsp, link, id + mu * DEVPARAMS::Volume + radius * DEVPARAMS::Volume * 3, DEVPARAMS::Volume * 3 * arg.radius );
+            link *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_ND_Neig_NM(id, mu, radius) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
+	        GAUGE_SAVE<atype, Real>( arg.WLsp, link, id + mu * DEVPARAMS::Volume + radius * DEVPARAMS::Volume * (NDIMS-1), DEVPARAMS::Volume * (NDIMS-1) * arg.radius );
 
             }
     }
@@ -88,23 +88,23 @@ __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg){
 
   int id = INDEX1D();
 	
-  int tdirvolume = 3 * DEVPARAMS::Volume;
+  int tdirvolume = (NDIMS - 1) * DEVPARAMS::Volume;
 
-  for(int mu = 0; mu < 3; mu++){
+  for(int mu = 0; mu < NDIMS-1; mu++){
     
     for(int radius = 0; radius <= arg.radius; radius++){
         msun linkb = msun::identity();
         if(id < DEVPARAMS::Volume && radius > 0)
-            linkb = GAUGE_LOAD<UseTex, atype, Real>( arg.WLsp, id + mu * DEVPARAMS::Volume + (radius-1) * DEVPARAMS::Volume * 3, DEVPARAMS::Volume * 3 * arg.radius);
+            linkb = GAUGE_LOAD<UseTex, atype, Real>( arg.WLsp, id + mu * DEVPARAMS::Volume + (radius-1) * DEVPARAMS::Volume * (NDIMS-1), DEVPARAMS::Volume * (NDIMS-1) * arg.radius);
         
 	    msun t0 = msun::identity();
 	    msun t1 = msun::identity();
 	    for(int it = 0; it <= arg.Tmax; it++){
 
-		    int idt = Index_4D_Neig_NM(id, 3, it);
+		    int idt = Index_ND_Neig_NM(id, NDIMS-1, it);
 		    msun linktop = msun::identity();
 		    if(id < DEVPARAMS::Volume && radius > 0)
-		        linktop = GAUGE_LOAD<UseTex, atype, Real>( arg.WLsp, idt + mu * DEVPARAMS::Volume + (radius-1) * DEVPARAMS::Volume * 3, DEVPARAMS::Volume * 3 * arg.radius); 
+		        linktop = GAUGE_LOAD<UseTex, atype, Real>( arg.WLsp, idt + mu * DEVPARAMS::Volume + (radius-1) * DEVPARAMS::Volume * (NDIMS-1), DEVPARAMS::Volume * (NDIMS-1) * arg.radius); 
      
 			  complex wl = complex::zero();
 			  if(id < DEVPARAMS::Volume) wl = (linkb * t1 * linktop.dagger() * t0.dagger()).trace();
@@ -122,7 +122,7 @@ __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg){
 
 		    if(id < DEVPARAMS::Volume && it < arg.Tmax){
 			    t0 *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, idt + tdirvolume, DEVPARAMS::size);
-			    t1 *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_4D_Neig_NM(idt, mu, radius) + tdirvolume, DEVPARAMS::size);
+			    t1 *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_ND_Neig_NM(idt, mu, radius) + tdirvolume, DEVPARAMS::size);
 		    } 
 
      	 }
@@ -157,7 +157,7 @@ private:
 public:
    WilsonLineSP(WLArgR<Real> arg, gauge array): arg(arg), array(array){
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;  
@@ -185,10 +185,8 @@ public:
    void stat(){	COUT << "WilsonLineSP:  " <<  time() << " s\t"  << bandwidth() << " GB/s\t" << flops() << " GFlops"  << endl;}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string tmp = "None";
     return TuneKey(vol.str().c_str(), typeid(*this).name(), tmp.c_str(), aux.str().c_str());
@@ -242,7 +240,7 @@ private:
 public:
    WilsonLoopSP(WLArgR<Real> arg, gauge array): arg(arg), array(array){
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;  
@@ -270,10 +268,8 @@ public:
    void stat(){	COUT << "WilsonLoop:  " <<  time() << " s\t"  << bandwidth() << " GB/s\t" << flops() << " GFlops"  << endl;}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string tmp = "None";
     return TuneKey(vol.str().c_str(), typeid(*this).name(), tmp.c_str(), aux.str().c_str());
@@ -305,23 +301,23 @@ __global__ void kernel_WilsonLoopR(WLArgR<Real> arg){
 
   int id = INDEX1D();
 	
-  int tdirvolume = 3 * DEVPARAMS::Volume;
+  int tdirvolume = (NDIMS-1) * DEVPARAMS::Volume;
 
-  for(int mu = 0; mu < 3; mu++){
+  for(int mu = 0; mu < NDIMS-1; mu++){
     msun linkb = msun::identity();
     for(int radius = 0; radius <= arg.radius; radius++){
         if(id < DEVPARAMS::Volume && radius > 0)
-        linkb *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_4D_Neig_NM(id, mu, radius-1) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
+        linkb *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_ND_Neig_NM(id, mu, radius-1) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
         
 	    msun t0 = msun::identity();
 	    msun t1 = msun::identity();
 	    for(int it = 0; it <= arg.Tmax; it++){
 
-        int idt = Index_4D_Neig_NM(id, 3, it);
+        int idt = Index_ND_Neig_NM(id, NDIMS-1, it);
         msun linktop = msun::identity();
         if(id < DEVPARAMS::Volume)
           for(int r=0; r < radius; r++) 
-            linktop *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_4D_Neig_NM(idt, mu, r) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
+            linktop *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_ND_Neig_NM(idt, mu, r) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
         
 			  complex wl = complex::zero();
 			  if(id < DEVPARAMS::Volume){
@@ -338,7 +334,7 @@ __global__ void kernel_WilsonLoopR(WLArgR<Real> arg){
 
 		    if(id < DEVPARAMS::Volume && it < arg.Tmax){
 			    t0 *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, idt + tdirvolume, DEVPARAMS::size);
-			    t1 *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_4D_Neig_NM(idt, mu, radius) + tdirvolume, DEVPARAMS::size);
+			    t1 *= GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_ND_Neig_NM(idt, mu, radius) + tdirvolume, DEVPARAMS::size);
 		    } 
 
       }
@@ -381,7 +377,7 @@ private:
 public:
    WilsonLoopR(WLArgR<Real> arg, gauge array): arg(arg), array(array){
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;  
@@ -409,10 +405,8 @@ public:
    void stat(){	COUT << "WilsonLoop:  " <<  time() << " s\t"  << bandwidth() << " GB/s\t" << flops() << " GFlops"  << endl;}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string tmp = "None";
     return TuneKey(vol.str().c_str(), typeid(*this).name(), tmp.c_str(), aux.str().c_str());
@@ -460,7 +454,7 @@ void CWilsonLoop(gauge array, complex *res, int radius, int Tmax){
   dev_free(arg.res);
   for(int r = 0; r <= radius; r++)
   for(int it = 0; it <= Tmax; it++)
-    res[it + r * (Tmax+1)] /= (Real)(PARAMS::Volume * 3 * NCOLORS);
+    res[it + r * (Tmax+1)] /= (Real)(PARAMS::Volume * (NDIMS-1) * NCOLORS);
   CUDA_SAFE_DEVICE_SYNC( );
   mtime.stop();
   COUT << "Time WilsonLoop:  " <<  mtime.getElapsedTimeInSec() << " s"  << endl;
@@ -499,7 +493,7 @@ void WilsonLoop(gauge array, complex *res, int radius, int Tmax){
 	arg.radius = radius;
 	arg.Tmax = Tmax;
 
-	gauge WLsp(SOA, Device, PARAMS::Volume * 3 * radius, false);
+	gauge WLsp(SOA, Device, PARAMS::Volume * (NDIMS-1) * radius, false);
     arg.WLsp = WLsp.GetPtr();
   
   if(array.Type() != SOA)
@@ -522,7 +516,7 @@ void WilsonLoop(gauge array, complex *res, int radius, int Tmax){
   dev_free(arg.res);
   for(int r = 0; r <= radius; r++)
   for(int it = 0; it <= Tmax; it++)
-    res[it + r * (Tmax+1)] /= (Real)(PARAMS::Volume * 3 * NCOLORS);
+    res[it + r * (Tmax+1)] /= (Real)(PARAMS::Volume * (NDIMS-1) * NCOLORS);
   CUDA_SAFE_DEVICE_SYNC( );
   mtime.stop();
   COUT << "Time WilsonLoop:  " <<  mtime.getElapsedTimeInSec() << " s"  << endl;

@@ -83,10 +83,8 @@ public:
 
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(), array.ToStringArrayType().c_str(), aux.str().c_str());
   }
@@ -112,8 +110,8 @@ __global__ void kernel_calc_polyakovloop3D(PotPLoop3DArg<Real> arg){
 	int id = INDEX1D();
   msun plup = msun::zero();
   if(id < DEVPARAMS::tstride) plup = GAUGE_LOAD<UseTex, atypein,Real>(arg.array, id, DEVPARAMS::tstride);
-  int x[3];
-  Index_3D_NM(id, x);
+  int x[NDIMS-1];
+  Index_NDs_NM(id, x);
   for(int k = 0; k <= arg.radius; k++)
   for(int j = 0; j <= arg.radius; j++)
   for(int i = 0; i <= arg.radius; i++){
@@ -122,8 +120,8 @@ __global__ void kernel_calc_polyakovloop3D(PotPLoop3DArg<Real> arg){
     complex pp = complex::zero();
     complex ppdagger = complex::zero();
     if(id < DEVPARAMS::tstride){	
-		int dx[3] = {i,j,k};
-	    msun pldown = GAUGE_LOAD<UseTex, atypein,Real>(arg.array, Index_3D_Neig_NM(x, dx), DEVPARAMS::tstride);
+		int dx[NDIMS-1] = {i,j,k};
+	    msun pldown = GAUGE_LOAD<UseTex, atypein,Real>(arg.array, Index_NDs_Neig_NM(x, dx), DEVPARAMS::tstride);
 	    pp = plup.trace() * pldown.trace();
 	    ppdagger = plup.trace() * pldown.dagger().trace();
     }
@@ -142,7 +140,7 @@ PotPLoop3D<Real>::PotPLoop3D(gauge &array, complex *pot, int radius, int pts):ar
   if(array.EvenOdd() == true) errorCULQCD("Not defined for EvenOdd arrays...\n");
 
 	size = 1;
-	for(int i=0;i<3;i++){
+	for(int i=0;i<NDIMS-1;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;

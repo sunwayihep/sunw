@@ -84,20 +84,20 @@ __global__ void kernel_WilsonLoop(WLArg<Real> arg){
   __shared__ typename BlockReduce::TempStorage temp_storage;  
 
   int id = INDEX1D();
-	int x[4];
-	Index_4D_NM(id, x);
+	int x[NDIMS];
+	Index_ND_NM(id, x);
 
-	int idl = ( x[2] * param_Grid(1) + x[1] ) * param_Grid(0) + x[0]; //space index left
+	int idl = Index_NDs_NM(x); //space index left
 	x[arg.mu] = (x[arg.mu]+arg.radius)%param_Grid(arg.mu);
-	int idr = ( x[2] * param_Grid(1) + x[1] ) * param_Grid(0) + x[0]; //space index right
+	int idr = Index_NDs_NM(x); //space index right
 
-	int tdirvolume = 3 * DEVPARAMS::Volume;
+	int tdirvolume = (NDIMS-1) * DEVPARAMS::Volume;
 	int gfoffset = DEV_Ops[0] * DEVPARAMS::Volume;
 
 	msun t0 = msun::identity();
 	msun t1 = msun::identity();
 	for(int it = 0; it <= arg.Tmax; it++){
-		int idt = (x[3]+it)%param_Grid(3);
+		int idt = (x[NDIMS-1]+it)%param_Grid(NDIMS-1);
 		idt *= DEVPARAMS::tstride;
         int idOp = 0;
         for(int comp = 0; comp < DEV_Ops[1]; comp++){
@@ -165,7 +165,7 @@ private:
 public:
    WilsonLoop(WLArg<Real> arg, gauge array): arg(arg), array(array){
 	size = 1;
-	for(int i=0;i<4;i++){
+	for(int i=0;i<NDIMS;i++){
 		size *= PARAMS::Grid[i];
 	} 
 	timesec = 0.0;  
@@ -194,10 +194,8 @@ public:
    void stat(){	COUT << "WilsonLoop:  " <<  time() << " s\t"  << bandwidth() << " GB/s\t" << flops() << " GFlops"  << endl;}
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    vol << PARAMS::Grid[0] << "x";
-    vol << PARAMS::Grid[1] << "x";
-    vol << PARAMS::Grid[2] << "x";
-    vol << PARAMS::Grid[3];
+    for(int i=0; i<NDIMS-1; i++) vol << PARAMS::Grid[i] << "x";
+    vol << PARAMS::Grid[NDIMS-1];
     aux << "threads=" << size << ",prec="  << sizeof(Real);
     string tmp = "None";
     return TuneKey(vol.str().c_str(), typeid(*this).name(), tmp.c_str(), aux.str().c_str());
