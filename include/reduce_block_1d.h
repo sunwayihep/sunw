@@ -36,7 +36,7 @@ inline __device__ void reduce_block_1d(T *ptr, const T &thread_val) {
 // parameters:
 //                     <<<,,threads_per_block * sizeof(T),>>>
 
-//#define CUDA_SHFL_DOWN(val, offset) __shfl_down(val, offset)
+// #define CUDA_SHFL_DOWN(val, offset) __shfl_down(val, offset)
 #define FULL_MASK 0xffffffff
 #define CUDA_SHFL_DOWN(val, offset) __shfl_down_sync(0xffffffff, val, offset)
 
@@ -94,6 +94,6 @@ inline __device__ void reduce_block_1d_shfl(T *ptr, const T &thread_val) {
 // DON'T FORGET to reserve the shared memory need by this in the kernel
 // parameters:
 //
-}
+} // namespace CULQCD
 
 #endif

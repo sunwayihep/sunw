@@ -16,8 +16,8 @@ DIRS:
 
 #define mod(x, y) ((x) % (y))
 #define pow2(x) ((x) * (x)) // pow(x, 2)
-//#define PI	3.1415926535897932
-//#define PII	6.2831853071795865
+// #define PI	3.1415926535897932
+// #define PII	6.2831853071795865
 #ifndef PI
 #define PI 3.1415926535897932384626433832795 // pi
 #endif
@@ -26,7 +26,7 @@ DIRS:
 #endif
 
 // the total number of spatial and time plaqs per lattice sites
-#define TOTAL_NUM_PLAQS ((NDIMS * (NDIMS-1))/2)
+#define TOTAL_NUM_PLAQS ((NDIMS * (NDIMS - 1)) / 2)
 // total number of time component plaqs per lattice sites
 #define TOTAL_NUM_TPLAQS (NDIMS - 1)
 // total number of spatial component plaqs per lattice sites
@@ -92,7 +92,7 @@ extern int FaceId[NDIMS];
 extern int NodeIdRight[NDIMS];
 // Node id -1 for active faces
 extern int NodeIdLeft[NDIMS];
-//#endif
+// #endif
 /*! \brief store the max gpu grid size in x dimension */
 extern uint GPUGridDimX;
 
@@ -112,7 +112,7 @@ extern dim3 nthreadsINITHALF;
 extern dim3 nblocksINITHALF;
 extern dim3 nthreadsREU;
 extern dim3 nblocksREU;
-}
+} // namespace PARAMS
 
 // double reportPotentialOccupancy(void *kernel, int blockSize, size_t
 // dynamicSMem);
@@ -134,7 +134,8 @@ void PrintDetails();
 void SETPARAMS(bool _usetex, double beta, int nx, int ny, int nz, int nt,
                bool verbose);
 
-void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size, bool verbose);
+void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size,
+               bool verbose);
 
 void SETPARAMS(bool _usetex, int latticedim[4], const int nodesperdim[4],
                const int logical_coordinate[4], bool verbose);
@@ -240,7 +241,7 @@ extern __constant__ float hypalpha1;
 extern __constant__ float hypalpha2;
 /*! \brief HYP smearing constant: alpha3 */
 extern __constant__ float hypalpha3;
-}
+} // namespace DEVPARAMS
 
 int __host__ __device__ inline param_border(int i) {
 #ifdef __CUDA_ARCH__
@@ -336,5 +337,5 @@ void UseTextureMemory(bool TexOn);
     @brief Set constants for the HYP smearing.
 */
 void copyHYPSmearConstants(float _alpha1, float _alpha2, float _alpha3);
-}
+} // namespace CULQCD
 #endif

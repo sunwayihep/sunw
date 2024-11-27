@@ -1,13 +1,13 @@
 #ifndef PLAQUETTE_H
 #define PLAQUETTE_H
 
-#include <typeinfo>
 #include <complex.h>
 #include <gaugearray.h>
 #include <timer.h>
+#include <typeinfo>
 
-#include <tune.h>
 #include <launch_kernel.cuh>
+#include <tune.h>
 
 namespace CULQCD {
 
@@ -112,9 +112,7 @@ private:
 
 public:
   PlaquetteCUB(gauge &array);
-  ~PlaquetteCUB() {
-    dev_free(arg.plaq);
-  };
+  ~PlaquetteCUB() { dev_free(arg.plaq); };
   complex Run(const cudaStream_t &stream);
   complex Run();
   double flops();
@@ -128,8 +126,9 @@ public:
 
   TuneKey tuneKey() const {
     std::stringstream vol, aux;
-    for(int i=0; i<NDIMS-1; i++) vol << grid[i] << "x";
-    vol << grid[NDIMS-1];
+    for (int i = 0; i < NDIMS - 1; i++)
+      vol << grid[i] << "x";
+    vol << grid[NDIMS - 1];
     aux << "threads=" << size << ",prec=" << sizeof(Real);
     return TuneKey(vol.str().c_str(), typeid(*this).name(),
                    array.ToStringArrayType().c_str(), aux.str().c_str());
@@ -144,6 +143,6 @@ public:
   void preTune() {}
   void postTune() {}
 };
-}
+} // namespace CULQCD
 
 #endif

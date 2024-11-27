@@ -62,6 +62,6 @@ template <> struct SharedMemory<msund> {
     return (msund *)__smem_d;
   }
 };
-}
+} // namespace CULQCD
 
 #endif // #ifndef SHARED_MEMORY_TYPES_H

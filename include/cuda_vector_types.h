@@ -30,5 +30,5 @@ template <> struct MakeVector<float, 4> {
 template <> struct MakeVector<double, 4> {
   typedef double4 type;
 };
-}
+} // namespace CULQCD
 #endif // #ifndef CUDA_VECTOR_TYPES_H

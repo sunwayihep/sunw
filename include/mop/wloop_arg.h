@@ -7,4 +7,4 @@ template <class Real> struct WLOPArg {
   int mu;
   int opN;
 };
-}
+} // namespace CULQCD

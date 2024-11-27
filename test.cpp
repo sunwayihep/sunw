@@ -1,21 +1,21 @@
+#include <assert.h>
 #include <cmath>
-#include <iostream>
 #include <fstream>
-#include <string.h>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <string>
-#include <assert.h>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include <culqcd.h>
-//#include "gnuplot.h"
+// #include "gnuplot.h"
 
+#include <iostream>
 #include <stdio.h>  // defines FILENAME_MAX
 #include <unistd.h> // for getcwd()
-#include <iostream>
 
 using namespace std;
 using namespace CULQCD;
@@ -38,14 +38,17 @@ int main(int argc, char **argv) {
   cout << sizeof(float) << ":::::" << sizeof(double) << endl;
 
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   const ArrayType mygauge = SOA; // SOA/SOA12/SOA8 for SU(3) and SOA for N>3
   RunOnDeviceTEST<double, mygauge>(argc, argv);
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   EndCULQCD(0);
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   exit(0);
 }
 ////////////////////////////////////////////////////////////////////////
@@ -167,11 +170,13 @@ void RunOnDeviceTEST(int argc, char **argv) {
       BB.Copy(AA);
       if (ss == 1) {
         COUT << "##############################################################"
-                "###" << endl;
+                "###"
+             << endl;
         // Apply APE Smearing
         ApplyAPEinSpace<Real>(BB, 0.2, 25, 10, 1.e-10);
         COUT << "##############################################################"
-                "###" << endl;
+                "###"
+             << endl;
         filename1 = "WilsonLoop_APE_S_A0_" + ToString(iter) + ".dat";
       }
       if (ss == 2) {
@@ -185,21 +190,25 @@ void RunOnDeviceTEST(int argc, char **argv) {
       }
       if (ss == 3) {
         COUT << "##############################################################"
-                "###" << endl;
+                "###"
+             << endl;
         // Apply APE Smearing
         ApplyAPEinTime<Real>(BB, 0.2, 1, 10, 1.e-10);
         COUT << "##############################################################"
-                "###" << endl;
+                "###"
+             << endl;
         filename1 = "WilsonLoop_APE_T_A0_" + ToString(iter) + ".dat";
       }
       if (ss == 4) {
         COUT << "##############################################################"
-                "###" << endl;
+                "###"
+             << endl;
         // Apply APE Smearing
         ApplyAPEinTime<Real>(BB, 0.2, 1, 10, 1.e-10);
         ApplyAPEinSpace<Real>(BB, 0.2, 25, 10, 1.e-10);
         COUT << "##############################################################"
-                "###" << endl;
+                "###"
+             << endl;
         filename1 = "WilsonLoop_APE_ST_A0_" + ToString(iter) + ".dat";
       }
       if (ss == 5) {
@@ -230,7 +239,7 @@ void RunOnDeviceTEST(int argc, char **argv) {
           for (int r = 0; r < Rmax; r++) {
             for (int it = 0; it < Tmax; it++) {
               //				meas[it + r * (Tmax+1)] +=
-              //res[it + r * (Tmax+1)];
+              // res[it + r * (Tmax+1)];
               //		    	fileout << r << "\t" << it << "\t"
               //<< meas[it + r * (Tmax+1)].real()/double(nmeas) << '\n';
               fileout << r << "\t" << it << "\t"
@@ -273,10 +282,12 @@ void RunOnDeviceTEST(int argc, char **argv) {
         int numdirs = 3;
         for (int r = 2; r <= arg.Rmax; r++) {
           COUT << "############################################################"
-                  "###################" << endl;
+                  "###################"
+               << endl;
           COUT << "Calculating radius: " << r << endl;
           COUT << "############################################################"
-                  "###################" << endl;
+                  "###################"
+               << endl;
           CUDA_SAFE_CALL(cudaMemset(arg.wloop, 0, arg.wloop_size));
           for (int mu = 0; mu < numdirs; mu++) {
             CalcWLOPs_A0<Real>(BB, &arg, r, mu);
@@ -303,19 +314,23 @@ void RunOnDeviceTEST(int argc, char **argv) {
       }
       a0.stop();
       COUT << "################################################################"
-              "###############" << endl;
+              "###############"
+           << endl;
       COUT << "Time A0: " << a0.getElapsedTime() << " s" << endl;
       COUT << "################################################################"
-              "###############" << endl;
+              "###############"
+           << endl;
       BB.Release();
     }
     randstates.Release();
   }
   AA.Release();
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   COUT << "Time: " << t0.getElapsedTime() << " s" << endl;
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   return;
 }

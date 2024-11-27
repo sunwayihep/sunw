@@ -2,8 +2,8 @@
 #ifndef EXCHANGE_H
 #define EXCHANGE_H
 
-#include <gaugearray.h>
 #include <constants.h>
+#include <gaugearray.h>
 
 namespace CULQCD {
 #ifdef MULTI_GPU
@@ -31,6 +31,6 @@ void Exchange_gauge_border_links(gauge _pgauge, int dir, int parity,
                                  bool all_radius_border);
 
 #endif
-}
+} // namespace CULQCD
 
 #endif

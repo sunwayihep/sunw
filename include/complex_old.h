@@ -1,10 +1,10 @@
 #ifndef COMPLEX_H
 #define COMPLEX_H
 
-#include <string.h>
-#include <iostream>
-#include <iomanip>
 #include <assert.h>
+#include <iomanip>
+#include <iostream>
+#include <string.h>
 
 #include <math.h>
 
@@ -71,19 +71,11 @@ public:
   };
 
   // return references to the T and imaginary components
-  M_HOSTDEVICE Real &real() {
-    return val.x;
-  };
-  M_HOSTDEVICE Real &imag() {
-    return val.y;
-  };
+  M_HOSTDEVICE Real &real() { return val.x; };
+  M_HOSTDEVICE Real &imag() { return val.y; };
 
-  M_HOSTDEVICE Real real() const {
-    return val.x;
-  };
-  M_HOSTDEVICE Real imag() const {
-    return val.y;
-  };
+  M_HOSTDEVICE Real real() const { return val.x; };
+  M_HOSTDEVICE Real imag() const { return val.y; };
 
   /*M_HOST bool operator==( const _complex<Real> &A ) {
     _complex<Real> B = *this;
@@ -391,6 +383,6 @@ static M_HOSTDEVICE complexd make_complexd(double2 a) {
   res.imag() = a.y;
   return res;
 }
-}
+} // namespace CULQCD
 
 #endif // #ifndef COMPLEX_H

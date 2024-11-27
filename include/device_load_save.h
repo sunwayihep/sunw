@@ -2,13 +2,13 @@
 #ifndef DEVICE_SAVE_LOAD_H
 #define DEVICE_SAVE_LOAD_H
 
-#include <cuda.h>
 #include <complex.h>
-#include <matrixsun.h>
-#include <gaugearray.h>
 #include <constants.h>
-#include <texture.h>
+#include <cuda.h>
+#include <gaugearray.h>
+#include <matrixsun.h>
 #include <reconstruct_12p_8p.h>
+#include <texture.h>
 
 namespace CULQCD {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -704,6 +704,6 @@ __device__ inline msun LAMBDA_LOAD(const complex *array, const uint id,
 #endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-}
+} // namespace CULQCD
 
 #endif // #ifndef DEVICE_SAVE_LOAD_H

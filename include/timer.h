@@ -15,10 +15,10 @@
 #ifndef TIMER_H_DEF
 #define TIMER_H_DEF
 
-#include <iostream>
-#include <cstring>
-#include <sstream>
 #include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <sstream>
 #include <string>
 
 #ifdef WIN32 // Windows system specific

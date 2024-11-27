@@ -54,6 +54,6 @@ void CalcChromoField_G(complex *ploop, complex *plaqfield, Real *field,
 template <class Real>
 void CalcChromoField_Q(complex *ploop, complex *plaqfield, Real *field,
                        Real *value, int nx, int ny);
-}
+} // namespace CULQCD
 
 #endif

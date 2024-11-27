@@ -4,8 +4,8 @@
 
 #include <gaugearray.h>
 
-#include <typeinfo>
 #include <gaugearray.h>
+#include <typeinfo>
 
 #include <timer.h>
 #include <tune.h>
@@ -64,5 +64,5 @@ public:
   void preTune() { array.Backup(); }
   void postTune() { array.Restore(); }
 };
-}
+} // namespace CULQCD
 #endif

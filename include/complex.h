@@ -1,11 +1,11 @@
 #ifndef COMPLEX_H
 #define COMPLEX_H
 
-#include <string.h>
-#include <iostream>
-#include <iomanip>
 #include <assert.h>
+#include <iomanip>
+#include <iostream>
 #include <math.h>
+#include <string.h>
 
 #include <cuda_common.h>
 #include <cuda_vector_types.h>
@@ -75,19 +75,11 @@ public:
   };
 
   // return references to the T and imaginary components
-  M_HOSTDEVICE Real &real() {
-    return val.x;
-  };
-  M_HOSTDEVICE Real &imag() {
-    return val.y;
-  };
+  M_HOSTDEVICE Real &real() { return val.x; };
+  M_HOSTDEVICE Real &imag() { return val.y; };
 
-  M_HOSTDEVICE Real real() const {
-    return val.x;
-  };
-  M_HOSTDEVICE Real imag() const {
-    return val.y;
-  };
+  M_HOSTDEVICE Real real() const { return val.x; };
+  M_HOSTDEVICE Real imag() const { return val.y; };
 
   // Operator +
   // add complex numbers
@@ -475,6 +467,6 @@ static M_HOSTDEVICE complexd make_complexd(double2 a) {
   res.imag() = a.y;
   return res;
 }
-}
+} // namespace CULQCD
 
 #endif // #ifndef COMPLEX_H

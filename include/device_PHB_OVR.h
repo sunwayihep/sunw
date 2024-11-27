@@ -3,11 +3,11 @@
 #ifndef DEVICE_PHB_OVR_H
 #define DEVICE_PHB_OVR_H
 
-#include <random.h>
 #include <complex.h>
+#include <constants.h>
 #include <matrixsun.h>
 #include <msu2.h>
-#include <constants.h>
+#include <random.h>
 
 namespace CULQCD {
 
@@ -430,9 +430,9 @@ __device__ inline void heatBathSUN(msun &U, msun F, cuRNGState &localState) {
     }
     // FLOP_min = (NCOLORS * 64 + 19 + 28 + 28) * 3 = NCOLORS * 192 + 225
   }
-//////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////
 
-#elif(NCOLORS == 2)
+#elif (NCOLORS == 2)
   int2 id = IndexBlock(0);
   msu2 r = get_block_su2<Real>(F, id);
   Real k = r.abs();
@@ -461,11 +461,11 @@ __device__ inline void heatBathSUN(msun &U, msun F, cuRNGState &localState) {
   int2 id2;
   id2.x = 0, id2.y = 1;
   U = block_su2_to_sun(rr, id2);
-/**
-if (INDEX1D() == 0) {
-  printf("print U matrix\n");
-  U.print();
-}*/
+  /**
+  if (INDEX1D() == 0) {
+    printf("print U matrix\n");
+    U.print();
+  }*/
 
 #else
   //////////////////////////////////////////////////////////////////
@@ -486,46 +486,46 @@ if (INDEX1D() == 0) {
     mul_block_sun<Real>(rr, M, id);
     ///////////////////////////////////////
   }
-/*//TESTED IN SU(4) SP THIS IS FASTER
-for( int block = 0; block < NCOLORS * ( NCOLORS - 1) / 2; block++ ) {
-    int2 id = IndexBlock( block );
-    complex a0 = complex::zero();
-    complex a1 = complex::zero();
-    complex a2 = complex::zero();
-    complex a3 = complex::zero();
+  /*//TESTED IN SU(4) SP THIS IS FASTER
+  for( int block = 0; block < NCOLORS * ( NCOLORS - 1) / 2; block++ ) {
+      int2 id = IndexBlock( block );
+      complex a0 = complex::zero();
+      complex a1 = complex::zero();
+      complex a2 = complex::zero();
+      complex a3 = complex::zero();
+
+      for(int j = 0; j < NCOLORS; j++){
+          a0 += U.e[id.x][j] * F.e[j][id.x];
+          a1 += U.e[id.x][j] * F.e[j][id.y];
+          a2 += U.e[id.y][j] * F.e[j][id.x];
+          a3 += U.e[id.y][j] * F.e[j][id.y];
+      }
+      msu2 r;
+      r.a0() = a0.real() + a3.real();
+      r.a1() = a1.imag() + a2.imag();
+      r.a2() = a1.real() - a2.real();
+      r.a3() = a0.imag() - a3.imag();
+      Real k = r.abs();
+      Real ap = (Real)DEVPARAMS::BetaOverNc * k;
+      k = (Real)1.0 / k;
+      r *= k;
+      //msu2 a = generate_su2_matrix<T4, T>(ap, localState);
+      msu2 a = generate_su2_matrix_milc<Real>(ap, localState);
+      r = mulsu2UVDagger<Real>( a, r);
+      mul_block_sun<Real>( r, U, id);*/
+  /*///////////////////////////////////////
+    a0 = complex( r.a0(), r.a3() );
+    a1 = complex( r.a2(), r.a1() );
+    a2 = complex(-r.a2(), r.a1() );
+    a3 = complex( r.a0(),-r.a3() );
+    complex tmp0;
 
     for(int j = 0; j < NCOLORS; j++){
-        a0 += U.e[id.x][j] * F.e[j][id.x];
-        a1 += U.e[id.x][j] * F.e[j][id.y];
-        a2 += U.e[id.y][j] * F.e[j][id.x];
-        a3 += U.e[id.y][j] * F.e[j][id.y];
-    }
-    msu2 r;
-    r.a0() = a0.real() + a3.real();
-    r.a1() = a1.imag() + a2.imag();
-    r.a2() = a1.real() - a2.real();
-    r.a3() = a0.imag() - a3.imag();
-    Real k = r.abs();
-    Real ap = (Real)DEVPARAMS::BetaOverNc * k;
-    k = (Real)1.0 / k;
-    r *= k;
-    //msu2 a = generate_su2_matrix<T4, T>(ap, localState);
-    msu2 a = generate_su2_matrix_milc<Real>(ap, localState);
-    r = mulsu2UVDagger<Real>( a, r);
-    mul_block_sun<Real>( r, U, id);*/
-/*///////////////////////////////////////
-  a0 = complex( r.a0(), r.a3() );
-  a1 = complex( r.a2(), r.a1() );
-  a2 = complex(-r.a2(), r.a1() );
-  a3 = complex( r.a0(),-r.a3() );
-  complex tmp0;
-
-  for(int j = 0; j < NCOLORS; j++){
-  tmp0 = a0 * U.e[id.x][j] + a1 * U.e[id.y][j];
-  U.e[id.y][j] = a2 * U.e[id.x][j] + a3 * U.e[id.y][j];
-  U.e[id.x][j] = tmp0;
-  }	*/
-// }
+    tmp0 = a0 * U.e[id.x][j] + a1 * U.e[id.y][j];
+    U.e[id.y][j] = a2 * U.e[id.x][j] + a3 * U.e[id.y][j];
+    U.e[id.x][j] = tmp0;
+    }	*/
+  // }
 
 #endif
   //////////////////////////////////////////////////////////////////
@@ -663,9 +663,9 @@ __device__ inline void overrelaxationSUN(msun &U, msun F) {
 template <class Real> __device__ inline msu2 randomSU2(cuRNGState &localState) {
   msu2 a;
   Real aabs, ctheta, stheta, phi;
-  a.a0() = Random<Real>(localState, (Real) - 1.0, (Real)1.0);
+  a.a0() = Random<Real>(localState, (Real)-1.0, (Real)1.0);
   aabs = sqrt((Real)1.0 - a.a0() * a.a0());
-  ctheta = Random<Real>(localState, (Real) - 1.0, (Real)1.0);
+  ctheta = Random<Real>(localState, (Real)-1.0, (Real)1.0);
   phi = PII * Random<Real>(localState);
   stheta = (Real)(curand(&localState) & 1 ? 1 : -1) *
            sqrt((Real)1.0 - ctheta * ctheta);
@@ -699,6 +699,6 @@ template <class Real> __device__ inline msun randomize(cuRNGState &localState) {
     }*/
   return U;
 }
-}
+} // namespace CULQCD
 
 #endif

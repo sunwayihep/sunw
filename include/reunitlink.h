@@ -47,7 +47,7 @@ template <class Real> __host__ __device__ inline void reunit_link(msun *U) {
   (*U)(2, 1) = ((*U)(0, 2) * (*U)(1, 0) - (*U)(0, 0) * (*U)(1, 2)).conj();
   (*U)(2, 2) = ((*U)(0, 0) * (*U)(1, 1) - (*U)(0, 1) * (*U)(1, 0)).conj();
 ///////////////////////////////////////////////////////////////////////////////
-#elif(NCOLORS > 3)
+#elif (NCOLORS > 3)
   ////////////////////////////////// NCOLORS > 3 ////////////////////////////
   Real t1;
   complex t2;
@@ -90,6 +90,6 @@ template <class Real> __host__ __device__ inline void reunit_link(msun *U) {
 #warning NCOLORS not defined or NCOLORS < 3!
 #endif
 }
-}
+} // namespace CULQCD
 
 #endif

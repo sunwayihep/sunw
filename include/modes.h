@@ -6,10 +6,7 @@
 
 namespace CULQCD {
 
-typedef enum ReadMode_S {
-  Host,
-  Device
-} ReadMode;
+typedef enum ReadMode_S { Host, Device } ReadMode;
 
 typedef enum CopyMode_s {
   HostToHost,
@@ -18,12 +15,7 @@ typedef enum CopyMode_s {
   DeviceToDevice
 } CopyMode;
 
-typedef enum ArrayType_s {
-  SOA = 0,
-  SOA12 = 1,
-  SOA12A = 2,
-  SOA8 = 3
-} ArrayType;
+typedef enum ArrayType_s { SOA = 0, SOA12 = 1, SOA12A = 2, SOA8 = 3 } ArrayType;
 
 typedef enum Verbosity_s {
   SILENT,
@@ -32,20 +24,11 @@ typedef enum Verbosity_s {
   DEBUG_VERBOSE
 } Verbosity;
 
-typedef enum TuneMode_S {
-  TUNE_NO,
-  TUNE_YES
-} TuneMode;
+typedef enum TuneMode_S { TUNE_NO, TUNE_YES } TuneMode;
 
-typedef enum OrderMode_S {
-  NORMAL,
-  EVEN_ODD
-} OrderMode;
+typedef enum OrderMode_S { NORMAL, EVEN_ODD } OrderMode;
 
-typedef enum HaloMode_S {
-  NO_HALOS,
-  HALOS
-} HaloMode;
+typedef enum HaloMode_S { NO_HALOS, HALOS } HaloMode;
 
 #define CULQCD_INVALID_ENUM INT_MIN
 
@@ -62,5 +45,5 @@ typedef enum FieldLocation_s {
   CUDA_FIELD_LOCATION = 2,
   INVALID_FIELD_LOCATION = CULQCD_INVALID_ENUM
 } FieldLocation;
-}
+} // namespace CULQCD
 #endif

@@ -44,7 +44,10 @@ Real &b){
 */
 
 /**
-   @brief CUDA double precision version of atomicAd. Reads the word old located at the address address in global or shared memory, computes (old + val), and stores the result back to memory at the same address. These three operations are performed in one atomic transaction. The function returns old.
+   @brief CUDA double precision version of atomicAd. Reads the word old located
+   at the address address in global or shared memory, computes (old + val), and
+   stores the result back to memory at the same address. These three operations
+   are performed in one atomic transaction. The function returns old.
    @param address memory pointer.
    @param val value to add to current value in memory
    @return function return old
@@ -206,8 +209,8 @@ __inline__ __device__ complexs CudaAtomicAdd(complexs *addr, complexs val) {
 }
 
 template <typename Real> struct Summ {
-  __host__ __device__ __forceinline__ Real
-  operator()(const Real &a, const Real &b) {
+  __host__ __device__ __forceinline__ Real operator()(const Real &a,
+                                                      const Real &b) {
     return a + b;
   }
 };
@@ -221,8 +224,8 @@ template <typename T> struct MaxVal {
 };
 
 template <> struct MaxVal<complexs> {
-  __host__ __device__ __forceinline__ complexs
-  operator()(const complexs &a, const complexs &b) {
+  __host__ __device__ __forceinline__ complexs operator()(const complexs &a,
+                                                          const complexs &b) {
     complexs tmp = b;
     if (a.val.x > b.val.x)
       tmp.val.x = a.val.x;
@@ -233,8 +236,8 @@ template <> struct MaxVal<complexs> {
 };
 
 template <> struct MaxVal<complexd> {
-  __host__ __device__ __forceinline__ complexd
-  operator()(const complexd &a, const complexd &b) {
+  __host__ __device__ __forceinline__ complexd operator()(const complexd &a,
+                                                          const complexd &b) {
     complexd tmp = b;
     if (a.val.x > b.val.x)
       tmp.val.x = a.val.x;
@@ -253,8 +256,8 @@ template <typename T> struct MinVal {
 };
 
 template <> struct MinVal<complexs> {
-  __host__ __device__ __forceinline__ complexs
-  operator()(const complexs &a, const complexs &b) {
+  __host__ __device__ __forceinline__ complexs operator()(const complexs &a,
+                                                          const complexs &b) {
     complexs tmp = b;
     if (a.val.x < b.val.x)
       tmp.val.x = a.val.x;
@@ -265,8 +268,8 @@ template <> struct MinVal<complexs> {
 };
 
 template <> struct MinVal<complexd> {
-  __host__ __device__ __forceinline__ complexd
-  operator()(const complexd &a, const complexd &b) {
+  __host__ __device__ __forceinline__ complexd operator()(const complexd &a,
+                                                          const complexd &b) {
     complexd tmp = b;
     if (a.val.x < b.val.x)
       tmp.val.x = a.val.x;
@@ -275,6 +278,6 @@ template <> struct MinVal<complexd> {
     return tmp;
   }
 };
-}
+} // namespace CULQCD
 
 #endif

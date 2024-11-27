@@ -2,27 +2,27 @@
 #ifndef TUNE_H
 #define TUNE_H
 
-//#include <stdio.h>
-//#include <string.h>
-#include <iostream>
-#include <fstream>
-#include <cstring>
-#include <sstream>
+// #include <stdio.h>
+// #include <string.h>
 #include <cstdlib>
-#include <string>
+#include <cstring>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include <typeinfo>
 
-#include <cuda_common.h>
-#include <complex.h>
-#include <matrixsun.h>
-#include <reconstruct_12p_8p.h>
-#include <constants.h>
-#include <modes.h>
-#include <index.h>
 #include <comm_mpi.h>
+#include <complex.h>
+#include <constants.h>
+#include <cuda_common.h>
+#include <index.h>
+#include <matrixsun.h>
+#include <modes.h>
 #include <random.h>
+#include <reconstruct_12p_8p.h>
 
 #include <alloc.h>
 
@@ -329,6 +329,6 @@ public:
 void loadTuneCache(Verbosity verbosity);
 void saveTuneCache(Verbosity verbosity);
 TuneParam &tuneLaunch(Tunable &tunable, TuneMode enabled, Verbosity verbosity);
-}
+} // namespace CULQCD
 
 #endif

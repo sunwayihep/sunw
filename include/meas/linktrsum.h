@@ -3,8 +3,8 @@
 #define LINKTRSUM_H
 
 #include <gaugearray.h>
-#include <tune.h>
 #include <timer.h>
+#include <tune.h>
 
 namespace CULQCD {
 
@@ -16,7 +16,7 @@ template <class Real> struct TraceArg {
   complex *value;
 };
 
-//#ifdef USE_CUDA_CUB
+// #ifdef USE_CUDA_CUB
 template <class Real> class GaugeTraceCUB : Tunable {
 private:
   gauge array;
@@ -52,7 +52,7 @@ public:
   void preTune() {}
   void postTune() {}
 };
-//#else
+// #else
 template <class Real> class GaugeTrace : Tunable {
 private:
   gauge array;
@@ -89,7 +89,7 @@ public:
   void preTune() {}
   void postTune() {}
 };
-//#endif
-}
+// #endif
+} // namespace CULQCD
 
 #endif

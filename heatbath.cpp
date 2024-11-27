@@ -1,21 +1,21 @@
+#include <assert.h>
 #include <cmath>
-#include <iostream>
 #include <fstream>
-#include <string.h>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <string>
-#include <assert.h>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
 #include <culqcd.h>
-//#include "gnuplot.h"
+// #include "gnuplot.h"
 
+#include <iostream>
 #include <stdio.h>  // defines FILENAME_MAX
 #include <unistd.h> // for getcwd()
-#include <iostream>
 #include <vector>
 
 using namespace std;
@@ -32,31 +32,36 @@ int main(int argc, char **argv) {
   cout << sizeof(float) << ":::::" << sizeof(double) << endl;
 
   COUT << "####################################################################"
-          "###########" << endl;
-  COUT << "Start generating SU(" << NCOLORS << ") gauge configurations in " << NDIMS << " spacetime dimensions" << endl;
+          "###########"
+       << endl;
+  COUT << "Start generating SU(" << NCOLORS << ") gauge configurations in "
+       << NDIMS << " spacetime dimensions" << endl;
   const ArrayType mygauge = SOA; // SOA/SOA12/SOA8 for SU(3) and SOA for N>3
   runHeatBath<double, mygauge>(argc, argv);
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   EndCULQCD(0);
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   exit(0);
 }
 
 // heatbath test module
 template <class Real, ArrayType mygaugein>
 void runHeatBath(int argc, char **argv) {
-  if((argc-1) != (NDIMS+2)) {
-        errorCULQCD("Number of input arguments is %d, should be (NDIMS + 2) = %d", argc - 1, NDIMS + 2);
+  if ((argc - 1) != (NDIMS + 2)) {
+    errorCULQCD("Number of input arguments is %d, should be (NDIMS + 2) = %d",
+                argc - 1, NDIMS + 2);
   }
   vector<int> lattice_size;
   lattice_size.reserve(NDIMS);
-  for(int i=1; i<=NDIMS; i++) lattice_size.push_back(atoi(argv[i]));
-  float beta0 = atof(argv[NDIMS+1]);
+  for (int i = 1; i <= NDIMS; i++)
+    lattice_size.push_back(atoi(argv[i]));
+  float beta0 = atof(argv[NDIMS + 1]);
   PARAMS::UseTex = false;
-  int ntraj = atoi(argv[NDIMS+2]);
-
+  int ntraj = atoi(argv[NDIMS + 2]);
 
   // init the MPI environment, gpuid not used for multi-GPU, while can be set
   // for single-GPU run.
@@ -74,7 +79,7 @@ void runHeatBath(int argc, char **argv) {
   // also sets some kernel launch parameters
   // true for verbosity
   //---------------------------------------------------------------------------------------
-  //SETPARAMS(PARAMS::UseTex, beta0, ns, ns, ns, nt, true);
+  // SETPARAMS(PARAMS::UseTex, beta0, ns, ns, ns, nt, true);
   SETPARAMS(PARAMS::UseTex, beta0, lattice_size, true);
   gauge conf(mygaugein, Device, PARAMS::Volume * NDIMS, true);
   conf.Details();
@@ -131,9 +136,11 @@ void runHeatBath(int argc, char **argv) {
   conf.Release();
   t0.stop();
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   COUT << "Total Time: " << t0.getElapsedTime() << " s" << endl;
   COUT << "####################################################################"
-          "###########" << endl;
+          "###########"
+       << endl;
   return;
 }

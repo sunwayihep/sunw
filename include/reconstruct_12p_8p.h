@@ -2,8 +2,8 @@
 #ifndef RECONSTRUCT8P_H
 #define RECONSTRUCT8P_H
 
-#include <cuda_common.h>
 #include <complex.h>
+#include <cuda_common.h>
 #include <matrixsun.h>
 #ifdef __CUDACC__
 #include <cuda_runtime.h>
@@ -75,6 +75,6 @@ The 8 real parameters are stored as 4 complex numbers
   m.e[2][2] += temp * m.e[0][2];
   m.e[2][2] *= -p2;
 }
-}
+} // namespace CULQCD
 
 #endif

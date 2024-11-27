@@ -1,19 +1,19 @@
-#include <cstdlib>
 #include <cstdio>
-#include <string>
+#include <cstdlib>
 #include <cstring>
-#include <map>
-#include <unistd.h>   // for getpagesize()
 #include <execinfo.h> // for backtrace
 #include <iostream>
+#include <map>
+#include <string>
+#include <unistd.h> // for getpagesize()
 
+#include <comm_mpi.h>
 #include <cuda_common.h>
 #include <modes.h>
-#include <comm_mpi.h>
 
-#include "timer.h"
 #include "cuda_error_check.h"
-//#include <climits>
+#include "timer.h"
+// #include <climits>
 
 namespace CULQCD {
 
@@ -195,4 +195,4 @@ void curandSafeCall_(const char *func, const char *file, int line,
     errorCULQCD("Aborting");
   }
 }
-}
+} // namespace CULQCD

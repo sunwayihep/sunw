@@ -1,10 +1,8 @@
 
 
-
 #include <texture.h>
 
-
-namespace CULQCD{
+namespace CULQCD {
 //////////////////////////////////////////////////////////////////////////////////////
 /*
   TEXTURES
@@ -22,6 +20,4 @@ texture<int4, 1, cudaReadModeElementType> tex_delta_double;
 texture<float2, 1, cudaReadModeElementType> tex_lambda_float;
 texture<int4, 1, cudaReadModeElementType> tex_lambda_double;
 
-
-
-}
+} // namespace CULQCD

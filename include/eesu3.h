@@ -60,12 +60,13 @@ template <class Real> __host__ __device__ inline void eesu3(msun &iQ) {
                        (1.0 - (1.0 / 20.0) * ww * (1.0 - (1.0 / 42.0) * ww))));
 
   // f_i = f_i(c0, c1). Expand f_i by c1, if c1 is small.
-  f0 = where(latboo_c1, (exp2iu * (uu - ww) +
-                         expmiu * complex(8.0 * uu * cosw,
-                                          2.0 * u * (3.0 * uu + ww) * xi0)) /
-                            denom,
-             complex(1.0 - c0 * c0 / 720.0,
-                     -c0 / 6.0 * (1.0 - c1 / 20.0 * (1.0 - c1 / 42.0))));
+  f0 = where(
+      latboo_c1,
+      (exp2iu * (uu - ww) +
+       expmiu * complex(8.0 * uu * cosw, 2.0 * u * (3.0 * uu + ww) * xi0)) /
+          denom,
+      complex(1.0 - c0 * c0 / 720.0,
+              -c0 / 6.0 * (1.0 - c1 / 20.0 * (1.0 - c1 / 42.0))));
 
   f1 = where(latboo_c1,
              (exp2iu * 2.0 * u -
@@ -92,6 +93,6 @@ template <class Real> __host__ __device__ inline void eesu3(msun &iQ) {
   // Relpace Q by exp(iQ)
   // Q = expiQ;
 }
-}
+} // namespace CULQCD
 
 #endif

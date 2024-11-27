@@ -2,8 +2,8 @@
 #ifndef IO_GAUGE_H
 #define IO_GAUGE_H
 
-#include <string>
 #include <gaugearray.h>
+#include <string>
 
 namespace CULQCD {
 
@@ -21,6 +21,6 @@ void ReadBin_Gauge(gauge arrayin, std::string filename,
 
 // ONLY SINGLE GPU THIS FUNCTION!!!!!!!
 template <class Real> void Read_GaugeOLD(gauge arrayin, std::string filename);
-}
+} // namespace CULQCD
 
 #endif

@@ -2,10 +2,10 @@
 #ifndef MATRIXSUN_H
 #define MATRIXSUN_H
 
+#include <iomanip>
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
-#include <iomanip>
 
 #include <complex.h>
 
@@ -1148,6 +1148,6 @@ template <class Real> M_HOSTDEVICE msun timesI(msun a) {
     }
   return res;
 }
-}
+} // namespace CULQCD
 
 #endif // #ifndef MATRIXSUN_H

@@ -51,6 +51,6 @@ void CalcWLOPs_dg_33(gauge array, gauge fieldOp, int radius, int mu, int opN);
 extern __constant__ int DEV_Ops[2];
 extern __constant__ int DEV_OpComps[8];
 extern __constant__ int DEV_OpPos[8];
-}
+} // namespace CULQCD
 
 #endif

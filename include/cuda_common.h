@@ -27,13 +27,13 @@ extern "C" {
 // prevent
 // linkage issues (duplicate symbols and such)
 #ifdef __CUDACC__
-//#define HOST __host__
+// #define HOST __host__
 #define DEVICE __device__ inline
 #define HOSTDEVICE __host__ __device__ inline
 #define M_HOST __host__
 #define M_HOSTDEVICE __host__ __device__ inline
 #else
-//#define HOST static inline
+// #define HOST static inline
 #define DEVICE static inline
 #define HOSTDEVICE static inline
 #define M_HOST inline // note there is no static here
@@ -78,13 +78,13 @@ extern "C" {
 #define PTR(x) *x
 #endif
 
-//#if CUDART_VERSION >= 4000
+// #if CUDART_VERSION >= 4000
 #define CUT_DEVICE_SYNCHRONIZE() cudaDeviceSynchronize();
 #define CUT_DEVICE_RESET() cudaDeviceReset();
-//#else
-//#define CUT_DEVICE_SYNCHRONIZE( )   cudaThreadSynchronize();
-//#define CUT_DEVICE_RESET( )   cudaThreadExit();
-//#endif
+// #else
+// #define CUT_DEVICE_SYNCHRONIZE( )   cudaThreadSynchronize();
+// #define CUT_DEVICE_RESET( )   cudaThreadExit();
+// #endif
 
 /*-------------------------------------------------------------------------------*/
 #define OUTPUT_RESULT(result)                                                  \
@@ -338,6 +338,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif // #ifdef _DEBUG (else branch)
-}
+} // namespace CULQCD
 
 #endif

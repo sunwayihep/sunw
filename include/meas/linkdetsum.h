@@ -4,8 +4,8 @@
 
 #include <gaugearray.h>
 
-#include <tune.h>
 #include <timer.h>
+#include <tune.h>
 
 namespace CULQCD {
 
@@ -17,7 +17,7 @@ template <class Real> struct DetArg {
   complex *value;
 };
 
-//#ifdef USE_CUDA_CUB
+// #ifdef USE_CUDA_CUB
 template <class Real> class GaugeDetCUB : Tunable {
 private:
   gauge array;
@@ -68,7 +68,7 @@ public:
   void preTune() {}
   void postTune() {}
 };
-//#else
+// #else
 template <class Real> class GaugeDet : Tunable {
 private:
   gauge array;
@@ -118,7 +118,7 @@ public:
   void preTune() {}
   void postTune() {}
 };
-//#endif
-}
+// #endif
+} // namespace CULQCD
 
 #endif

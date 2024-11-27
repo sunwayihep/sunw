@@ -3,10 +3,10 @@
 #define STAPLE_H
 
 #include <complex.h>
-#include <matrixsun.h>
 #include <constants.h>
-#include <index.h>
 #include <device_load_save.h>
+#include <index.h>
+#include <matrixsun.h>
 
 namespace CULQCD {
 /**
@@ -124,5 +124,5 @@ __device__ void inline Staple(complex *array, msun &staple, int idx, int mu,
   }
 
   }*/
-}
+} // namespace CULQCD
 #endif
