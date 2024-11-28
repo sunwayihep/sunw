@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 template <class Real, ArrayType mygaugein>
 void runHeatBath(int argc, char **argv) {
   if ((argc - 1) != (NDIMS + 2)) {
-    errorCULQCD("Number of input arguments is %d, should be (NDIMS + 2) = %d",
+    errorCULQCD("Number of input arguments is %d, should be (NDIMS + 2) = %d\n",
                 argc - 1, NDIMS + 2);
   }
   vector<int> lattice_size;

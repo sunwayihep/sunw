@@ -11,7 +11,6 @@
 #include <cuda_runtime.h>
 
 #include <culqcd.h>
-// #include "gnuplot.h"
 
 #include <iostream>
 #include <stdio.h>  // defines FILENAME_MAX
@@ -20,17 +19,11 @@
 using namespace std;
 using namespace CULQCD;
 
+#if (NDIMS == 4)
+
 template <class Real, ArrayType mygaugein>
 void RunOnDeviceTEST(int argc, char **argv);
 
-// NEEDS: export CULQCD_RESOURCE_PATH="path to folder where the tuning
-// parameters are saved..."
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
 
   cout << sizeof(curandStateMRG32k3a) << ":::::" << sizeof(curandStateXORWOW)
@@ -38,42 +31,36 @@ int main(int argc, char **argv) {
   cout << sizeof(float) << ":::::" << sizeof(double) << endl;
 
   COUT << "####################################################################"
-          "###########"
        << endl;
   const ArrayType mygauge = SOA; // SOA/SOA12/SOA8 for SU(3) and SOA for N>3
   RunOnDeviceTEST<double, mygauge>(argc, argv);
   COUT << "####################################################################"
-          "###########"
        << endl;
   EndCULQCD(0);
   COUT << "####################################################################"
-          "###########"
        << endl;
   exit(0);
 }
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
+
 template <class Real, ArrayType mygaugein>
 void RunOnDeviceTEST(int argc, char **argv) {
+  if ((argc - 1) != (NDIMS + 2)) {
+    errorCULQCD("Number of input arguments is %d, should be (NDIMS + 2) = %d",
+                argc - 1, NDIMS + 2);
+  }
+  vector<int> lattice_size;
+  lattice_size.reserve(NDIMS);
+  for (int i = 1; i <= NDIMS; i++)
+    lattice_size.push_back(atoi(argv[i]));
 
-  int ns = atoi(argv[1]);
-  int nt = atoi(argv[2]);
-  float beta0 = atof(argv[3]);
-  int gpuid = atoi(argv[4]);
-  int usetex = atoi(argv[5]);
-  PARAMS::UseTex = usetex;
-  string filenamein = argv[6];
-  int iter = atoi(argv[7]);
+  float beta0 = atof(argv[NDIMS + 1]);
+  int gpuid = atoi(argv[NDIMS + 2]);
+  PARAMS::UseTex = false;
+  int iter = 1;
 
-  // initCULQCD(gpuid, DEBUG_VERBOSE, TUNE_YES);
-  initCULQCD(gpuid, SUMMARIZE, TUNE_YES);
-  // initCULQCD(gpuid, VERBOSE, TUNE_YES);
   // if TUNE_YES user must set export CULQCD_RESOURCE_PATH="path to folder where
   // the tuning parameters are saved..."
+  initCULQCD(gpuid, SUMMARIZE, TUNE_YES);
   //---------------------------------------------------------------------------------------
   // Create timer
   //---------------------------------------------------------------------------------------
@@ -86,16 +73,20 @@ void RunOnDeviceTEST(int argc, char **argv) {
   //---------------------------------------------------------------------------------------
   // Set Lattice Gauge Parameters and copy to Device constant memory
   // also sets some kernel launch parameters
-  // SETPARAMS( bool tex reads on/off, beta, nx, ny, nz, nt);
   //---------------------------------------------------------------------------------------
-  SETPARAMS(usetex, beta0, ns, ns, ns, nt, true);
+  SETPARAMS(PARAMS::UseTex, beta0, lattice_size, true);
   // TO ENABLE/DISABLE READS FROM TEXTURES anywhere in the code....!!!!!!
   // UseTextureMemory(true/false);
 
-  gauge AA(mygaugein, Device, PARAMS::Volume * 4, true);
+  gauge AA(mygaugein, Device, PARAMS::Volume * NDIMS, true);
   AA.Details();
 
-  ReadBin_Gauge<Real, double>(AA, filenamein);
+  // init the random number generator
+  RNG randstates;
+  int rngSeed = 1234;
+  randstates.Init(rngSeed);
+  // AA.Init(randstates);
+  AA.Init();
 
   PlaquetteCUB<Real> plaqCUB(AA);
   OnePolyakovLoop<Real> poly(AA);
@@ -113,13 +104,13 @@ void RunOnDeviceTEST(int argc, char **argv) {
   plaqCUB.stat();
   poly.stat();
 
-  if (0) {
-    gauge BB(SOA, Device, PARAMS::Volume * 4, false);
+  if (1) {
+    gauge BB(SOA, Device, PARAMS::Volume * NDIMS, false);
     // copy the gauge field in even-odd order to normal order to use by ape and
     // Wilson loop
     BB.Copy(AA);
     int Rmax = PARAMS::Grid[0] / 2;
-    int Tmax = PARAMS::Grid[3] / 3;
+    int Tmax = PARAMS::Grid[NDIMS - 1] / 3;
     complex *res =
         (complex *)safe_malloc(sizeof(complex) * (Rmax + 1) * (Tmax + 1));
 
@@ -128,8 +119,8 @@ void RunOnDeviceTEST(int argc, char **argv) {
     // APE in time, this is not yet implemented in MPI
     // ApplyAPEinTime(in, 0.2, 1, 20, 0.0000000001);
     // Wilson loop, this is not yet implemented in MPI
-    WilsonLoop(BB, res, Rmax,
-               Tmax); // This version uses more device memory, but is faster
+    WilsonLoop(BB, res, Rmax, Tmax);
+    // This version uses more device memory, but is faster
     // CWilsonLoop(in, res, Rmax, Tmax);
     ofstream fileout;
     string filename = "WilsonLoop_" + ToString(iter) + ".dat";
@@ -146,16 +137,12 @@ void RunOnDeviceTEST(int argc, char **argv) {
         fileout.flush();
       }
       fileout.close();
-      // gnuplot3D(gp, 0, filename);
     }
     BB.Release();
     host_free(res);
   }
 
   if (1) {
-
-    RNG randstates;
-    int rngSeed = 1234;
     rngSeed = (unsigned)time(0);
 
     //	for(int ss=0;ss<5;ss++){
@@ -164,24 +151,22 @@ void RunOnDeviceTEST(int argc, char **argv) {
       Timer a0;
       a0.start();
       string filename1 = "WilsonLoop_A0_" + ToString(iter) + ".dat";
-      gauge BB(SOA, Device, PARAMS::Volume * 4, false);
+      gauge BB(SOA, Device, PARAMS::Volume * NDIMS, false);
       // copy the gauge field in even-odd order to normal order to use by ape
       // and Wilson loop
       BB.Copy(AA);
       if (ss == 1) {
         COUT << "##############################################################"
-                "###"
              << endl;
         // Apply APE Smearing
         ApplyAPEinSpace<Real>(BB, 0.2, 25, 10, 1.e-10);
         COUT << "##############################################################"
-                "###"
              << endl;
         filename1 = "WilsonLoop_APE_S_A0_" + ToString(iter) + ".dat";
       }
       if (ss == 2) {
         randstates.Init(rngSeed);
-        gauge DD(BB.Type(), Device, PARAMS::Volume * 4, false);
+        gauge DD(BB.Type(), Device, PARAMS::Volume * NDIMS, false);
         DD.Copy(BB);
         ApplyMultiHit(DD, BB, randstates, 100);
         // ApplyMultiHitExt(DD, BB, randstates, 100);
@@ -190,30 +175,26 @@ void RunOnDeviceTEST(int argc, char **argv) {
       }
       if (ss == 3) {
         COUT << "##############################################################"
-                "###"
              << endl;
         // Apply APE Smearing
         ApplyAPEinTime<Real>(BB, 0.2, 1, 10, 1.e-10);
         COUT << "##############################################################"
-                "###"
              << endl;
         filename1 = "WilsonLoop_APE_T_A0_" + ToString(iter) + ".dat";
       }
       if (ss == 4) {
         COUT << "##############################################################"
-                "###"
              << endl;
         // Apply APE Smearing
         ApplyAPEinTime<Real>(BB, 0.2, 1, 10, 1.e-10);
         ApplyAPEinSpace<Real>(BB, 0.2, 25, 10, 1.e-10);
         COUT << "##############################################################"
-                "###"
              << endl;
         filename1 = "WilsonLoop_APE_ST_A0_" + ToString(iter) + ".dat";
       }
       if (ss == 5) {
         randstates.Init(rngSeed);
-        gauge DD(BB.Type(), Device, PARAMS::Volume * 4, false);
+        gauge DD(BB.Type(), Device, PARAMS::Volume * NDIMS, false);
         DD.Copy(BB);
         ApplyMultiHit(DD, BB, randstates, 100);
         // ApplyMultiHitExt(DD, BB, randstates, 100);
@@ -224,38 +205,32 @@ void RunOnDeviceTEST(int argc, char **argv) {
 
       if (1) {
         int Rmax = PARAMS::Grid[0] / 2;
-        int Tmax = PARAMS::Grid[3] / 2;
+        int Tmax = PARAMS::Grid[NDIMS - 1] / 2;
         complex *res =
             (complex *)safe_malloc(sizeof(complex) * (Rmax + 1) * (Tmax + 1));
 
-        WilsonLoop(BB, res, Rmax,
-                   Tmax); // This version uses more device memory, but is faster
-        //    CWilsonLoop(BB, res, Rmax, Tmax);
-        //	nmeas++;
+        WilsonLoop(BB, res, Rmax, Tmax);
+        // This version uses more device memory, but is faster
+        // CWilsonLoop(BB, res, Rmax, Tmax);
+        // nmeas++;
         ofstream fileout;
         fileout.open(filename1.c_str(), ios::out);
         cout << "Writing data to: " << filename1 << endl;
         if (fileout.is_open()) {
           for (int r = 0; r < Rmax; r++) {
             for (int it = 0; it < Tmax; it++) {
-              //				meas[it + r * (Tmax+1)] +=
-              // res[it + r * (Tmax+1)];
-              //		    	fileout << r << "\t" << it << "\t"
-              //<< meas[it + r * (Tmax+1)].real()/double(nmeas) << '\n';
               fileout << r << "\t" << it << "\t"
                       << res[it + r * (Tmax + 1)].real() << '\n';
-              // if(it==Tmax-1) fileout << '\n';
             }
             fileout.flush();
           }
           fileout.close();
-          // gnuplot3D(gp, 0, filename);
         }
 
         host_free(res);
       }
 
-      if (0) {
+      if (1) {
         Sigma_g_plus<Real> arg(12, 16);
 
         ofstream fileout;
@@ -282,11 +257,9 @@ void RunOnDeviceTEST(int argc, char **argv) {
         int numdirs = 3;
         for (int r = 2; r <= arg.Rmax; r++) {
           COUT << "############################################################"
-                  "###################"
                << endl;
           COUT << "Calculating radius: " << r << endl;
           COUT << "############################################################"
-                  "###################"
                << endl;
           CUDA_SAFE_CALL(cudaMemset(arg.wloop, 0, arg.wloop_size));
           for (int mu = 0; mu < numdirs; mu++) {
@@ -299,7 +272,7 @@ void RunOnDeviceTEST(int argc, char **argv) {
           for (int iop = 0; iop < arg.totalOpN; iop++)
             for (int it = 0; it <= arg.Tmax; it++) {
               int id = it + iop * (arg.Tmax + 1);
-              arg.wloop_h[id] /= (Real)(PARAMS::Volume * numdirs * 3);
+              arg.wloop_h[id] /= (Real)(PARAMS::Volume * numdirs * (NDIMS - 1));
             }
           for (int it = 0; it <= arg.Tmax; it++) {
             fileout << r << "\t" << it;
@@ -314,11 +287,9 @@ void RunOnDeviceTEST(int argc, char **argv) {
       }
       a0.stop();
       COUT << "################################################################"
-              "###############"
            << endl;
       COUT << "Time A0: " << a0.getElapsedTime() << " s" << endl;
       COUT << "################################################################"
-              "###############"
            << endl;
       BB.Release();
     }
@@ -326,11 +297,15 @@ void RunOnDeviceTEST(int argc, char **argv) {
   }
   AA.Release();
   COUT << "####################################################################"
-          "###########"
        << endl;
   COUT << "Time: " << t0.getElapsedTime() << " s" << endl;
   COUT << "####################################################################"
-          "###########"
        << endl;
   return;
 }
+#else
+#warning Only works for NDIMS=4
+int main(int argc, char **argv) {
+  errorCULQCD("Current NDIMS = %d, should compile with NDIMS = 4\n", NDIMS);
+}
+#endif
