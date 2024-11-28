@@ -94,7 +94,7 @@ GaugeFixHit_AtomicAdd(msun &link, Real relax_boost, int tid) {
       }
     }
     //_____________ //FLOP per lattice site = 8 * NCOLORS * 2 * (2*6+2) =
-    //NCOLORS * 224
+    // NCOLORS * 224
     if (block < TOTAL_SUB_BLOCKS - 1) {
       __syncthreads();
       // reset shared memory SU(2) elements
@@ -203,7 +203,7 @@ GaugeFixHit_NoAtomicAdd(msun &link, Real relax_boost, int tid) {
       }
     }
     //_____________ //FLOP per lattice site = 8 * NCOLORS * 2 * (2*6+2) =
-    //NCOLORS * 224
+    // NCOLORS * 224
     if (block < TOTAL_SUB_BLOCKS - 1)
       __syncthreads();
   } // FLOP per lattice site = (block < NCOLORS * ( NCOLORS - 1) / 2) * (22 + 28
@@ -341,7 +341,7 @@ GaugeFixHit_NoAtomicAdd_LessSM(msun &link, Real relax_boost, int tid) {
       }
     }
     //_____________ //FLOP per lattice site = 8 * NCOLORS * 2 * (2*6+2) =
-    //NCOLORS * 224
+    // NCOLORS * 224
     if (block < TOTAL_SUB_BLOCKS - 1)
       __syncthreads();
   } // FLOP per lattice site = (block < NCOLORS * ( NCOLORS - 1) / 2) * (22 + 28
@@ -429,7 +429,7 @@ GaugeFixHit_AtomicAdd(msun &link, msun &link1, Real relax_boost, int tid) {
               link1.e[j][q];
     }
     //_____________ //FLOP per lattice site = 8 * NCOLORS * 2 * (2*6+2) =
-    //NCOLORS * 224
+    // NCOLORS * 224
     if (block < TOTAL_SUB_BLOCKS - 1) {
       __syncthreads();
       // reset shared memory SU(2) elements

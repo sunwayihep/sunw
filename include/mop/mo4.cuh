@@ -151,7 +151,8 @@ DEVICE msun MO4(WLOPArg<Real> arg, int id, int lx, int ly, msun link,
     //		msun link=msun::identity();
     //		for(int ir=0;ir<arg.radius;ir++){
     //			link*=GAUGE_LOAD< UseTex, atype, Real>(arg.gaugefield,
-    //ids+muvolume, DEVPARAMS::size); 			ids=Index_4D_Neig_NM(ids, dir1, 1);
+    // ids+muvolume, DEVPARAMS::size);
+    // ids=Index_4D_Neig_NM(ids, dir1, 1);
     //		}
     msun qu[4];
     msun aqu[4];

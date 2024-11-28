@@ -32,33 +32,24 @@ __global__ void kernel_copybetweenArraytypes(_gauge<Real> arrayin,
   int id = idd % DEVPARAMS::Volume;
 
   int id_in = idd;
-  int x[4];
+  int x[NDIMS];
   if (In_evenodd) {
     int parity = 0;
     if (id >= DEVPARAMS::HalfVolume) {
       id -= DEVPARAMS::HalfVolume;
       parity = 1;
     }
-    int za = (id / (DEVPARAMS::Grid[0] / 2));
-    int zb = (za / DEVPARAMS::Grid[1]);
-    x[1] = za - zb * DEVPARAMS::Grid[1];
-    x[3] = (zb / DEVPARAMS::Grid[2]);
-    x[2] = zb - x[3] * DEVPARAMS::Grid[2];
-    int x1odd = (x[1] + x[2] + x[3] + parity) & 1;
-    x[0] = (2 * id + x1odd) - za * DEVPARAMS::Grid[0];
+    Index_ND_EO(x, id, parity);
   } else {
-    x[3] = id / (DEVPARAMS::Grid[0] * DEVPARAMS::Grid[1] * DEVPARAMS::Grid[2]);
-    x[2] =
-        (id / (DEVPARAMS::Grid[0] * DEVPARAMS::Grid[1])) % DEVPARAMS::Grid[2];
-    x[1] = (id / DEVPARAMS::Grid[0]) % DEVPARAMS::Grid[1];
-    x[0] = id % DEVPARAMS::Grid[0];
+    Index_ND_NM(id, x);
   }
-  id =
-      (x[0] + (x[1] + (x[2] + x[3] * DEVPARAMS::Grid[2]) * DEVPARAMS::Grid[1]) *
-                  DEVPARAMS::Grid[0]);
+  id = Index_ND_NM(x);
   int id_out = id;
   if (Out_evenodd) {
-    id_out = id / 2 + ((x[0] + x[1] + x[2] + x[3]) & 1) * DEVPARAMS::HalfVolume;
+    int sum_x = 0;
+    for (int i = 0; i < NDIMS; i++)
+      sum_x += x[i];
+    id_out = id / 2 + (sum_x & 1) * DEVPARAMS::HalfVolume;
   }
   arrayout.Set(arrayin.Get(id_in), id_out + mu * DEVPARAMS::Volume);
 }
@@ -380,7 +371,7 @@ template <class Real> void HotStart(gauge array, RNG randstates) {
     if (numnodes() > 1) {
       CUDA_SAFE_DEVICE_SYNC();
       for (int parity = 0; parity < 2; ++parity)
-        for (int mu = 0; mu < 4; ++mu) {
+        for (int mu = 0; mu < NDIMS; ++mu) {
           Exchange_gauge_border_links_gauge(array, mu, parity);
         }
     }
@@ -407,22 +398,23 @@ template <ArrayType atype, class Real>
 __global__ void kernel_hot_start00(complex *array, cuRNGState *state, int size,
                                    int rngsize) {
   uint id = INDEX1D();
-  if (id < rngsize && id < DEVPARAMS::Volume * 4) {
+  if (id < rngsize && id < DEVPARAMS::Volume * NDIMS) {
     cuRNGState localState = state[id];
     int numberloops = 1;
-    if (rngsize < DEVPARAMS::Volume * 4)
-      numberloops = (DEVPARAMS::Volume * 4 + rngsize - 1) / rngsize;
+    if (rngsize < DEVPARAMS::Volume * NDIMS)
+      numberloops = (DEVPARAMS::Volume * NDIMS + rngsize - 1) / rngsize;
     for (int loop = 0; loop < numberloops; loop++) {
       int idx = id + loop * rngsize;
-      if (idx < DEVPARAMS::Volume * 4) {
+      if (idx < DEVPARAMS::Volume * NDIMS) {
         msun U = randomize<Real>(localState);
         reunit_link<Real>(&U);
-        int newid = idx / 4;
+        int newid = idx / NDIMS;
         int nu = idx / DEVPARAMS::Volume;
-        newid += nu * DEVPARAMS::tstride * (DEVPARAMS::Grid[3] + 2);
+        newid += nu * DEVPARAMS::tstride * (DEVPARAMS::Grid[NDIMS - 1] + 2);
         newid += DEVPARAMS::tstride;
-        GAUGE_SAVE<atype, Real>(
-            array, U, newid, DEVPARAMS::tstride * (DEVPARAMS::Grid[3] + 2) * 4);
+        GAUGE_SAVE<atype, Real>(array, U, newid,
+                                DEVPARAMS::tstride *
+                                    (DEVPARAMS::Grid[NDIMS - 1] + 2) * NDIMS);
       }
     }
     state[id] = localState;

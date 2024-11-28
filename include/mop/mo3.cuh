@@ -130,13 +130,15 @@ DEVICE msun MO3(WLOPArg<Real> arg, int id, int lx1, int ly, int lx2, msun link,
     //	msun link=msun::identity();
     //	for(int ir=0; ir< arg.radius; ir++){
     //	link*=GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, ids+muvolume,
-    //DEVPARAMS::size); 	ids=Index_4D_Neig_NM(ids, dir1 ,1);
+    // DEVPARAMS::size); 	ids=Index_4D_Neig_NM(ids, dir1 ,1);
     //	}
     // qac(WLOPArg<Real> arg,int id,int dir1, int dir2, int lx1,int ly, int lx2)
     msun qu[4];
     // id is at the quark
-    qu[0] = qac<UseTex, Real, atype>(arg, id, mu[0], mu[1], lx1, ly, lx2); // q12
-    qu[1] = qac<UseTex, Real, atype>(arg, id, mu[1], mu[0], lx1, ly, lx2); // q23
+    qu[0] =
+        qac<UseTex, Real, atype>(arg, id, mu[0], mu[1], lx1, ly, lx2); // q12
+    qu[1] =
+        qac<UseTex, Real, atype>(arg, id, mu[1], mu[0], lx1, ly, lx2); // q23
     qu[2] =
         qmac<UseTex, Real, atype>(arg, id, mu[0], mu[1], lx1, ly, lx2); // q34
     qu[3] =
