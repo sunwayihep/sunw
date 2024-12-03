@@ -1,18 +1,18 @@
-#include <cstdlib>
 #include <cstdio>
-#include <string>
+#include <cstdlib>
 #include <cstring>
-#include <map>
-#include <unistd.h>   // for getpagesize()
 #include <execinfo.h> // for backtrace
+#include <map>
+#include <string>
+#include <unistd.h> // for getpagesize()
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include <cuda_common.h>
-#include <modes.h>
 #include <comm_mpi.h>
+#include <cuda_common.h>
 #include <cuda_error_check.h>
+#include <modes.h>
 
 // CODE FROM QUDA LIBRARY WITH A FEW MODIFICATIONS
 
@@ -55,8 +55,8 @@ public:
 };
 
 static std::map<void *, MemAlloc> alloc[N_ALLOC_TYPE];
-static long total_bytes[N_ALLOC_TYPE] = { 0 };
-static long max_total_bytes[N_ALLOC_TYPE] = { 0 };
+static long total_bytes[N_ALLOC_TYPE] = {0};
+static long max_total_bytes[N_ALLOC_TYPE] = {0};
 static long total_host_bytes, max_total_host_bytes;
 static long total_pinned_bytes, max_total_pinned_bytes;
 
@@ -88,8 +88,8 @@ static void print_alloc_header() {
 }
 
 static void print_alloc(AllocType type) {
-  const char *type_str[] = { "Device", "Device Pinned", "Host",
-                             "Pinned", "Mapped",        "Managed" };
+  const char *type_str[] = {"Device", "Device Pinned", "Host",
+                            "Pinned", "Mapped",        "Managed"};
   std::map<void *, MemAlloc>::iterator entry;
 
   for (entry = alloc[type].begin(); entry != alloc[type].end(); entry++) {
@@ -185,7 +185,7 @@ void *dev_malloc_(const char *func, const char *file, int line, size_t size) {
   }
   track_malloc(DEVICE_PTR, a, ptr);
 
-  //#ifdef HOST_DEBUG
+  // #ifdef HOST_DEBUG
   err = cudaMemset(ptr, 0, size);
   if (err != cudaSuccess) {
     printfCULQCD(
@@ -193,7 +193,7 @@ void *dev_malloc_(const char *func, const char *file, int line, size_t size) {
         size, file, line, func);
     errorCULQCD("Aborting");
   }
-  //#endif
+  // #endif
 
   return ptr;
 }
@@ -222,7 +222,7 @@ void *dev_pinned_malloc_(const char *func, const char *file, int line,
     errorCULQCD("Aborting");
   }
   track_malloc(DEVICE_PINNED_PTR, a, ptr);
-  //#ifdef HOST_DEBUG
+  // #ifdef HOST_DEBUG
   cudaError_t err1 = cudaMemset(ptr, 0, size);
   if (err1 != cudaSuccess) {
     printfCULQCD(
@@ -230,7 +230,7 @@ void *dev_pinned_malloc_(const char *func, const char *file, int line,
         size, file, line, func);
     errorCULQCD("Aborting");
   }
-  //#endif
+  // #endif
   return ptr;
 }
 
@@ -251,9 +251,9 @@ void *safe_malloc_(const char *func, const char *file, int line, size_t size) {
     errorCULQCD("Aborting");
   }
   track_malloc(HOST_PTR, a, ptr);
-  //#ifdef HOST_DEBUG
+  // #ifdef HOST_DEBUG
   memset(ptr, 0, size);
-  //#endif
+  // #endif
   return ptr;
 }
 
@@ -296,8 +296,8 @@ void *mapped_malloc_(const char *func, const char *file, int line,
 
 #ifdef HOST_ALLOC
   void *ptr;
-  cudaError_t err = cudaHostAlloc(&ptr, size, cudaHostRegisterMapped |
-                                                  cudaHostRegisterPortable);
+  cudaError_t err = cudaHostAlloc(
+      &ptr, size, cudaHostRegisterMapped | cudaHostRegisterPortable);
   if (err != cudaSuccess) {
     printfCULQCD("ERROR: cudaHostAlloc failed of size %zu (%s:%d in %s())\n",
                  size, file, line, func);
@@ -383,7 +383,7 @@ void *managed_malloc_(const char *func, const char *file, int line,
   }
   track_malloc(MANAGED_PTR, a, ptr);
 #ifdef HOST_DEBUG
-  //#ifdef HOST_DEBUG
+  // #ifdef HOST_DEBUG
   cudaError_t err1 = cudaMemset(ptr, 0, size);
   if (err1 != cudaSuccess) {
     printfCULQCD(
@@ -561,9 +561,9 @@ void assertAllMemFree() {
 
 FieldLocation get_pointer_location(const void *ptr) {
 
-  CUpointer_attribute attribute[] = { CU_POINTER_ATTRIBUTE_MEMORY_TYPE };
+  CUpointer_attribute attribute[] = {CU_POINTER_ATTRIBUTE_MEMORY_TYPE};
   CUmemorytype mem_type;
-  void *data[] = { &mem_type };
+  void *data[] = {&mem_type};
   CUresult error = cuPointerGetAttributes(1, attribute, data,
                                           reinterpret_cast<CUdeviceptr>(ptr));
   if (error != CUDA_SUCCESS) {
@@ -589,8 +589,8 @@ FieldLocation get_pointer_location(const void *ptr) {
 }
 
 static void FreeMemoryType(AllocType type) {
-  const char *type_str[] = { "Device", "Device Pinned", "Host",
-                             "Pinned", "Mapped",        "Managed" };
+  const char *type_str[] = {"Device", "Device Pinned", "Host",
+                            "Pinned", "Mapped",        "Managed"};
   std::map<void *, MemAlloc>::iterator entry;
   std::map<void *, MemAlloc>::iterator next_entry;
 
@@ -670,4 +670,4 @@ void FreeAllMemory() {
   }
   assertAllMemFree();
 }
-}
+} // namespace CULQCD

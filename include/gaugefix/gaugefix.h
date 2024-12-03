@@ -2,8 +2,8 @@
 #ifndef GAUGEFIXING_H
 #define GAUGEFIXING_H
 
-#include <typeinfo>
 #include <gaugearray.h>
+#include <typeinfo>
 
 #include <timer.h>
 #include <tune.h>
@@ -211,5 +211,5 @@ public:
   void preTune() {}
   void postTune() {}
 };
-}
+} // namespace CULQCD
 #endif

@@ -3,22 +3,22 @@
 #ifndef _COMM_MPI_H
 #define _COMM_MPI_H
 
+#include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <assert.h>
 #include <time.h>
 #ifdef MULTI_GPU
 #include <mpi.h>
 #endif
 
-#include <string.h>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <string.h>
 
 #include <complex.h>
-#include <matrixsun.h>
 #include <constants.h>
+#include <matrixsun.h>
 #include <modes.h>
 
 namespace CULQCD {
@@ -34,8 +34,9 @@ void initCULQCD(int gpuidin, Verbosity verbosein = SILENT,
 
 void EndCULQCD(int status);
 
-void SetMPIParam_MILC(const int latticedim[4], const int logical_coordinate[4],
-                      const int nodesperdim[4]);
+void SetMPIParam_MILC(const int latticedim[NDIMS],
+                      const int logical_coordinate[NDIMS],
+                      const int nodesperdim[NDIMS]);
 
 #ifdef MULTI_GPU
 void comm_abort(int status);
@@ -59,7 +60,7 @@ bool comm_dim_partitioned(int dim);
 
 void comm_broadcast(void *data, size_t nbytes);
 
-void logical_coordinate(int coords[]);
+void logical_coordinate(int coords[NDIMS]);
 int nodes_per_dim(int dim);
 void setup_hyper_prime(int _nx, int _ny, int _nz, int _nt);
 
@@ -68,7 +69,7 @@ void setup_hyper_prime(int _nx, int _ny, int _nz, int _nt);
   if (mynode() == masternode())                                                \
     printf(abc, ##__VA_ARGS__);                                                \
   else                                                                         \
-  (void)0
+    (void)0
 #define COUT                                                                   \
   if (mynode() == masternode())                                                \
   std::cout
@@ -80,7 +81,7 @@ void setup_hyper_prime(int _nx, int _ny, int _nz, int _nt);
     cerr << "MPI error calling \"" #call "\"\n";                               \
     MPI_Abort(MPI_COMM_WORLD, (-1));                                           \
   } else                                                                       \
-  (void)0
+    (void)0
 #define printfError(abc, ...)                                                  \
   do {                                                                         \
     printf("Error in %d, " __FILE__ ": %d in %s()\n\t", mynode(), __LINE__,    \
@@ -224,6 +225,6 @@ void comm_allreduce_array_min(float *data, size_t size);
 
 void MPI_Create_OP_DATATYPES();
 void MPI_Release_OP_DATATYPES();
-}
+} // namespace CULQCD
 
 #endif //_COMM_MPI_H

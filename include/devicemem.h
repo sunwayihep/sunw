@@ -23,6 +23,6 @@ uint3 GetMemUsage();
 void GPUsInSystem();
 
 void GPUDetails();
-}
+} // namespace CULQCD
 
 #endif // #ifndef DEVICEMEM_H

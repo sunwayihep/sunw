@@ -13,6 +13,6 @@ void PotPL(gauge ploop, complex *pot, int radius, bool ppdagger);
 
 template <class Real>
 void PotPL3D(gauge ploop, complex *pot, int radius, int pts);
-}
+} // namespace CULQCD
 
 #endif

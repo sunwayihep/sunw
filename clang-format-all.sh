@@ -76,7 +76,9 @@ for dir in "$@"; do
          \( -name '*.c' \
          -o -name '*.cc' \
          -o -name '*.cpp' \
+         -o -name '*.cu' \
          -o -name '*.h' \
+         -o -name '*.cuh' \
          -o -name '*.hh' \
          -o -name '*.hpp' \) \
          -exec "${FMT}" -style=${Style} -i '{}' \;

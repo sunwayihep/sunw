@@ -1,37 +1,37 @@
 
 
-//#include <stdio.h>
-//#include <string.h>
-#include <iostream>
-#include <fstream>
-#include <cstring>
-#include <sstream>
+// #include <stdio.h>
+// #include <string.h>
 #include <cstdlib>
-#include <string>
+#include <cstring>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-#include <sys/stat.h> // for stat()
-#include <fcntl.h>
 #include <cfloat> // for FLT_MAX
 #include <ctime>
+#include <fcntl.h>
 #include <fstream>
-#include <typeinfo>
 #include <map>
+#include <sys/stat.h> // for stat()
+#include <typeinfo>
 #include <unistd.h>
 
-#include <cuda_common.h>
-#include <complex.h>
-#include <matrixsun.h>
-#include <reconstruct_12p_8p.h>
-#include <constants.h>
-#include <modes.h>
-#include <index.h>
 #include <comm_mpi.h>
+#include <complex.h>
+#include <constants.h>
+#include <cuda_common.h>
+#include <index.h>
+#include <matrixsun.h>
+#include <modes.h>
 #include <random.h>
+#include <reconstruct_12p_8p.h>
 
 #include <alloc.h>
-#include <tune.h>
 #include <comm_mpi.h>
+#include <tune.h>
 
 #include <culqcd_version.h>
 
@@ -235,9 +235,9 @@ void loadTuneCache(Verbosity verbosity) {
                    "re-tuned (if tuning is enabled).");
     }
 
-    //#ifdef MULTI_GPU
+    // #ifdef MULTI_GPU
   }
-  //#endif
+  // #endif
 
   broadcastTuneCache();
 }
@@ -254,12 +254,14 @@ void saveTuneCache(Verbosity verbosity) {
   if (resource_path.empty())
     return;
 
-// FIXME: We should really check to see if any nodes have tuned a kernel that
-// was not also tuned on node 0, since as things
-//       stand, the corresponding launch parameters would never get cached to
-// disk in this situation.  This will come up if we
-//       ever support different subvolumes per GPU (as might be convenient for
-// lattice volumes that don't divide evenly).
+    // FIXME: We should really check to see if any nodes have tuned a kernel
+    // that was not also tuned on node 0, since as things
+    //       stand, the corresponding launch parameters would never get cached
+    //       to
+    // disk in this situation.  This will come up if we
+    //       ever support different subvolumes per GPU (as might be convenient
+    //       for
+    // lattice volumes that don't divide evenly).
 
 #ifdef MULTI_GPU
   if (mynode() == 0)
@@ -315,9 +317,9 @@ void saveTuneCache(Verbosity verbosity) {
 
     initial_cache_size = tunecache.size();
 
-    //#ifdef MULTI_GPU
+    // #ifdef MULTI_GPU
   }
-  //#endif
+  // #endif
 }
 
 // static TimeProfile launchTimer("tuneLaunch");
@@ -325,9 +327,9 @@ void saveTuneCache(Verbosity verbosity) {
 //  static int tally = 0;
 
 /**
-* Return the optimal launch parameters for a given kernel, either
-* by retrieving them from tunecache or autotuning on the spot.
-*/
+ * Return the optimal launch parameters for a given kernel, either
+ * by retrieving them from tunecache or autotuning on the spot.
+ */
 TuneParam &tuneLaunch(Tunable &tunable, TuneMode enabled, Verbosity verbosity) {
 
   const TuneKey key = tunable.tuneKey();
@@ -448,4 +450,4 @@ TuneParam &tuneLaunch(Tunable &tunable, TuneMode enabled, Verbosity verbosity) {
   // globalReduce = reduceState;
   return param;
 }
-}
+} // namespace CULQCD

@@ -1,16 +1,16 @@
 
+#include <iomanip>
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
-#include <iomanip>
 
-#include <cuda_common.h>
-#include <gaugearray.h>
-#include <complex.h>
-#include <matrixsun.h>
-#include <constants.h>
 #include <comm_mpi.h>
+#include <complex.h>
+#include <constants.h>
+#include <cuda_common.h>
 #include <exchange.h>
+#include <gaugearray.h>
+#include <matrixsun.h>
 
 #include <io_gauge.h>
 
@@ -809,4 +809,4 @@ void ReadBin_Gauge(gauge arrayin, std::string filename, bool withheader) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// /////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-}
+} // namespace CULQCD

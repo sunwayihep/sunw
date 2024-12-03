@@ -3,14 +3,14 @@
 #define CUDA_ERROR_CHECK_H
 
 #include <cstdlib>
-//#include <enum_sbreak.h>
+// #include <enum_sbreak.h>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <curand.h>
 #include <cusolverDn.h>
 #include <cusolverSp.h>
 #include <cusparse.h>
-#include <curand.h>
 
 #include "alloc.h"
 
@@ -29,7 +29,7 @@ void cublasSafeCall_(const char *func, const char *file, int line,
                      cublasStatus_t call);
 void curandSafeCall_(const char *func, const char *file, int line,
                      curandStatus_t call);
-}
+} // namespace CULQCD
 
 #define cudaDeviceSync()                                                       \
   CULQCD::cudaDevSync_(__func__, CULQCD::file_name(__FILE__), __LINE__)

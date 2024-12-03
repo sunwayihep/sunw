@@ -2,26 +2,26 @@
 #ifndef GAUGEARRAY_H
 #define GAUGEARRAY_H
 
-//#include <stdio.h>
-//#include <string.h>
-#include <iostream>
-#include <fstream>
-#include <cstring>
-#include <sstream>
+// #include <stdio.h>
+// #include <string.h>
 #include <cstdlib>
-#include <string>
+#include <cstring>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-#include <cuda_common.h>
-#include <complex.h>
-#include <matrixsun.h>
-#include <reconstruct_12p_8p.h>
-#include <constants.h>
-#include <modes.h>
-#include <index.h>
 #include <comm_mpi.h>
-#include <random.h>
+#include <complex.h>
+#include <constants.h>
+#include <cuda_common.h>
 #include <devicemem.h>
+#include <index.h>
+#include <matrixsun.h>
+#include <modes.h>
+#include <random.h>
+#include <reconstruct_12p_8p.h>
 
 #include <alloc.h>
 #include <cuda_error_check.h>
@@ -35,7 +35,7 @@ namespace CULQCD {
 */
 template <class Real> string ToString(Real number) {
   stringstream ss; // create a stringstream
-  ss << number; // add number to the stream
+  ss << number;    // add number to the stream
   return ss.str(); // return a string with the contents of the stream
 }
 
@@ -248,9 +248,7 @@ public:
   /*! @brief Prints gauge array details*/
   void Details();
   /*! @brief Retrieve/Set array type, SOA/SOA12/SOA8*/
-  M_HOSTDEVICE ArrayType Type() const {
-    return atype;
-  };
+  M_HOSTDEVICE ArrayType Type() const { return atype; };
   /*! @brief Retrieve/Set where array is allocated, Host/Device*/
   M_HOSTDEVICE ReadMode Mode() const { return mode; }
   /*! @brief Retrieve/Set if the array are stored in even/odd way*/
@@ -785,6 +783,6 @@ template <class Real> void _gauge<Real>::Init(RNG randstates) {
     break;
   }
 }
-}
+} // namespace CULQCD
 
 #endif

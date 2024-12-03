@@ -2,9 +2,9 @@
 #ifndef OVR_H
 #define OVR_H
 
-#include <typeinfo>
 #include <gaugearray.h>
 #include <random.h>
+#include <typeinfo>
 
 #include <timer.h>
 #include <tune.h>
@@ -65,6 +65,6 @@ public:
   void preTune() { array.Backup(); }
   void postTune() { array.Restore(); }
 };
-}
+} // namespace CULQCD
 
 #endif

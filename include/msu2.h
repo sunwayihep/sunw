@@ -2,10 +2,10 @@
 #ifndef MATRIXSU2_H
 #define MATRIXSU2_H
 
+#include <iomanip>
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
-#include <iomanip>
 
 #include <cuda_common.h>
 #include <cuda_vector_types.h>
@@ -40,18 +40,10 @@ public:
   };
 
   // return references to the T4 components
-  M_HOSTDEVICE Real &a0() {
-    return val.x;
-  };
-  M_HOSTDEVICE Real &a1() {
-    return val.y;
-  };
-  M_HOSTDEVICE Real &a2() {
-    return val.z;
-  };
-  M_HOSTDEVICE Real &a3() {
-    return val.w;
-  };
+  M_HOSTDEVICE Real &a0() { return val.x; };
+  M_HOSTDEVICE Real &a1() { return val.y; };
+  M_HOSTDEVICE Real &a2() { return val.z; };
+  M_HOSTDEVICE Real &a3() { return val.w; };
 
   M_HOSTDEVICE _msu2<Real> operator=(const _msu2<Real> REF(b)) {
     val.x = b.val.x;
@@ -237,6 +229,6 @@ __host__ __device__ inline msu2 mulsu2UVDagger(msu2 v, msu2 u) {
       v.a3() * u.a0() - v.a0() * u.a3() + v.a1() * u.a2() - v.a2() * u.a1();
   return b;
 }
-}
+} // namespace CULQCD
 
 #endif // #ifndef MATRIXSU2_H

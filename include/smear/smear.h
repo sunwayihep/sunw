@@ -52,6 +52,6 @@ void ApplyMultiHitSpace(gauge array, gauge arrayout, RNG &randstates, int nhit);
 /////////////////////////////////
 template <class Real>
 void ApplyMultiHitExt(gauge array, gauge arrayout, RNG &randstates, int nhit);
-}
+} // namespace CULQCD
 
 #endif

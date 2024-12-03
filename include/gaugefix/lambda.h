@@ -24,6 +24,6 @@ template <class Real> void RandGaugeTransf(gauge &gaugein, RNG &randstates);
 
 template <class Real> void CreateLambdaI(gauge &lambda, Real *lambdab, Real xi);
 template <class Real> void CreateLambda(gauge &lambda, Real *lambdab, Real xi);
-}
+} // namespace CULQCD
 
 #endif

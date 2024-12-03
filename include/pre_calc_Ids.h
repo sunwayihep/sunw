@@ -2,8 +2,8 @@
 #ifndef GAUGEFIXING_EXCHANGE_H
 #define GAUGEFIXING_EXCHANGE_H
 
-#include <gaugearray.h>
 #include <constants.h>
+#include <gaugearray.h>
 
 namespace CULQCD {
 
@@ -180,5 +180,5 @@ template <class Real>
 void Exchange_gauge_bottomborder_links_gx(gauge _pgauge, int oddbit);
 
 #endif
-}
+} // namespace CULQCD
 #endif

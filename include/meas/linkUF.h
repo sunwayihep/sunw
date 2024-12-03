@@ -4,8 +4,8 @@
 
 #include <gaugearray.h>
 
-#include <tune.h>
 #include <timer.h>
+#include <tune.h>
 
 namespace CULQCD {
 
@@ -67,6 +67,6 @@ public:
   void preTune() {}
   void postTune() {}
 };
-}
+} // namespace CULQCD
 
 #endif

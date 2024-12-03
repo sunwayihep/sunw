@@ -1,30 +1,30 @@
 
+#include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <assert.h>
 #include <time.h>
 #ifdef MULTI_GPU
 #include <mpi.h>
 #endif
 
-#include <string.h>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <string.h>
 
+#include <alloc.h>
 #include <comm_mpi.h>
 #include <complex.h>
 #include <constants.h>
-#include <alloc.h>
-#include <cuda_common.h>
 #include <cuda.h>
+#include <cuda_common.h>
 #include <cuda_runtime.h>
 
 #include <exchange.h>
 
-#include <tune.h>
-#include <timer.h>
 #include <texture_host.h>
+#include <timer.h>
+#include <tune.h>
 
 using namespace std;
 
@@ -43,24 +43,22 @@ static int size = -1;
 static int gpuid = -1;
 static int nx, ny, nz, nt;
 
-static int squaresize[4];                /* dimensions of hypercubes */
-static int nsquares[4] = { 1, 1, 1, 1 }; /* number of hypercubes in each
-                                            direction */
-static int machine_coordinates[4] = { 0, 0, 0, 0 }; /* logical machine
-                                                       coordinates */
+static int squaresize[NDIMS]; /* dimensions of hypercubes */
+static int nsquares[NDIMS];   /* number of hypercubes in each direction */
+static int machine_coordinates[NDIMS] = {0}; /* logical machine coordinates */
+static int nodes_per_ionode[NDIMS]; /* dimensions of ionode partition */
+static int *ionodegeomvals = NULL;  /* ionode partitions */
 
-static int nodes_per_ionode[4];    /* dimensions of ionode partition */
-static int *ionodegeomvals = NULL; /* ionode partitions */
-
-int prime[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53 };
+int prime[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53};
 #define MAXPRIMES (sizeof(prime) / sizeof(int))
 
 static cudaDeviceProp deviceProp;
 ;
 
-void SetMPIParam_MILC(const int latticedim[4], const int logical_coordinate[4],
-                      const int nodesperdim[4]) {
-  for (int i = 0; i < 4; i++) {
+void SetMPIParam_MILC(const int latticedim[NDIMS],
+                      const int logical_coordinate[NDIMS],
+                      const int nodesperdim[NDIMS]) {
+  for (int i = 0; i < NDIMS; i++) {
     machine_coordinates[i] = logical_coordinate[i];
     nsquares[i] = nodesperdim[i];
     squaresize[i] = latticedim[i] / nodesperdim[i];
@@ -91,11 +89,14 @@ void setTuning(TuneMode kerneltunein) { kerneltune = kerneltunein; }
 void setVerbosity(Verbosity verbosein) { verbose = verbosein; }
 
 void initCULQCD(int gpuidin, Verbosity verbosein, TuneMode tune) {
+  // initialize the nsquares array
+  for (int i = 0; i < NDIMS; i++)
+    nsquares[i] = 1;
 #ifdef MULTI_GPU
 #ifdef MPI_GPU_DIRECT
   /* set CUDA-aware features environment variables enabled to "1" */
-  setenv("MV2_USE_CUDA", "1", 1); // MVAPICH
-  setenv("PMPI_GPU_AWARE", "1", 1); // IBM Platform MPI
+  setenv("MV2_USE_CUDA", "1", 1);            // MVAPICH
+  setenv("PMPI_GPU_AWARE", "1", 1);          // IBM Platform MPI
   setenv("MPICH_RDMA_ENABLED_CUDA", "1", 1); // Cray
 // Open MPI this feature are enabled per default
 
@@ -151,11 +152,11 @@ if (pPath!=NULL)
 
   cudaGetDeviceProperties(&deviceProp, gpuid);
 
-// IMPORTANT
-// This feature must be disabled if MPICH_RDMA_ENABLED_CUDA is set to one and
-// using GPU comms...
-// Probably a bug in cray compiler...
-// if(deviceProp.canMapHostMemory) cudaSetDeviceFlags(cudaDeviceMapHost);
+  // IMPORTANT
+  // This feature must be disabled if MPICH_RDMA_ENABLED_CUDA is set to one and
+  // using GPU comms...
+  // Probably a bug in cray compiler...
+  // if(deviceProp.canMapHostMemory) cudaSetDeviceFlags(cudaDeviceMapHost);
 
 #ifdef GLOBAL_SET_CACHE_PREFER_L1
   //---------------------------------------------------------------------------------------
@@ -212,8 +213,8 @@ void comm_broadcast(void *data, size_t nbytes) {
 }
 
 int nodes_per_dim(int dim) { return nsquares[dim]; }
-void logical_coordinate(int coords[]) {
-  for (int d = 0; d < 4; d++)
+void logical_coordinate(int coords[NDIMS]) {
+  for (int d = 0; d < NDIMS; d++)
     coords[d] = machine_coordinates[d];
 }
 
@@ -661,4 +662,4 @@ void MPI_Release_OP_DATATYPES() {
 #endif
 #endif
 }
-}
+} // namespace CULQCD

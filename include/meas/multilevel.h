@@ -53,6 +53,6 @@ void CalcChromoField_ML(complex *ploop, complex *plaqfield, Real *field,
 
 template <class Real>
 void PlaquetteField_3D(gauge array, complex *plaq, complex *meanplaq);
-}
+} // namespace CULQCD
 
 #endif

@@ -4,9 +4,9 @@
 #define PROJECTLINK_H
 
 #include "complex.h"
+#include "device_PHB_OVR.h"
 #include "matrixsun.h"
 #include "msu2.h"
-#include "device_PHB_OVR.h"
 
 namespace CULQCD {
 
@@ -142,6 +142,6 @@ __host__ __device__ void SU3project(msun &F, int max_iter) {
   F = U;
 }
 ///////////////////////////////////////////////////////////////
-}
+} // namespace CULQCD
 
 #endif

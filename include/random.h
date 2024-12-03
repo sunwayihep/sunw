@@ -2,10 +2,10 @@
 #ifndef RANDOM_GPU_H
 #define RANDOM_GPU_H
 
+#include <curand_kernel.h>
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
-#include <curand_kernel.h>
 
 #include <alloc.h>
 #include <comm_mpi.h>
@@ -23,8 +23,8 @@ typedef struct curandStateMRG32k3a cuRNGState;
 struct randArg {
 #ifdef MULTI_GPU
   int log_cord[4]; // logical node coordinate
-  int grid[4]; // global lattice dimensions
-  int X[4]; // local lattice dimensions
+  int grid[4];     // global lattice dimensions
+  int X[4];        // local lattice dimensions
 #endif
   /*! @brief number of curand states */
   int size;
@@ -48,17 +48,11 @@ public:
   /*! free array */
   void Release();
   /*! @brief return curand rng array size */
-  int &Size() {
-    return arg.size;
-  };
+  int &Size() { return arg.size; };
   /*! @brief return curand rng array initialseed */
-  unsigned int &Seed() {
-    return arg.seed;
-  };
+  unsigned int &Seed() { return arg.seed; };
   /*! @brief return curand rng array of states */
-  cuRNGState *State() {
-    return state;
-  };
+  cuRNGState *State() { return state; };
 
   size_t Bytes() { return arg.size * sizeof(cuRNGState); }
   void Backup() {
@@ -178,6 +172,6 @@ template <> struct normal<double> {
     return curand_normal_double(&state);
   }
 };
-}
+} // namespace CULQCD
 
 #endif

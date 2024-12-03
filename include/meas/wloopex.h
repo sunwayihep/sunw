@@ -63,6 +63,6 @@ void CalcWilsonLoop_dg(gauge array, gauge fieldOp, Real *wloop, int radius,
 
 template <class Real>
 void CalcWLOPs_dg_33(gauge array, gauge fieldOp, int radius, int mu, int opN);
-}
+} // namespace CULQCD
 
 #endif
