@@ -4,9 +4,9 @@ import os
 import sys
 import socket
 import numpy as np
-import insert_point
+import tool.utils.src.insert_point as insert_point
 from pathlib import Path
-import sunw_name_generator
+import tool.utils.src.sunw_name_generator as sunw_name_generator
 
 
 pattern = 'Plaquette: <'
