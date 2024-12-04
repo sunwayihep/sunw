@@ -507,54 +507,56 @@ void SaveBin_Gauge(gauge arrayin, string filename, bool withheader) {
                    cudaMemcpyDeviceToHost));
     array = A_h;
   }
-  int line = 0;
   ofstream fileout;
   fileout.open(filename.c_str(), ios::binary | ios::out);
-  fileout.precision(14);
-  fileout.setf(ios_base::scientific);
   if (fileout.is_open()) {
     cout << "Saving configuration " << filename << endl;
-    msun *data = (msun *)safe_malloc(sizeof(msun) * 4);
+    msun *data = (msun *)safe_malloc(sizeof(msun) * NDIMS);
     _matrixsun<RealSaveConf, NCOLORS> *tmp;
     if (sizeof(Real) != (sizeof(RealSaveConf)))
       tmp = (_matrixsun<RealSaveConf, NCOLORS> *)safe_malloc(
-          sizeof(_matrixsun<RealSaveConf, NCOLORS>) * 4);
+          sizeof(_matrixsun<RealSaveConf, NCOLORS>) * NDIMS);
 
     if (withheader) {
-      fileout.write((const char *)(&PARAMS::Grid), sizeof(int) * 4);
+      fileout.write((const char *)(&PARAMS::Grid), sizeof(int) * NDIMS);
       fileout.write((const char *)(&PARAMS::Beta), sizeof(Real));
       size_t confprec = sizeof(RealSaveConf);
       fileout.write((const char *)(&confprec), sizeof(size_t));
     }
 
-    for (int t = 0; t < param_Grid(3); t++)
-      for (int k = 0; k < param_Grid(2); k++)
-        for (int j = 0; j < param_Grid(1); j++)
-          for (int i = 0; i < param_Grid(0); i++) {
-            int parity = (i + j + k + t) & 1;
-            int id = i + j * param_Grid(0) + k * param_Grid(0) * param_Grid(1);
-            id += t * param_Grid(0) * param_Grid(1) * param_Grid(2);
-            if (arrayin.EvenOdd()) {
-              id = id >> 1;
-              id += parity * param_HalfVolume();
-            }
-            for (int dir = 0; dir < 4; dir++) {
-              int idx = id + dir * param_Volume();
-              data[dir] = array.Get(idx);
-            }
-            if (sizeof(Real) != (sizeof(RealSaveConf))) {
-              RealSaveConf *p = reinterpret_cast<RealSaveConf *>(tmp);
-              for (int it = 0; it < 8 * NCOLORS * NCOLORS; it++)
-                p[it] = (RealSaveConf)(reinterpret_cast<Real *>(data))[it];
-              fileout.write((const char *)tmp,
-                            sizeof(_matrixsun<RealSaveConf, NCOLORS>) * 4);
-            } else
-              fileout.write((const char *)data,
-                            sizeof(_matrixsun<Real, NCOLORS>) * 4);
-            if (fileout.fail()) {
-              errorCULQCD("ERROR: Unable save to file: %s\n", filename.c_str());
-            }
-          }
+    int x[NDIMS];
+    for (int i = 0; i < param_Volume(); i++) {
+      Index_ND_NM(i, x);
+
+      int x_sum = 0;
+      for (int i = 0; i < NDIMS; i++)
+        x_sum += x[i];
+      int parity = x_sum & 1;
+
+      int id = i;
+      if (arrayin.EvenOdd()) {
+        id = id >> 1;
+        id += parity * param_HalfVolume();
+      }
+
+      for (int dir = 0; dir < NDIMS; dir++) {
+        int idx = id + dir * param_Volume();
+        data[dir] = array.Get(idx);
+      }
+      if (sizeof(Real) != (sizeof(RealSaveConf))) {
+        RealSaveConf *p = reinterpret_cast<RealSaveConf *>(tmp);
+        for (int it = 0; it < 8 * NCOLORS * NCOLORS; it++)
+          p[it] = (RealSaveConf)(reinterpret_cast<Real *>(data))[it];
+        fileout.write((const char *)tmp,
+                      sizeof(_matrixsun<RealSaveConf, NCOLORS>) * NDIMS);
+      } else
+        fileout.write((const char *)data,
+                      sizeof(_matrixsun<Real, NCOLORS>) * NDIMS);
+      if (fileout.fail()) {
+        errorCULQCD("ERROR: Unable save to file: %s\n", filename.c_str());
+      }
+    }
+
     host_free(data);
     if (sizeof(Real) != (sizeof(RealSaveConf)))
       host_free(tmp);
@@ -567,16 +569,13 @@ void SaveBin_Gauge(gauge arrayin, string filename, bool withheader) {
     array.Release();
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// /////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <class Real> bool checkParams(int gridDim[4], Real beta) {
+template <class Real> bool checkParams(int gridDim[NDIMS], Real beta) {
   COUT << "Parameters: " << endl;
-  for (int dim = 0; dim < 4; dim++)
+  for (int dim = 0; dim < NDIMS; dim++)
     COUT << "\tdim " << dim << ": " << gridDim[dim]
          << "\t set: " << PARAMS::Grid[dim] << endl;
   COUT << "\tBeta: " << beta << "\t set: " << (Real)PARAMS::Beta << endl;
-  for (int dim = 0; dim < 4; dim++)
+  for (int dim = 0; dim < NDIMS; dim++)
     if (gridDim[dim] != PARAMS::Grid[dim])
       return true;
   if ((Real)PARAMS::Beta != beta)
@@ -731,18 +730,17 @@ void ReadBin_Gauge(gauge arrayin, std::string filename, bool withheader) {
   ifstream filein;
   filein.open(filename.c_str(), ios::binary | ios::in);
   if (filein.is_open()) {
-    int line = 0;
     cout << "Reading configuration " << filename << endl;
-    msun *data = (msun *)safe_malloc(sizeof(msun) * 4);
+    msun *data = (msun *)safe_malloc(sizeof(msun) * NDIMS);
     _matrixsun<RealSaveConf, NCOLORS> *tmp;
     if (sizeof(Real) != (sizeof(RealSaveConf)))
       tmp = (_matrixsun<RealSaveConf, NCOLORS> *)safe_malloc(
-          sizeof(_matrixsun<RealSaveConf, NCOLORS>) * 4);
+          sizeof(_matrixsun<RealSaveConf, NCOLORS>) * NDIMS);
 
     if (withheader) {
-      int gridDim[4];
-      filein.read((char *)(&gridDim), sizeof(int) * 4);
-      for (int dim = 0; dim < 4; dim++)
+      int gridDim[NDIMS];
+      filein.read((char *)(&gridDim), sizeof(int) * NDIMS);
+      for (int dim = 0; dim < NDIMS; dim++)
         COUT << "dim " << dim << " : " << gridDim[dim] << endl;
       Real beta = 0.0;
       filein.read((char *)(&beta), sizeof(Real));
@@ -761,34 +759,38 @@ void ReadBin_Gauge(gauge arrayin, std::string filename, bool withheader) {
                     "configuration: %s\n",
                     filename.c_str());
     }
-    for (int t = 0; t < param_Grid(3); t++)
-      for (int k = 0; k < param_Grid(2); k++)
-        for (int j = 0; j < param_Grid(1); j++)
-          for (int i = 0; i < param_Grid(0); i++) {
-            int parity = (i + j + k + t) & 1;
-            int id = i + j * param_Grid(0) + k * param_Grid(0) * param_Grid(1);
-            id += t * param_Grid(0) * param_Grid(1) * param_Grid(2);
-            if (arrayin.EvenOdd()) {
-              id = id >> 1;
-              id += parity * param_HalfVolume();
-            }
-            if (sizeof(Real) != sizeof(RealSaveConf)) {
-              filein.read((char *)tmp,
-                          sizeof(_matrixsun<RealSaveConf, NCOLORS>) * 4);
-              for (int it = 0; it < 8 * NCOLORS * NCOLORS; it++)
-                (reinterpret_cast<Real *>(data))[it] =
-                    (Real) reinterpret_cast<RealSaveConf *>(tmp)[it];
+    int x[NDIMS];
+    for (int i = 0; i < param_Volume(); i++) {
+      Index_ND_NM(i, x);
 
-            } else
-              filein.read((char *)data, sizeof(msun) * 4);
-            if (filein.fail()) {
-              errorCULQCD("ERROR: Unable read file: %s\n", filename.c_str());
-            }
-            for (int dir = 0; dir < 4; dir++) {
-              int idx = id + dir * param_Volume();
-              array.Set(data[dir], idx);
-            }
-          }
+      int x_sum = 0;
+      for (int i = 0; i < NDIMS; i++)
+        x_sum += x[i];
+      int parity = x_sum & 1;
+
+      int id = i;
+      if (arrayin.EvenOdd()) {
+        id = id >> 1;
+        id += parity * param_HalfVolume();
+      }
+      if (sizeof(Real) != sizeof(RealSaveConf)) {
+        filein.read((char *)tmp,
+                    sizeof(_matrixsun<RealSaveConf, NCOLORS>) * NDIMS);
+        for (int it = 0; it < 8 * NCOLORS * NCOLORS; it++)
+          (reinterpret_cast<Real *>(data))[it] =
+              (Real) reinterpret_cast<RealSaveConf *>(tmp)[it];
+
+      } else
+        filein.read((char *)data, sizeof(msun) * NDIMS);
+      if (filein.fail()) {
+        errorCULQCD("ERROR: Unable read file: %s\n", filename.c_str());
+      }
+      for (int dir = 0; dir < NDIMS; dir++) {
+        int idx = id + dir * param_Volume();
+        array.Set(data[dir], idx);
+      }
+    }
+
     host_free(data);
     if (sizeof(Real) != (sizeof(RealSaveConf)))
       host_free(tmp);
@@ -806,7 +808,4 @@ void ReadBin_Gauge(gauge arrayin, std::string filename, bool withheader) {
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//// /////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 } // namespace CULQCD

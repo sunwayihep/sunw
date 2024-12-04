@@ -13,7 +13,6 @@
 #include <culqcd.h>
 // #include "gnuplot.h"
 
-#include <iostream>
 #include <stdio.h>  // defines FILENAME_MAX
 #include <unistd.h> // for getcwd()
 #include <vector>
@@ -32,18 +31,15 @@ int main(int argc, char **argv) {
   cout << sizeof(float) << ":::::" << sizeof(double) << endl;
 
   COUT << "####################################################################"
-          "###########"
        << endl;
   COUT << "Start generating SU(" << NCOLORS << ") gauge configurations in "
        << NDIMS << " spacetime dimensions" << endl;
   const ArrayType mygauge = SOA; // SOA/SOA12/SOA8 for SU(3) and SOA for N>3
   runHeatBath<double, mygauge>(argc, argv);
   COUT << "####################################################################"
-          "###########"
        << endl;
   EndCULQCD(0);
   COUT << "####################################################################"
-          "###########"
        << endl;
   exit(0);
 }
@@ -63,6 +59,14 @@ void runHeatBath(int argc, char **argv) {
   PARAMS::UseTex = false;
   int ntraj = atoi(argv[NDIMS + 2]);
 
+  const int num_warmup_updates = 0;
+  const int save_interval = 10;
+  ostringstream save_prefix_stream;
+  save_prefix_stream << "su" << NCOLORS << "_nd" << NDIMS << "_beta" << beta0
+                     << "_L" << lattice_size[0] << "_T"
+                     << lattice_size[NDIMS - 1];
+  string save_prefix = save_prefix_stream.str();
+
   // init the MPI environment, gpuid not used for multi-GPU, while can be set
   // for single-GPU run.
   // if TUNE_YES user must set export CULQCD_RESOURCE_PATH="path to folder where
@@ -79,7 +83,6 @@ void runHeatBath(int argc, char **argv) {
   // also sets some kernel launch parameters
   // true for verbosity
   //---------------------------------------------------------------------------------------
-  // SETPARAMS(PARAMS::UseTex, beta0, ns, ns, ns, nt, true);
   SETPARAMS(PARAMS::UseTex, beta0, lattice_size, true);
   gauge conf(mygaugein, Device, PARAMS::Volume * NDIMS, true);
   conf.Details();
@@ -95,7 +98,7 @@ void runHeatBath(int argc, char **argv) {
   // prepare for heatbath
   HeatBath<Real> heatBath(conf, randstates);
 
-  for (int i = 0; i < ntraj; ++i) {
+  for (int i = 0; i <= ntraj; ++i) {
     COUT << "==========Traj-" << i << "==========" << endl;
     Timer h0;
     h0.start();
@@ -109,12 +112,18 @@ void runHeatBath(int argc, char **argv) {
          << "#" << i << ": " << h0.getElapsedTime() << " s" << endl;
     COUT << endl;
 
-    PlaquetteCUB<Real> plaqCUB(conf);
-    OnePolyakovLoop<Real> poly(conf);
-
     // Reunitarize gauge field
     Reunitarize<Real> reu(conf);
     reu.Run();
+
+    // Save gauge configuration with with some interval
+    if (i > num_warmup_updates && i % save_interval == 0) {
+      string filename = save_prefix + "_cfg_" + to_string(i) + ".bin";
+      SaveBin_Gauge<double, double>(conf, filename, false);
+    }
+
+    PlaquetteCUB<Real> plaqCUB(conf);
+    OnePolyakovLoop<Real> poly(conf);
 
     // Calculate plaquette
     plaqCUB.Run();
@@ -136,11 +145,9 @@ void runHeatBath(int argc, char **argv) {
   conf.Release();
   t0.stop();
   COUT << "####################################################################"
-          "###########"
        << endl;
   COUT << "Total Time: " << t0.getElapsedTime() << " s" << endl;
   COUT << "####################################################################"
-          "###########"
        << endl;
   return;
 }
