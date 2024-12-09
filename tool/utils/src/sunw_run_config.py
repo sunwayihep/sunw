@@ -16,6 +16,12 @@ class LambdaTrajPair:
     def __str__(self):
         return f"lambda_{self.lambda_}_traj_{self.traj_}"
 
+def generate_lambda_traj_pair_prefix(lambda_traj_pair_list: list):
+    prefix = ''
+    for pair in lambda_traj_pair_list:
+        prefix += f"lambda_{pair.lambda_}_traj_{pair.traj_}_"
+    return prefix
+
 '''
     @brief: 
         This function is used to get the process name
