@@ -3,8 +3,8 @@ VERSION  = V1_$(shell date "+%d_%m_%Y_%T")
 VERSION  = V1_$(shell date "+%d_%m_%Y_%H-%M-%S")
 STANDARD = c99
 ############################################################################################################
-USE_NUMBER_OF_COLORS = 4 				#Set N of SU(N), needs make cleanall before recompile
-USE_NUMBER_OF_DIMS = 3					#Set space-time dimension of the lattice
+USE_NUMBER_OF_COLORS = 6 				#Set N of SU(N), needs make cleanall before recompile
+USE_NUMBER_OF_DIMS = 4					#Set space-time dimension of the lattice
 BUILD_MULTI_GPU = $(MGPU) 				#no Multi-GPU: make or make MGPU=no, for Multi-GPU: make MGPU=yes / change "$(MGPU)" to no/yes
 MEASURE_TIMMINGS = yes 					#report timing, gb/s and gflops
 USE_CUDARNG = MRG32k3a 					#XORWOW/MRG32k3a  #CURAND type random generator
@@ -23,8 +23,12 @@ DEBUG = no
 #MPI_HOME ?= /home/nuno/.mpi/
 #MPI_INC ?= $(MPI_INC)/include/
 MPI_HOME ?= /usr/lib64/openmpi/bin
-MPI_INC ?= /usr/include/openmpi-x86_64 
+MPI_INC ?= /usr/lib/x86_64-linux-gnu/openmpi/include
 
+LIBQCU_IO=libqcu_io_static.a
+QCU_PATH=/root/workspace/qcu_io
+QCU_LIB=$(QCU_PATH)/build
+QCU_INCLUDE=$(QCU_PATH)/include
 
 ifeq ($(strip $(BUILD_MULTI_GPU)), yes)	#SET DEFAULT COMPILER
 #GCC ?= $(MPI_HOME)/bin/mpic++
@@ -34,9 +38,9 @@ GCC ?= g++
 endif
 
 #SET CUDA PATH
-CUDA_PATH ?= /usr/local/cuda-11.7
+CUDA_PATH ?= /usr/local/cuda
 #SET DEVICE ARQUITECTURE -> NO SUPPORT for SM 1.X!!!!!
-GPU_ARCH = sm_80
+GPU_ARCH = sm_75
 GENCODE_FLAGS = -arch=$(GPU_ARCH)
 #GENCODE_FLAGS = -arch=$(GPU_ARCH) --ptxas-options=-v
 ############################################################################################################
@@ -63,6 +67,7 @@ DARWIN = $(strip $(findstring DARWIN, $(OSUPPER)))
 #CHANGE TO YOUR CUDA PATH
 CUDA_INC_PATH   ?= $(CUDA_PATH)/include
 CUDA_BIN_PATH   ?= $(CUDA_PATH)/bin
+CUDA_LIB_PATH   ?= $(CUDA_PATH)/lib64
 ifneq ($(DARWIN),)
   CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib
 else
@@ -256,13 +261,13 @@ $(MAINOBJ): test.cpp
 	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP  -c $< -o $@  
 
 $(HEATBATH_OBJ): heatbath.cpp
-	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP  -c $< -o $@  
+	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP  -c $< -o $@  -I ${QCU_INCLUDE}
  
 $(PROJECTNAME):  $(MAINOBJ) $(LIBDIR)/$(LIBNAME)
 	$(VERBOSE)$(GCC) $(CCFLAGS) -I. -L. -o $@ $+ $(SUNPROPERTIES)  $(EXTRA_LDFLAGS) -L$(LIBDIR)/ -lSUN  $(LDFLAGS)  -lcudadevrt
 
 $(HEATBATH_EXE):  $(HEATBATH_OBJ) $(LIBDIR)/$(LIBNAME)
-	$(VERBOSE)$(GCC) $(CCFLAGS) -I. -L. -o $@ $+ $(SUNPROPERTIES)  $(EXTRA_LDFLAGS) -L$(LIBDIR)/ -lSUN  $(LDFLAGS)  -lcudadevrt
+	$(VERBOSE)$(GCC) $(CCFLAGS) -I. -L. -o $@ $+ $(SUNPROPERTIES)  $(EXTRA_LDFLAGS) -L$(LIBDIR)/ -lSUN  $(LDFLAGS)  -lcudadevrt  -L${QCU_LIB}/ -l qcu_io_static
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
