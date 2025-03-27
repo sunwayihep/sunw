@@ -185,7 +185,7 @@ __host__ __device__ inline void Index_ND_EO(int x[NDIMS], const int id,
 __host__ __device__ inline void
 Index_ND_EO(int x[NDIMS], const int id, const int oddbit, const int X[NDIMS]) {
   int factor = id / (X[0] / 2);
-  for (int i = 0; i < NDIMS; i++) {
+  for (int i = 1; i < NDIMS; i++) {
     int factor1 = factor / X[i];
     x[i] = factor - factor1 * X[i];
     factor = factor1;
