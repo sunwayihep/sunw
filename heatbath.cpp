@@ -94,11 +94,12 @@ void runHeatBath(int argc, char **argv) {
 
   // Init() for Cold start and Init(randstates) for Hot start
   conf.Init();
+  //conf.Init(randstates);
 
   // prepare for heatbath
   HeatBath<Real> heatBath(conf, randstates);
 
-  for (int i = 0; i <= ntraj; ++i) {
+  for (int i = 1; i <= ntraj; ++i) {
     COUT << "==========Traj-" << i << "==========" << endl;
     Timer h0;
     h0.start();

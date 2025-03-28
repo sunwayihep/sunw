@@ -34,7 +34,7 @@ GCC ?= g++
 endif
 
 #SET CUDA PATH
-CUDA_PATH ?= /usr/local/cuda-11.7
+CUDA_PATH ?= /usr/local/cuda-11.8
 #SET DEVICE ARQUITECTURE -> NO SUPPORT for SM 1.X!!!!!
 GPU_ARCH = sm_80
 GENCODE_FLAGS = -arch=$(GPU_ARCH)
