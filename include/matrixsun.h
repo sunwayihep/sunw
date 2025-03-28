@@ -122,7 +122,8 @@ public:
       res.e[1][0] = e[1][0] + A;
       res.e[1][1] = e[1][1] + A;
       res.e[1][2] = e[1][2] + A;
-      res.e[2][0] = e[2][0] + A, res.e[2][1] = e[2][1] + A;
+      res.e[2][0] = e[2][0] + A;
+      res.e[2][1] = e[2][1] + A;
       res.e[2][2] = e[2][2] + A;
     } else {
 #pragma unroll
@@ -141,7 +142,8 @@ public:
       e[1][0] += A;
       e[1][1] += A;
       e[1][2] += A;
-      e[2][0] += A, e[2][1] += A;
+      e[2][0] += A; 
+      e[2][1] += A;
       e[2][2] += A;
     } else {
 #pragma unroll
@@ -161,7 +163,8 @@ public:
       res.e[1][0] = e[1][0] + A;
       res.e[1][1] = e[1][1] + A;
       res.e[1][2] = e[1][2] + A;
-      res.e[2][0] = e[2][0] + A, res.e[2][1] = e[2][1] + A;
+      res.e[2][0] = e[2][0] + A;
+      res.e[2][1] = e[2][1] + A;
       res.e[2][2] = e[2][2] + A;
     } else {
 #pragma unroll
@@ -180,7 +183,8 @@ public:
       e[1][0] += A;
       e[1][1] += A;
       e[1][2] += A;
-      e[2][0] += A, e[2][1] += A;
+      e[2][0] += A;
+      e[2][1] += A;
       e[2][2] += A;
     } else {
 #pragma unroll
@@ -245,7 +249,8 @@ public:
       res.e[1][0] = e[1][0] - A;
       res.e[1][1] = e[1][1] - A;
       res.e[1][2] = e[1][2] - A;
-      res.e[2][0] = e[2][0] - A, res.e[2][1] = e[2][1] - A;
+      res.e[2][0] = e[2][0] - A;
+      res.e[2][1] = e[2][1] - A;
       res.e[2][2] = e[2][2] - A;
     } else {
 #pragma unroll
@@ -264,7 +269,8 @@ public:
       e[1][0] -= A;
       e[1][1] -= A;
       e[1][2] -= A;
-      e[2][0] -= A, e[2][1] -= A;
+      e[2][0] -= A;
+      e[2][1] -= A;
       e[2][2] -= A;
     } else {
 #pragma unroll
@@ -284,7 +290,8 @@ public:
       res.e[1][0] = e[1][0] - A;
       res.e[1][1] = e[1][1] - A;
       res.e[1][2] = e[1][2] - A;
-      res.e[2][0] = e[2][0] - A, res.e[2][1] = e[2][1] - A;
+      res.e[2][0] = e[2][0] - A;
+      res.e[2][1] = e[2][1] - A;
       res.e[2][2] = e[2][2] - A;
     } else {
 #pragma unroll
@@ -303,7 +310,8 @@ public:
       e[1][0] -= A;
       e[1][1] -= A;
       e[1][2] -= A;
-      e[2][0] -= A, e[2][1] -= A;
+      e[2][0] -= A;
+      e[2][1] -= A;
       e[2][2] -= A;
     } else {
 #pragma unroll
@@ -418,7 +426,8 @@ public:
       res.e[1][0] = e[1][0] * A;
       res.e[1][1] = e[1][1] * A;
       res.e[1][2] = e[1][2] * A;
-      res.e[2][0] = e[2][0] * A, res.e[2][1] = e[2][1] * A;
+      res.e[2][0] = e[2][0] * A;
+      res.e[2][1] = e[2][1] * A;
       res.e[2][2] = e[2][2] * A;
     } else {
 #pragma unroll
@@ -437,7 +446,8 @@ public:
       e[1][0] *= A;
       e[1][1] *= A;
       e[1][2] *= A;
-      e[2][0] *= A, e[2][1] *= A;
+      e[2][0] *= A;
+      e[2][1] *= A;
       e[2][2] *= A;
     } else {
 #pragma unroll
@@ -457,7 +467,8 @@ public:
       res.e[1][0] = e[1][0] * A;
       res.e[1][1] = e[1][1] * A;
       res.e[1][2] = e[1][2] * A;
-      res.e[2][0] = e[2][0] * A, res.e[2][1] = e[2][1] * A;
+      res.e[2][0] = e[2][0] * A;
+      res.e[2][1] = e[2][1] * A;
       res.e[2][2] = e[2][2] * A;
     } else {
 #pragma unroll
@@ -476,7 +487,8 @@ public:
       e[1][0] *= A;
       e[1][1] *= A;
       e[1][2] *= A;
-      e[2][0] *= A, e[2][1] *= A;
+      e[2][0] *= A;
+      e[2][1] *= A;
       e[2][2] *= A;
     } else {
 #pragma unroll
@@ -501,7 +513,8 @@ public:
       res.e[1][0] = e[1][0] / A;
       res.e[1][1] = e[1][1] / A;
       res.e[1][2] = e[1][2] / A;
-      res.e[2][0] = e[2][0] / A, res.e[2][1] = e[2][1] / A;
+      res.e[2][0] = e[2][0] / A;
+      res.e[2][1] = e[2][1] / A;
       res.e[2][2] = e[2][2] / A;
     } else {
 #pragma unroll
@@ -520,7 +533,8 @@ public:
       e[1][0] /= A;
       e[1][1] /= A;
       e[1][2] /= A;
-      e[2][0] /= A, e[2][1] /= A;
+      e[2][0] /= A;
+      e[2][1] /= A;
       e[2][2] /= A;
     } else {
 #pragma unroll
@@ -540,7 +554,8 @@ public:
       res.e[1][0] = e[1][0] / A;
       res.e[1][1] = e[1][1] / A;
       res.e[1][2] = e[1][2] / A;
-      res.e[2][0] = e[2][0] / A, res.e[2][1] = e[2][1] / A;
+      res.e[2][0] = e[2][0] / A;
+      res.e[2][1] = e[2][1] / A;
       res.e[2][2] = e[2][2] / A;
     } else {
 #pragma unroll
@@ -559,7 +574,8 @@ public:
       e[1][0] /= A;
       e[1][1] /= A;
       e[1][2] /= A;
-      e[2][0] /= A, e[2][1] /= A;
+      e[2][0] /= A;
+      e[2][1] /= A;
       e[2][2] /= A;
     } else {
 #pragma unroll
@@ -1037,8 +1053,8 @@ template <class Real> M_HOSTDEVICE complex traceUV(msun a, msun b) {
   return sum;
 #else
   complex sum = complex::zero();
-  for (int i = 0; i < 3; i++)
-    for (int j = 0; j < 3; j++) {
+  for (int i = 0; i < NCOLORS; i++)
+    for (int j = 0; j < NCOLORS; j++) {
       sum += a.e[i][j] * b.e[j][i];
     }
   return sum;
@@ -1090,8 +1106,8 @@ template <class Real> M_HOSTDEVICE Real realtraceUV(msun a, msun b) {
   return sum;
 #else
   Real sum = 0.0;
-  for (int i = 0; i < 3; i++)
-    for (int j = 0; j < 3; j++) {
+  for (int i = 0; i < NCOLORS; i++)
+    for (int j = 0; j < NCOLORS; j++) {
       sum += a.e[i][j].real() * b.e[j][i].real() -
              a.e[i][j].imag() * b.e[j][i].imag();
     }
