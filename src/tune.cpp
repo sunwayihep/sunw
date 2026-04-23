@@ -40,8 +40,11 @@ using namespace std;
 namespace CULQCD {
 
 std::string GetCurrentWorkingDir() {
-  std::string cwd("\0", FILENAME_MAX + 1);
-  return getcwd(&cwd[0], cwd.capacity());
+  std::string cwd(FILENAME_MAX + 1, '\0');
+  if (!getcwd(&cwd[0], cwd.size()))
+    return std::string();
+  cwd.resize(std::strlen(cwd.c_str()));
+  return cwd;
 }
 
 // CODE FROM QUDA LIBRARY WITH A FEW MODIFICATIONS
