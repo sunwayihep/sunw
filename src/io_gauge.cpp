@@ -636,7 +636,7 @@ void ReadBin_Gauge(gauge arrayin, std::string filename, bool withheader) {
       COUT << "prec: " << confprec << endl;
       if (confprec != sizeof(RealSaveConf))
         errorCULQCD("Error: Input lattice precision does not match: %s with "
-                    "precision %d\n",
+                    "precision %zu\n",
                     filename.c_str(), confprec);
 
       bool val = checkParams<Real>(gridDim, (Real)beta);
@@ -750,7 +750,7 @@ void ReadBin_Gauge(gauge arrayin, std::string filename, bool withheader) {
       COUT << "prec: " << confprec << endl;
       if (confprec != sizeof(RealSaveConf))
         errorCULQCD("Error: Input lattice precision does not match: %s with "
-                    "precision %d\n",
+                    "precision %zu\n",
                     filename.c_str(), confprec);
 
       bool val = checkParams<Real>(gridDim, (Real)beta);

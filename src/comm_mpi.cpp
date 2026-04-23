@@ -250,7 +250,7 @@ int comm_size(void) { return size; }
 int comm_gpuid(void) { return gpuid; }
 
 int node_number(int x, int y, int z, int t) {
-  register int i;
+  int i;
   x /= squaresize[XUP];
   y /= squaresize[YUP];
   z /= squaresize[ZUP];
