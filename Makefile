@@ -1,358 +1,230 @@
-############################################################################################################
-VERSION  = V1_$(shell date "+%d_%m_%Y_%T")
-VERSION  = V1_$(shell date "+%d_%m_%Y_%H-%M-%S")
-STANDARD = c99
-############################################################################################################
-USE_NUMBER_OF_COLORS = 3 				#Set N of SU(N), needs make cleanall before recompile
-USE_NUMBER_OF_DIMS = 4					#Set space-time dimension of the lattice
-BUILD_MULTI_GPU = $(MGPU) 				#no Multi-GPU: make or make MGPU=no, for Multi-GPU: make MGPU=yes / change "$(MGPU)" to no/yes
-MEASURE_TIMMINGS = yes 					#report timing, gb/s and gflops
-USE_CUDARNG = MRG32k3a 					#XORWOW/MRG32k3a  #CURAND type random generator
-START_LATTICE_PARTITION_BY_X = no  		#MULTI_GPU lattice partition priority, no to start by T dimension
-GPU_GLOBAL_SET_CACHE_PREFER_L1 = yes
-USE_MPI_GPU_DIRECT = no 				#with MVAPICH2 run example with MPI GPU DIRECT -> mpirun -n 4 env MV2_USE_CUDA=1 ./program args 
-GAUGEFIX_AUTO_TUNE_FFT_ALPHA = yes 		#yes for auto tune gauge fixing with FFTs
-USE_THETA_STOP_GAUGEFIX = yes			#use theta as stop criterium else otherwise uses MILC criterium
-USE_GPU_FAST_MATH = no 
-USE_CUDA_CUB = yes 
-USE_GAUGE_FIX = no
-USE_GAUGE_FIX_COV = no
+VERSION := V1_$(shell date "+%d_%m_%Y_%H-%M-%S")
 
-DEBUG = no
-#MPI home folder
-#MPI_HOME ?= /home/nuno/.mpi/
-#MPI_INC ?= $(MPI_INC)/include/
-MPI_HOME ?= /usr/lib64/openmpi/bin
-MPI_INC ?= /usr/include/openmpi-x86_64 
+# ------------------------------ Build configuration ------------------------------
+USE_NUMBER_OF_COLORS ?= 3
+USE_NUMBER_OF_DIMS ?= 4
+BUILD_MULTI_GPU ?= $(MGPU)
+MEASURE_TIMMINGS ?= yes
+USE_CUDARNG ?= MRG32k3a           # XORWOW / MRG32k3a
+START_LATTICE_PARTITION_BY_X ?= no
+GPU_GLOBAL_SET_CACHE_PREFER_L1 ?= yes
+USE_MPI_GPU_DIRECT ?= no
+GAUGEFIX_AUTO_TUNE_FFT_ALPHA ?= yes
+USE_THETA_STOP_GAUGEFIX ?= yes
+USE_GPU_FAST_MATH ?= no
+USE_CUDA_CUB ?= yes
+USE_GAUGE_FIX ?= no
+USE_GAUGE_FIX_COV ?= no
+DEBUG ?= no
 
-
-ifeq ($(strip $(BUILD_MULTI_GPU)), yes)	#SET DEFAULT COMPILER
-#GCC ?= $(MPI_HOME)/bin/mpic++
-GCC ?= mpic++
-else
-GCC ?= g++
-endif
-
-#SET CUDA PATH
+MPI_INC ?= /usr/include/openmpi-x86_64
 CUDA_PATH ?= /usr/local/cuda
-#SET DEVICE ARQUITECTURE -> NO SUPPORT for SM 1.X!!!!!
-GPU_ARCH = sm_120
-GENCODE_FLAGS = -arch=$(GPU_ARCH)
-#GENCODE_FLAGS = -arch=$(GPU_ARCH) --ptxas-options=-v
-############################################################################################################
-############################################################################################################
-############################################################################################################
-# OS Name (Linux or Darwin)
-OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
-OSLOWER = $(shell uname -s 2>/dev/null | tr [:upper:] [:lower:])
-# Flags to detect 32-bit or 64-bit OS platform
-OS_SIZE = $(shell uname -m | sed -e "s/i.86/32/" -e "s/x86_64/64/")
-OS_ARCH = $(shell uname -m | sed -e "s/i386/i686/")
-# These flags will override any settings
-ifeq ($(i386),1)
-	OS_SIZE = 32
-	OS_ARCH = i686
-endif
-ifeq ($(x86_64),1)
-	OS_SIZE = 64
-	OS_ARCH = x86_64
-endif
-# Flags to detect either a Linux system (linux) or Mac OSX (darwin)
-DARWIN = $(strip $(findstring DARWIN, $(OSUPPER)))
-# Location of the CUDA Toolkit binaries and libraries
-#CHANGE TO YOUR CUDA PATH
-CUDA_INC_PATH   ?= $(CUDA_PATH)/include
-CUDA_BIN_PATH   ?= $(CUDA_PATH)/bin
-ifneq ($(DARWIN),)
-  CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib64
+# Auto-detect GPU arch from nvidia-smi (first GPU). Override with:
+#   make GPU_ARCH=sm_90
+GPU_CC := $(strip $(shell nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | awk 'NR==1{gsub(/\./,""); if ($$1 ~ /^[0-9]+$$/) print $$1}'))
+GPU_ARCH ?= $(if $(GPU_CC),sm_$(GPU_CC),sm_120)
+
+# ------------------------------ Toolchain ------------------------------
+ifeq ($(strip $(BUILD_MULTI_GPU)),yes)
+  CXX ?= mpic++
 else
-  ifeq ($(OS_SIZE),32)
-    CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib64
-  else
-    CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib64
-  endif
+  CXX ?= g++
 endif
-# WSL typically exposes the NVIDIA driver library in /usr/lib/wsl/lib.
+
+NVCC ?= $(CUDA_PATH)/bin/nvcc
+CUDA_INC_PATH := $(CUDA_PATH)/include
+CUDA_LIB_PATH := $(CUDA_PATH)/lib64
 CUDA_DRIVER_LIB_PATH ?= $(if $(wildcard /usr/lib/wsl/lib/libcuda.so),/usr/lib/wsl/lib,$(CUDA_LIB_PATH))
-# Common binaries
-NVCC            ?= $(CUDA_BIN_PATH)/nvcc
-# Extra user flags
-EXTRA_NVCCFLAGS ?=
-EXTRA_LDFLAGS   ?=
-# CUDA code generation flags
-#NO SUPPORT for SM1.X
-#GENCODE_SM20    := -gencode arch=compute_20,code=sm_20
-#GENCODE_SM30    := -gencode arch=compute_30,code=sm_30
-#GENCODE_SM35    := -gencode arch=compute_35,code=sm_35
-#GENCODE_FLAGS   :=  $(GENCODE_SM20) --ptxas-options=-v
-#  -Xptxas -dlcm=cg
-# --maxrregcount=63
-# -use_fast_math -Xptxas -dlcm=cg  
-# OS-specific build flags
-ifneq ($(DARWIN),) 
-      LDFLAGS   := -Xlinker -rpath $(CUDA_LIB_PATH) -L$(CUDA_LIB_PATH) -L$(CUDA_DRIVER_LIB_PATH) -lcudart -lcuda  -lcufft -lcurand -lcublas
-      CCFLAGS   := -arch $(OS_ARCH) 
+OS_ARCH := $(shell uname -m)
+
+# ------------------------------ CUDA version / hash ------------------------------
+CUDA_VERSION := $(shell awk '/^#define CUDA_VERSION/{print $$3}' $(CUDA_PATH)/include/cuda.h)
+CUDA_VERSION_MAJOR := $(shell expr $(CUDA_VERSION) / 1000)
+CUDA_VERSION_MINOR := $(shell expr \( $(CUDA_VERSION) % 1000 \) / 10)
+CUDA_VERSION_PATCH := $(shell expr $(CUDA_VERSION) % 10)
+HASH := \"cpu_arch=$(OS_ARCH),gpu_arch=$(GPU_ARCH),cuda_version=$(CUDA_VERSION)\"
+
+# ------------------------------ Flags ------------------------------
+COMP_CAP := $(GPU_ARCH:sm_%=%0)
+is_yes = $(filter yes,$(strip $(1)))
+
+CPPFLAGS := -I$(CUDA_INC_PATH) -I. -I./include
+COMMON_DEFS := -DNCOLORS=$(USE_NUMBER_OF_COLORS) -DNDIMS=$(USE_NUMBER_OF_DIMS) -D__COMPUTE_CAPABILITY__=$(COMP_CAP)
+
+COMMON_DEFS += $(if $(call is_yes,$(MEASURE_TIMMINGS)),-DTIMMINGS)
+COMMON_DEFS += $(if $(call is_yes,$(USE_THETA_STOP_GAUGEFIX)),-DUSE_THETA_STOP_GAUGEFIX)
+COMMON_DEFS += $(if $(call is_yes,$(GPU_GLOBAL_SET_CACHE_PREFER_L1)),-DGLOBAL_SET_CACHE_PREFER_L1)
+COMMON_DEFS += $(if $(call is_yes,$(GAUGEFIX_AUTO_TUNE_FFT_ALPHA)),-DGAUGEFIX_AUTOTUNEFFT_ALPHA)
+COMMON_DEFS += $(if $(call is_yes,$(USE_CUDA_CUB)),-DUSE_CUDA_CUB)
+COMMON_DEFS += $(if $(call is_yes,$(USE_GAUGE_FIX)),-DUSE_GAUGE_FIX)
+COMMON_DEFS += $(if $(call is_yes,$(USE_GAUGE_FIX_COV)),-DUSE_GAUGE_FIX_COV)
+
+ifeq ($(strip $(USE_CUDARNG)),XORWOW)
+  COMMON_DEFS += -DXORWOW
 else
-  ifeq ($(OS_SIZE),32)
-      LDFLAGS   := -L$(CUDA_LIB_PATH) -L$(CUDA_DRIVER_LIB_PATH) -lcudart -lcuda  -lcufft -lcurand -lcublas 
- #     CCFLAGS   := -m32 -O3
-      CCFLAGS   := -O3
-  else
-      LDFLAGS   := -L$(CUDA_LIB_PATH) -L$(CUDA_DRIVER_LIB_PATH) -lcudart  -lcuda  -lcufft -lcurand -lcublas 
-#      CCFLAGS   := -m64 -O3
-      CCFLAGS   :=  -O3
+  COMMON_DEFS += -DMRG32k3a
+endif
+
+ifeq ($(call is_yes,$(BUILD_MULTI_GPU)),yes)
+  COMMON_DEFS += -DMULTI_GPU
+  CPPFLAGS += -I$(MPI_INC)
+  ifeq ($(call is_yes,$(USE_MPI_MVAPICH)),yes)
+    COMMON_DEFS += -DMPI_MVAPICH
+  endif
+  ifeq ($(call is_yes,$(USE_MPI_OPENMPI)),yes)
+    COMMON_DEFS += -DMPI_OPENMPI
+  endif
+  ifeq ($(call is_yes,$(START_LATTICE_PARTITION_BY_X)),yes)
+    COMMON_DEFS += -DSTART_LATTICE_PARTITION_BY_X
+  endif
+  ifeq ($(call is_yes,$(USE_MPI_GPU_DIRECT)),yes)
+    COMMON_DEFS += -DGAUGEFIX_MPI_GPU_DIRECT -DMPI_GPU_DIRECT
   endif
 endif
-# OS-architecture specific flags
-ifeq ($(OS_SIZE),32)
-      NVCCFLAGS := -m32 -O3
-else
-      NVCCFLAGS := -m64 -O3 
-endif
-# Debug build flags
-ifeq ($(strip $(DEBUG)), yes)
-      CCFLAGS   += -g
-      NVCCFLAGS += -g -G
-      TARGET := debug
-else
-      TARGET := release
-endif
 
+CPPFLAGS += $(COMMON_DEFS)
+CXXFLAGS := -O3
+NVCCFLAGS := -m64 -O3 -arch=$(GPU_ARCH)
 
-#
-COMP_CAP = $(GPU_ARCH:sm_%=%0)
-NVCCFLAGS += -D__COMPUTE_CAPABILITY__=$(COMP_CAP)
-CCFLAGS += -D__COMPUTE_CAPABILITY__=$(COMP_CAP) 
-
-INCLUDES := -I$(CUDA_INC_PATH)/ -I.  -I./include/  $(GENERICFLAG) -lcuda -lcudart  -lcufft -lcurand -lcublas 
-
-LIBNAME=libSUN.a
-OBJLIB=libSUNobj.a
-
-ifeq ($(strip $(USE_NUMBER_OF_COLORS)),)
-#$(error USE_NUMBER_OF_COLORS is not set)
-$(warning USE_NUMBER_OF_COLORS is not set. Setting default value: 3)
-USE_NUMBER_OF_COLORS = 3
-SUNPROPERTIES= -DNCOLORS=$(strip $(USE_NUMBER_OF_COLORS))
-$(warning USE_NUMBER_OF_COLORS: $(USE_NUMBER_OF_COLORS))
-else
-SUNPROPERTIES= -DNCOLORS=$(strip $(USE_NUMBER_OF_COLORS))
-$(warning USE_NUMBER_OF_COLORS: $(USE_NUMBER_OF_COLORS))
-endif
-
-ifeq ($(strip $(USE_NUMBER_OF_DIMS)),)
-$(warning USE_NUMBER_OF_DIMS is not set. Setting default value: 4)
-USE_NUMBER_OF_DIMS = 4
-SUNPROPERTIES += -DNDIMS=$(strip $(USE_NUMBER_OF_DIMS))
-$(warning USE_NUMBER_OF_DIMS: $(USE_NUMBER_OF_DIMS))
-else
-SUNPROPERTIES += -DNDIMS=$(strip $(USE_NUMBER_OF_DIMS))
-$(warning USE_NUMBER_OF_DIMS: $(USE_NUMBER_OF_DIMS))
-endif
-
-ifeq ($(strip $(USE_GPU_FAST_MATH)), yes)
+ifeq ($(call is_yes,$(USE_GPU_FAST_MATH)),yes)
   NVCCFLAGS += -use_fast_math
-$(warning Using -use_fast_math)
 endif
-ifeq ($(strip $(BUILD_MULTI_GPU)), yes)
-  INCLUDES += -DMULTI_GPU 
-  INCLUDES += -I$(MPI_INC)
-  $(warning Compiling to multi-GPU)
-ifeq ($(strip $(USE_MPI_MVAPICH)), yes)
-	INCLUDES += -DMPI_MVAPICH
-endif
-ifeq ($(strip $(USE_MPI_OPENMPI)), yes)
-	INCLUDES += -DMPI_OPENMPI
-endif
-ifeq ($(strip $(START_LATTICE_PARTITION_BY_X)), yes)
-  INCLUDES += -DSTART_LATTICE_PARTITION_BY_X
-$(warning Lattice partition priority starting by X)
-else
-$(warning Lattice partition priority starting by T)
-endif
-OBJDIR=obj_mgpu
-LIBDIR=lib_mgpu
-PROJECTNAME=test_mgpu
-MAINOBJ:=test_mgpu.o
-else
-$(warning Compililing to single-GPU)
-OBJDIR=obj_sgpu
-LIBDIR=lib_sgpu
-PROJECTNAME=test_sgpu
-MAINOBJ:=test_sgpu.o
-endif
-$(warning GLOBAL_SET_CACHE_PREFER_L1: $(GPU_GLOBAL_SET_CACHE_PREFER_L1))
-$(warning MEASURE_TIMMINGS: $(MEASURE_TIMMINGS))
-$(warning USE_THETA_STOP_GAUGEFIX: $(USE_THETA_STOP_GAUGEFIX))
-$(warning GAUGEFIX_AUTOTUNEFFT_ALPHA: $(GAUGEFIX_AUTO_TUNE_FFT_ALPHA))
-ifeq ($(strip $(MEASURE_TIMMINGS)), yes)
-  INCLUDES += -DTIMMINGS
+ifeq ($(call is_yes,$(DEBUG)),yes)
+  CXXFLAGS += -g
+  NVCCFLAGS += -g -G
 endif
 
-ifeq ($(strip $(USE_THETA_STOP_GAUGEFIX)), yes)
-  INCLUDES += -DUSE_THETA_STOP_GAUGEFIX
-endif
-ifeq ($(strip $(GPU_GLOBAL_SET_CACHE_PREFER_L1)), yes)
-  INCLUDES += -DGLOBAL_SET_CACHE_PREFER_L1
-endif
+LDFLAGS := -L$(CUDA_LIB_PATH) -L$(CUDA_DRIVER_LIB_PATH)
+LDLIBS := -lcudart -lcuda -lcufft -lcurand -lcublas
+EXTRA_NVCCFLAGS ?=
+EXTRA_LDFLAGS ?=
+EXTRA_CCFLAGS ?=
 
-ifeq ($(strip $(GAUGEFIX_AUTO_TUNE_FFT_ALPHA)), yes)
-  INCLUDES += -DGAUGEFIX_AUTOTUNEFFT_ALPHA
-endif
-
-
-ifeq ($(strip $(USE_MPI_GPU_DIRECT)), yes)
-	ifeq ($(strip $(BUILD_MULTI_GPU)), yes)
- 	 INCLUDES += -DGAUGEFIX_MPI_GPU_DIRECT -DMPI_GPU_DIRECT
- 	 $(warning USE_MPI_GPU_DIRECT: $(USE_MPI_GPU_DIRECT))
- 	 endif
- else
-	 ifeq ($(strip $(BUILD_MULTI_GPU)), yes)
- 	 $(warning USE_MPI_GPU_DIRECT: no)
- 	 endif
-endif
-
-
-ifeq ($(strip $(USE_CUDARNG)), XORWOW)
-  INCLUDES += -DXORWOW
-$(warning USE_CUDARNG: XORWOW)
-else
-  INCLUDES += -DMRG32k3a
-$(warning USE_CUDARNG: MRG32k3a)
-endif
-
-ifeq ($(strip $(USE_CUDA_CUB)), yes)
-  INCLUDES += -DUSE_CUDA_CUB
-endif
-
-
-
-
-ifeq ($(strip $(USE_GAUGE_FIX)), yes)
-  INCLUDES += -DUSE_GAUGE_FIX
-endif
-ifeq ($(strip $(USE_GAUGE_FIX_COV)), yes)
-  INCLUDES += -DUSE_GAUGE_FIX_COV
-endif
-
-
-
-
-
-############################################################################################################
-#For tune file
-CUDA_VERSION = $(shell awk '/\#define CUDA_VERSION/{print $$3}' $(CUDA_PATH)/include/cuda.h)
-HASH = \"cpu_arch=$(strip $(OS_ARCH)),gpu_arch=$(strip $(GPU_ARCH)),cuda_version=$(strip $(CUDA_VERSION))\"
-############################################################################################################
-############################################################################################################
-
-HEATBATH_OBJ=heatbath_su$(strip $(USE_NUMBER_OF_COLORS))_nd$(strip $(USE_NUMBER_OF_DIMS)).o
-HEATBATH_EXE=heatbath_su$(strip $(USE_NUMBER_OF_COLORS))_nd$(strip $(USE_NUMBER_OF_DIMS))
-# Target rules
-all: lib  $(PROJECTNAME) $(HEATBATH_EXE)
-############################################################################################################
-############################################################################################################
-deps = $(MAINOBJ:.o=.d)
-test: $(PROJECTNAME)
-$(MAINOBJ): test.cpp
-	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP  -c $< -o $@  
-
-$(HEATBATH_OBJ): heatbath.cpp
-	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP  -c $< -o $@  
- 
-$(PROJECTNAME):  $(MAINOBJ) $(LIBDIR)/$(LIBNAME)
-	$(VERBOSE)$(GCC) $(CCFLAGS) -I. -L. -o $@ $+ $(SUNPROPERTIES)  $(EXTRA_LDFLAGS) -L$(LIBDIR)/ -lSUN  $(LDFLAGS)  -lcudadevrt
-
-$(HEATBATH_EXE):  $(HEATBATH_OBJ) $(LIBDIR)/$(LIBNAME)
-	$(VERBOSE)$(GCC) $(CCFLAGS) -I. -L. -o $@ $+ $(SUNPROPERTIES)  $(EXTRA_LDFLAGS) -L$(LIBDIR)/ -lSUN  $(LDFLAGS)  -lcudadevrt
-############################################################################################################
-############################################################################################################
-############################################################################################################
-############################################################################################################
-lib: $(LIBDIR)/$(LIBNAME)
-############################################################################################################
+# ------------------------------ Build outputs ------------------------------
+LIBNAME := libSUN.a
 SRCDIR := src
+INCS := include
 
-GAUGEFIX_OBJS :=  gauge_fix/gaugefix_fft.o gauge_fix/gaugefix_fft_stdorder.o gauge_fix/gaugefix_ovr.o \
-		gauge_fix/gaugefix_quality.o gauge_fix/gaugefix_quality_cub.o
+ifeq ($(call is_yes,$(BUILD_MULTI_GPU)),yes)
+  OBJDIR := obj_mgpu
+  LIBDIR := lib_mgpu
+  PROJECTNAME := test_mgpu
+  MAINOBJ := test_mgpu.o
+else
+  OBJDIR := obj_sgpu
+  LIBDIR := lib_sgpu
+  PROJECTNAME := test_sgpu
+  MAINOBJ := test_sgpu.o
+endif
 
+HEATBATH_OBJ := heatbath_su$(USE_NUMBER_OF_COLORS)_nd$(USE_NUMBER_OF_DIMS).o
+HEATBATH_EXE := heatbath_su$(USE_NUMBER_OF_COLORS)_nd$(USE_NUMBER_OF_DIMS)
 
-
+# ------------------------------ Source layout ------------------------------
+GAUGEFIX_OBJS := gauge_fix/gaugefix_fft.o gauge_fix/gaugefix_fft_stdorder.o gauge_fix/gaugefix_ovr.o \
+                 gauge_fix/gaugefix_quality.o gauge_fix/gaugefix_quality_cub.o
 MONTE_OBJS := monte/monte.o monte/ovr.o
-
-MEAS_OBJS :=  meas/linkdetsum.o  meas/linktrsum.o meas/plaquette.o meas/plaquette_cub.o \
-		meas/pl.o  meas/plr.o meas/plr3d.o meas/polyakovloop.o meas/linkUF.o meas/wilsonloop.o \
-        meas/plaquettefield.o meas/plfield.o meas/chromofield.o
-
-
-
-SMEAR_OBJS := smear/ape.o smear/hyp.o smear/multihitsp.o  smear/multihit.o smear/stout.o smear/multihitext.o
-
+MEAS_OBJS := meas/linkdetsum.o meas/linktrsum.o meas/plaquette.o meas/plaquette_cub.o \
+             meas/pl.o meas/plr.o meas/plr3d.o meas/polyakovloop.o meas/linkUF.o meas/wilsonloop.o \
+             meas/plaquettefield.o meas/plfield.o meas/chromofield.o
+SMEAR_OBJS := smear/ape.o smear/hyp.o smear/multihitsp.o smear/multihit.o smear/stout.o smear/multihitext.o
 WL_OBJS := wl/calcop_dg_A0.o wl/wilsonloop_dg_A0.o wl/calcop_dg_33.o wl/wilsonloop_dg.o
 
-
 OBJS := timer.o random.o constants.o \
-		reduction_kernel.o  reduction.o reunitarize.o \
-		devicemem.o gaugearray.o  comm_mpi.o exchange.o \
-		alloc.o   tune.o io_gauge.o cuda_error_check.o \
-		$(MONTE_OBJS) $(MEAS_OBJS) $(SMEAR_OBJS) $(WLEX_OBJS) \
-		$(NEW_FIELDS_OBJS) $(MULTI_LEVEL) $(WL_OBJS) $(GAUGEFIX_OBJS)
- #$(GAUGEFIX_OBJS) $(FIELDS_OBJS) 
-		
-INCS:= include
-CUDAOBJS  := $(patsubst %.o,$(OBJDIR)/%.o,$(OBJS))
-deps += $(CUDAOBJS:.o=.d)
-############################################################################################################
+        reduction_kernel.o reduction.o reunitarize.o \
+        devicemem.o gaugearray.o comm_mpi.o exchange.o \
+        alloc.o tune.o io_gauge.o cuda_error_check.o \
+        $(MONTE_OBJS) $(MEAS_OBJS) $(SMEAR_OBJS) $(WLEX_OBJS) \
+        $(NEW_FIELDS_OBJS) $(MULTI_LEVEL) $(WL_OBJS) $(GAUGEFIX_OBJS)
+
+CUDAOBJS := $(patsubst %.o,$(OBJDIR)/%.o,$(OBJS))
+CUDAOBJ := $(OBJDIR)/dlink.o $(CUDAOBJS)
+deps := $(MAINOBJ:.o=.d) $(CUDAOBJS:.o=.d)
+
+# ------------------------------ User-facing info ------------------------------
+$(info USE_NUMBER_OF_COLORS: $(USE_NUMBER_OF_COLORS))
+$(info USE_NUMBER_OF_DIMS: $(USE_NUMBER_OF_DIMS))
+$(info BUILD_MULTI_GPU: $(if $(filter yes,$(strip $(BUILD_MULTI_GPU))),yes,no))
+$(info USE_CUDARNG: $(USE_CUDARNG))
+$(info GLOBAL_SET_CACHE_PREFER_L1: $(GPU_GLOBAL_SET_CACHE_PREFER_L1))
+$(info MEASURE_TIMMINGS: $(MEASURE_TIMMINGS))
+$(info USE_THETA_STOP_GAUGEFIX: $(USE_THETA_STOP_GAUGEFIX))
+$(info GAUGEFIX_AUTOTUNEFFT_ALPHA: $(GAUGEFIX_AUTO_TUNE_FFT_ALPHA))
+
+# ------------------------------ Targets ------------------------------
+all: lib $(PROJECTNAME) $(HEATBATH_EXE)
+test: $(PROJECTNAME)
+lib: $(LIBDIR)/$(LIBNAME)
+
+COMPILE_CPP = $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(EXTRA_CCFLAGS) -MMD -MP -c $< -o $@
+COMPILE_CU_DEP = $(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(CPPFLAGS) -M $< -o ${@:.o=.d} -odir $(@D)
+COMPILE_CU = $(NVCC) $(NVCCFLAGS) $(EXTRA_NVCCFLAGS) $(CPPFLAGS) -o $@ -dc $<
+
+$(MAINOBJ): test.cpp
+	$(COMPILE_CPP)
+
+$(HEATBATH_OBJ): heatbath.cpp
+	$(COMPILE_CPP)
+
+$(PROJECTNAME): $(MAINOBJ) $(LIBDIR)/$(LIBNAME)
+	$(CXX) $(CXXFLAGS) -I. -L. -o $@ $+ $(EXTRA_LDFLAGS) -L$(LIBDIR) -lSUN $(LDFLAGS) $(LDLIBS) -lcudadevrt
+
+$(HEATBATH_EXE): $(HEATBATH_OBJ) $(LIBDIR)/$(LIBNAME)
+	$(CXX) $(CXXFLAGS) -I. -L. -o $@ $+ $(EXTRA_LDFLAGS) -L$(LIBDIR) -lSUN $(LDFLAGS) $(LDLIBS) -lcudadevrt
+
 $(OBJDIR)/gaugefix_ovr.o: $(SRCDIR)/gaugefix_ovr.cu $(SRCDIR)/gaugefix_ovr.cuh $(SRCDIR)/gaugefix_ovr_device.cuh
-	@echo "######################### Compiling: "$<" #########################"
-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(GENCODE_FLAGS) $(EXTRA_NVCCFLAGS) $(INCLUDES) $(SUNPROPERTIES) -M $< -o ${@:.o=.d} -odir $(@D)
-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(GENCODE_FLAGS) $(EXTRA_NVCCFLAGS) $(INCLUDES) $(SUNPROPERTIES) -o $@ -dc $<
-############################################################################################################
+	@echo "######################### Compiling: $< #########################"
+	@mkdir -p $(@D)
+	$(COMPILE_CU_DEP)
+	$(COMPILE_CU)
+
 $(OBJDIR)/tune.o: $(SRCDIR)/tune.cpp
-	@echo "######################### Compiling: "$<" #########################"
-	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS) -DCULQCD_HASH=$(HASH) $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP   -c $< -o $@  
-############################################################################################################
-############################################################################################################
+	@echo "######################### Compiling: $< #########################"
+	@mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DCULQCD_HASH=$(HASH) $(EXTRA_CCFLAGS) -MMD -MP -c $< -o $@
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
-	@echo "######################### Compiling: "$<" #########################"
-	$(VERBOSE)mkdir -p $(dir $(abspath $@ ) )
-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(GENCODE_FLAGS) $(EXTRA_NVCCFLAGS) $(INCLUDES) $(SUNPROPERTIES) -M $< -o ${@:.o=.d} -odir $(@D)
-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(GENCODE_FLAGS) $(EXTRA_NVCCFLAGS) $(INCLUDES) $(SUNPROPERTIES) -o $@ -dc $<
+	@echo "######################### Compiling: $< #########################"
+	@mkdir -p $(@D)
+	$(COMPILE_CU_DEP)
+	$(COMPILE_CU)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
-	@echo "######################### Compiling: "$<" #########################"
-	$(VERBOSE)$(GCC) $(CCFLAGS) $(LDFLAGS)  $(EXTRA_CCFLAGS) $(INCLUDES) $(SUNPROPERTIES)  -MMD -MP   -c $< -o $@ 
-############################################################################################################
-############################################################################################################
-CUDAOBJ=$(OBJDIR)/dlink.o $(CUDAOBJS)
-$(OBJDIR)/dlink.o: $(CUDAOBJS)
-	@echo ""######################### Creating: "$(OBJDIR)/dlink.o" #########################"
-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(GENCODE_FLAGS) -dlink -o $@ $^ -lcudavert
-############################################################################################################
-############################################################################################################
-$(LIBDIR)/$(LIBNAME):  directories $(CUDAOBJ) 
-	@echo ""######################### Creating: "$(LIBDIR)/$(LIBNAME)" #########################"
-	$(VERBOSE)rm -f  $(LIBDIR)/$(LIBNAME)
-	ar rcs $(LIBDIR)/$(LIBNAME)  $(CUDAOBJ)
-	ranlib $(LIBDIR)/$(LIBNAME)
-############################################################################################################
-############################################################################################################
-directories:
-	$(VERBOSE)mkdir -p $(OBJDIR)
-	$(VERBOSE)mkdir -p $(LIBDIR)
-cleanall:
-	$(VERBOSE)rm -r -f $(OBJDIR)
-	$(VERBOSE)rm -r -f $(LIBDIR)
-	$(VERBOSE)rm -f $(PROJECTNAME) $(MAINOBJ) child.o $(HEATBATH_OBJ) $(HEATBATH_EXE) *.d
-clean:
-	$(VERBOSE)rm -r -f $(LIBDIR)
-	$(VERBOSE)rm -f $(PROJECTNAME) $(MAINOBJ) child.o $(HEATBATH_OBJ) $(HEATBATH_EXE) *.d
+	@echo "######################### Compiling: $< #########################"
+	@mkdir -p $(@D)
+	$(COMPILE_CPP)
 
-pack: 
+$(OBJDIR)/dlink.o: $(CUDAOBJS)
+	@echo "######################### Creating: $(OBJDIR)/dlink.o #########################"
+	$(NVCC) $(NVCCFLAGS) -dlink -o $@ $^ -lcudavert
+
+$(LIBDIR)/$(LIBNAME): directories $(CUDAOBJ)
+	@echo "######################### Creating: $(LIBDIR)/$(LIBNAME) #########################"
+	@rm -f $(LIBDIR)/$(LIBNAME)
+	ar rcs $(LIBDIR)/$(LIBNAME) $(CUDAOBJ)
+	ranlib $(LIBDIR)/$(LIBNAME)
+
+directories:
+	@mkdir -p $(OBJDIR)
+	@mkdir -p $(LIBDIR)
+	@echo 
+	@echo "GPU_ARCH: $(GPU_ARCH)$(if $(GPU_CC), (auto-detected compute capability=$(GPU_CC)),$(if $(filter sm_120,$(GPU_ARCH)), (fallback default),))"
+	@echo "CUDA Toolkit version: $(CUDA_VERSION_MAJOR).$(CUDA_VERSION_MINOR).$(CUDA_VERSION_PATCH) (CUDA_VERSION=$(CUDA_VERSION))"
+	@echo 
+
+cleanall:
+	@rm -rf $(OBJDIR) $(LIBDIR)
+	@rm -f $(PROJECTNAME) $(MAINOBJ) child.o $(HEATBATH_OBJ) $(HEATBATH_EXE) *.d
+
+clean:
+	@rm -rf $(LIBDIR)
+	@rm -f $(PROJECTNAME) $(MAINOBJ) child.o $(HEATBATH_OBJ) $(HEATBATH_EXE) *.d
+
+pack:
 	@echo Generating Package sun_$(VERSION).tar.gz
-	@tar cvfz sun_$(VERSION).tar.gz *.cpp *.h $(INCS)/*  $(SRCDIR)/* Makefile
+	@tar cvfz sun_$(VERSION).tar.gz *.cpp *.h $(INCS)/* $(SRCDIR)/* Makefile
 	@echo Generated Package sun_$(VERSION).tar.gz
 
-.PHONY : clean cleanall pack directories lib $(PROJECTNAME) $(HEATBATH_EXE)
+.PHONY: all test lib clean cleanall pack directories $(PROJECTNAME) $(HEATBATH_EXE)
 
 -include $(deps)
