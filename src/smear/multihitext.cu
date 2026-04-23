@@ -25,7 +25,7 @@ using namespace std;
 namespace CULQCD {
 
 // kernel MultiHitExt, uses random array state with volume/2 size
-template <bool UseTex, ArrayType atypeIn, ArrayType atypeOut, class Real>
+template <ArrayType atypeIn, ArrayType atypeOut, class Real>
 __global__ void
 kernel_multihitext_1D_halfrng111(complex *arrayin, complex *arrayout,
                                  cuRNGState *state, int mu, int nhit) {
@@ -37,9 +37,9 @@ kernel_multihitext_1D_halfrng111(complex *arrayin, complex *arrayout,
     int id = idd + iter * DEVPARAMS::HalfVolume;
     msun staple = msun::zero();
     // calculate the staple
-    Staple<UseTex, atypeIn, Real>(arrayin, staple, id, mu);
+    Staple< atypeIn, Real>(arrayin, staple, id, mu);
     msun U =
-        GAUGE_LOAD<UseTex, atypeIn, Real>(arrayin, id + mu * DEVPARAMS::Volume);
+        GAUGE_LOAD< atypeIn, Real>(arrayin, id + mu * DEVPARAMS::Volume);
     staple = staple.dagger();
     msun link = U;
     for (int iter = 0; iter < nhit; iter++) {
@@ -120,7 +120,7 @@ inline __host__ __device__ void get4DFLL(int id, int x[4], int X[4]) {
   x[0] = id % X[0];
 }
 
-template <bool UseTex, ArrayType atypeIn, ArrayType atypeOut, class Real>
+template <ArrayType atypeIn, ArrayType atypeOut, class Real>
 __global__ void kernel_make_extendedLattice(complex *arrayin, complex *arrayout,
                                             multihitArg arg) {
   uint id = INDEX1D();
@@ -138,14 +138,14 @@ __global__ void kernel_make_extendedLattice(complex *arrayin, complex *arrayout,
                   arg.grid[0] +
               xext[0];
   for (int mu = 0; mu < 4; mu++) {
-    msun U = GAUGE_LOAD<UseTex, atypeIn, Real>(arrayin,
+    msun U = GAUGE_LOAD< atypeIn, Real>(arrayin,
                                                idin + mu * DEVPARAMS::Volume);
     GAUGE_SAVE<atypeOut, Real>(arrayout, U, idout + mu * arg.volume,
                                arg.offset);
   }
 }
 
-template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
+template <ArrayType atypein, ArrayType atypeout, class Real>
 class MultiHitExtCopy : Tunable {
 private:
   gauge arrayin;
@@ -165,7 +165,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_make_extendedLattice<UseTex, atypein, atypeout, Real>
+    kernel_make_extendedLattice< atypein, atypeout, Real>
         <<<tp.grid, tp.block, 0, stream>>>(arrayin.GetPtr(), arrayout.GetPtr(),
                                            arg);
   }
@@ -212,9 +212,7 @@ public:
 #ifdef TIMMINGS
     mtime.start();
 #endif
-    if (UseTex) {
-    }
-    apply(stream);
+  apply(stream);
 #ifdef TIMMINGS
     CUDA_SAFE_DEVICE_SYNC();
     CUT_CHECK_ERROR("Kernel execution failed");
@@ -232,7 +230,7 @@ __device__ __host__ inline int linkIndex22(int x[], int dx[], int grid[]) {
   return (((y[3] * grid[2] + y[2]) * grid[1] + y[1]) * grid[0] + y[0]);
 }
 
-template <bool UseTex, ArrayType atypeIn, ArrayType atypeOut, class Real>
+template <ArrayType atypeIn, ArrayType atypeOut, class Real>
 __global__ void kernel_multihitext(complex *array, complex *arrayout,
                                    cuRNGState *state, int mu, int nhit,
                                    multihitArg arg) {
@@ -300,41 +298,41 @@ __global__ void kernel_multihitext(complex *array, complex *arrayout,
                   msun link;
                   int dx[4] = {0, 0, 0, 0};
                   // UP
-                  link = GAUGE_LOAD<UseTex, atypeIn, Real>(
+                  link = GAUGE_LOAD< atypeIn, Real>(
                       array, idx + nuvolume, arg.offset);
                   dx[nu]++;
-                  link *= GAUGE_LOAD<UseTex, atypeIn, Real>(
+                  link *= GAUGE_LOAD< atypeIn, Real>(
                       array, linkIndex22(xx, dx, arg.grid) + muvolume,
                       arg.offset);
                   dx[nu]--;
                   dx[mu]++;
-                  link *= GAUGE_LOAD_DAGGER<UseTex, atypeIn, Real>(
+                  link *= GAUGE_LOAD_DAGGER< atypeIn, Real>(
                       array, linkIndex22(xx, dx, arg.grid) + nuvolume,
                       arg.offset);
                   staple += link;
                   dx[mu]--;
                   // DOWN
                   dx[nu]--;
-                  link = GAUGE_LOAD_DAGGER<UseTex, atypeIn, Real>(
+                  link = GAUGE_LOAD_DAGGER< atypeIn, Real>(
                       array, linkIndex22(xx, dx, arg.grid) + nuvolume,
                       arg.offset);
-                  link *= GAUGE_LOAD<UseTex, atypeIn, Real>(
+                  link *= GAUGE_LOAD< atypeIn, Real>(
                       array, linkIndex22(xx, dx, arg.grid) + muvolume,
                       arg.offset);
                   dx[mu]++;
-                  link *= GAUGE_LOAD<UseTex, atypeIn, Real>(
+                  link *= GAUGE_LOAD< atypeIn, Real>(
                       array, linkIndex22(xx, dx, arg.grid) + nuvolume,
                       arg.offset);
                   staple += link;
                 }
               staple = staple.dagger();
-              msun U = GAUGE_LOAD<UseTex, atypeIn, Real>(array, idx + muvolume,
+              msun U = GAUGE_LOAD< atypeIn, Real>(array, idx + muvolume,
                                                          arg.offset);
               heatBathSUN<Real>(U, staple, localState);
               GAUGE_SAVE<atypeIn, Real>(array, U, idx + muvolume, arg.offset);
             }
     }
-    newU += GAUGE_LOAD<UseTex, atypeIn, Real>(array, mainid + mu * arg.volume,
+    newU += GAUGE_LOAD< atypeIn, Real>(array, mainid + mu * arg.volume,
                                               arg.offset);
   }
   newU /= (Real)nhit;
@@ -342,7 +340,7 @@ __global__ void kernel_multihitext(complex *array, complex *arrayout,
   state[idd] = localState;
 }
 
-template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
+template <ArrayType atypein, ArrayType atypeout, class Real>
 class MultiHitExt : Tunable {
 private:
   gauge arrayin;
@@ -363,7 +361,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_multihitext<UseTex, atypein, atypeout, Real>
+    kernel_multihitext< atypein, atypeout, Real>
         <<<tp.grid, tp.block, 0, stream>>>(arrayin.GetPtr(), arrayout.GetPtr(),
                                            randstates.State(), mu, nhit, arg);
   }
@@ -419,9 +417,7 @@ public:
 #ifdef TIMMINGS
     mtime.start();
 #endif
-    if (UseTex) {
-    }
-    arg.id = id;
+  arg.id = id;
     apply(stream);
 #ifdef TIMMINGS
     CUDA_SAFE_DEVICE_SYNC();
@@ -436,7 +432,7 @@ public:
 #define LEN_SPACE 2
 #define LEN_TIME 1
 
-template <bool UseTex, class Real>
+template <class Real>
 void ApplyMultiHitExtended(gauge array, gauge arrayout, RNG &randstates, int mu,
                            int nhit) {
   if (array.Type() != SOA || arrayout.Type() != SOA)
@@ -455,8 +451,8 @@ void ApplyMultiHitExtended(gauge array, gauge arrayout, RNG &randstates, int mu,
   if (randstates.Size() < arg.totblocks)
     errorCULQCD("Size of the RNG is small...\n");
   gauge CC(array.Type(), Device, arg.offset, false);
-  MultiHitExtCopy<UseTex, atypein, atypeout, Real> chitCopy(array, CC, arg);
-  MultiHitExt<UseTex, atypein, atypeout, Real> mhit(CC, arrayout, randstates,
+  MultiHitExtCopy< atypein, atypeout, Real> chitCopy(array, CC, arg);
+  MultiHitExt< atypein, atypeout, Real> mhit(CC, arrayout, randstates,
                                                     mu, nhit, arg);
   for (int id = 0; id < arg.intids; id++) {
     chitCopy.Run();
@@ -476,7 +472,7 @@ void ApplyMultiHitExtended(gauge array, gauge arrayout, RNG &randstates, int mu,
 template <class Real>
 void ApplyMultiHitExt(gauge array, gauge arrayout, RNG &randstates, int nhit) {
   
-    ApplyMultiHitExtended<false, Real>(array, arrayout, randstates, 3, nhit);
+    ApplyMultiHitExtended<Real>(array, arrayout, randstates, 3, nhit);
   
 }
 template void ApplyMultiHitExt<float>(gauges array, gauges arrayout,

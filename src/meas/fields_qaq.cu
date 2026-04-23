@@ -123,7 +123,7 @@ template <typename T> __device__ __forceinline__ T Aldg(const T *ptr) {
 }
 #endif
 
-template <bool UseTex, class Real, bool planexy, typename BlockReduce,
+template <class Real, bool planexy, typename BlockReduce,
           typename TempStorage>
 __device__ inline void CalcField(FieldWLArg<Real> arg, int id,
                                  TempStorage &temp_storage, Real w,
@@ -317,7 +317,7 @@ __device__ inline void CalcField(FieldWLArg<Real> arg, int id,
   }
 }
 
-template <int blockSize, bool UseTex, class Real, ArrayType atype, bool planexy>
+template <int blockSize, class Real, ArrayType atype, bool planexy>
 __global__ void kernel_FieldWilsonLoop(FieldWLArg<Real> arg) {
 
   typedef cub::BlockReduce<Real, blockSize> BlockReduce;
@@ -350,25 +350,25 @@ __global__ void kernel_FieldWilsonLoop(FieldWLArg<Real> arg) {
       Real w = 0.0;
       msun linkb = msun::zero();
       if (id < DEVPARAMS::Volume)
-        linkb = GAUGE_LOAD<false, atype, Real>(arg.wilson_spaceline,
+        linkb = GAUGE_LOAD<atype, Real>(arg.wilson_spaceline,
                                                id + mu * DEVPARAMS::Volume,
                                                gfoffset); // bottom space links
 
       if (id < DEVPARAMS::Volume) {
-        msun linkt = GAUGE_LOAD_DAGGER<false, atype, Real>(
+        msun linkt = GAUGE_LOAD_DAGGER<atype, Real>(
             arg.wilson_spaceline, idl + idt + mu * DEVPARAMS::Volume,
             gfoffset); // top space links
         w = (linkb * t1 * linkt * t0.dagger()).realtrace();
       }
 
       if (id < DEVPARAMS::Volume && it < arg.Tmax) {
-        t0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        t0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, idl + idt + tdirvolume, DEVPARAMS::size);
-        t1 *= GAUGE_LOAD<UseTex, atype, Real>(
+        t1 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, idr + idt + tdirvolume, DEVPARAMS::size);
       }
       // fields!!!
-      CalcField<UseTex, Real, planexy, BlockReduce, BlockReduceTempStorage>(
+      CalcField< Real, planexy, BlockReduce, BlockReduceTempStorage>(
           arg, id, temp_storage, w, fieldoffset, it, mu);
       // save wilson loop
       Real aggregate = BlockReduce(temp_storage).Reduce(w, Summ<Real>());
@@ -379,7 +379,7 @@ __global__ void kernel_FieldWilsonLoop(FieldWLArg<Real> arg) {
   }
 }
 
-template <bool UseTex, class Real, ArrayType atype, bool planexy>
+template <class Real, ArrayType atype, bool planexy>
 class FieldWilsonLoop : Tunable {
 private:
   FieldWLArg<Real> arg;
@@ -404,7 +404,7 @@ private:
     CUDA_SAFE_CALL(cudaMemset(arg.wloop, 0, wloop_mem));
     CUDA_SAFE_CALL(cudaMemset(arg.field, 0, field_mem));
 
-    LAUNCH_KERNEL(kernel_FieldWilsonLoop, tp, stream, arg, UseTex, Real, atype,
+    LAUNCH_KERNEL(kernel_FieldWilsonLoop, tp, stream, arg, Real, atype,
                   planexy);
   }
 
@@ -463,7 +463,7 @@ public:
   void postTune() {}
 };
 
-template <bool UseTex, class Real, bool planexy>
+template <class Real, bool planexy>
 void CalcFieldWilsonLoop_dg(gauge array, gauge wilson_spaceline,
                             Real *plaqfield, Real *wloop, Real *field,
                             int radius, int Tmax, int nx, int ny) {
@@ -485,7 +485,7 @@ void CalcFieldWilsonLoop_dg(gauge array, gauge wilson_spaceline,
   if (array.EvenOdd() == true || wilson_spaceline.EvenOdd() == true)
     errorCULQCD("Not defined for EvenOdd arrays...\n");
 
-  FieldWilsonLoop<UseTex, Real, SOA, planexy> wl(arg, array);
+  FieldWilsonLoop< Real, SOA, planexy> wl(arg, array);
   wl.Run();
 
   CUDA_SAFE_DEVICE_SYNC();
@@ -494,16 +494,16 @@ void CalcFieldWilsonLoop_dg(gauge array, gauge wilson_spaceline,
        << endl;
 }
 
-template <bool UseTex, class Real>
+template <class Real>
 void CalcFieldWilsonLoop_dg(gauge array, gauge wilson_spaceline,
                             Real *plaqfield, Real *wloop, Real *field,
                             int radius, int Tmax, int nx, int ny,
                             bool planexy) {
   if (planexy) {
-    CalcFieldWilsonLoop_dg<UseTex, Real, true>(
+    CalcFieldWilsonLoop_dg< Real, true>(
         array, wilson_spaceline, plaqfield, wloop, field, radius, Tmax, nx, ny);
   } else
-    CalcFieldWilsonLoop_dg<UseTex, Real, false>(
+    CalcFieldWilsonLoop_dg< Real, false>(
         array, wilson_spaceline, plaqfield, wloop, field, radius, Tmax, nx, ny);
 }
 
@@ -512,7 +512,7 @@ void CalcFieldWilsonLoop_dg(gauge array, gauge wilson_spaceline,
                             Real *plaqfield, Real *wloop, Real *field,
                             int radius, int Tmax, int nx, int ny,
                             bool planexy) {
-  CalcFieldWilsonLoop_dg<false, Real>(array, wilson_spaceline, plaqfield,
+  CalcFieldWilsonLoop_dg<Real>(array, wilson_spaceline, plaqfield,
                                         wloop, field, radius, Tmax, nx, ny,
                                         planexy);
 }

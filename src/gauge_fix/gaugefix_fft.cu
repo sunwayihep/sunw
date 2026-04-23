@@ -37,7 +37,7 @@ namespace CULQCD {
 
 #ifdef USE_GAUGE_FIX
 
-template <bool UseTex, ArrayType atype, ArrayType atypedelta, class Real,
+template <ArrayType atype, ArrayType atypedelta, class Real,
           int DIR>
 __global__ void kernel_calc_Fg_theta_delta(complex *array, complex *res_save,
                                            complex *Delta) {
@@ -54,14 +54,14 @@ __global__ void kernel_calc_Fg_theta_delta(complex *array, complex *res_save,
     msun delta = msun::zero();
     // Uplinks
     for (int nu = 0; nu < DIR; nu++)
-      delta -= GAUGE_LOAD<UseTex, atype, Real>(
+      delta -= GAUGE_LOAD<atype, Real>(
           array, idx + nu * DEVPARAMS::Volume, offset);
     complex res;
     // Fg (sum_DIR uplinks)
     res.real() = -delta.realtrace();
     // Downlinks
     for (int nu = 0; nu < DIR; nu++)
-      delta += GAUGE_LOAD<UseTex, atype, Real>(
+      delta += GAUGE_LOAD<atype, Real>(
           array,
           neighborEOIndexMinusOne(id, oddbit, nu) + nu * DEVPARAMS::Volume,
           offset);
@@ -77,7 +77,7 @@ __global__ void kernel_calc_Fg_theta_delta(complex *array, complex *res_save,
   // 1 + NCOLORS) The FLOP number does not include the reconstruction when used
 }
 
-template <bool UseTex, ArrayType atype, ArrayType atypedelta, class Real,
+template <ArrayType atype, ArrayType atypedelta, class Real,
           int DIR>
 class GaugeFixFFTQuality : Tunable {
 private:
@@ -114,7 +114,7 @@ public:
     kernel_pointer = NULL;
     if (array.EvenOdd()) {
       kernel_pointer =
-          &kernel_calc_Fg_theta_delta<UseTex, atype, atypedelta, Real, DIR>;
+          &kernel_calc_Fg_theta_delta< atype, atypedelta, Real, DIR>;
     }
     if (kernel_pointer == NULL)
       errorCULQCD("No kernel GaugeFixFFTQuality function exist for this gauge "
@@ -134,7 +134,7 @@ public:
     kernel_pointer = NULL;
     if (array.EvenOdd()) {
       kernel_pointer =
-          &kernel_calc_Fg_theta_delta<UseTex, atype, atypedelta, Real, DIR>;
+          &kernel_calc_Fg_theta_delta< atype, atypedelta, Real, DIR>;
     }
     if (kernel_pointer == NULL)
       errorCULQCD("No kernel GaugeFixFFTQuality function exist for this gauge "
@@ -226,7 +226,7 @@ public:
 
 #ifdef USE_GAUGE_FIX_COV
 
-template <bool UseTex, ArrayType atype, ArrayType atypedelta,
+template <ArrayType atype, ArrayType atypedelta,
           ArrayType atypelambda, class Real, int DIR>
 __global__ void kernel_calc_Fg_theta_delta(complex *array, complex *res_save,
                                            complex *Delta, complex *ILambda) {
@@ -241,17 +241,17 @@ __global__ void kernel_calc_Fg_theta_delta(complex *array, complex *res_save,
     int offset = DEVPARAMS::Volume * 4;
     int idx = EOIndeX(id, oddbit);
     msun delta =
-        LAMBDA_LOAD<UseTex, atypelambda, Real>(ILambda, idx, DEVPARAMS::Volume);
+        LAMBDA_LOAD< atypelambda, Real>(ILambda, idx, DEVPARAMS::Volume);
     // Uplinks
     for (int nu = 0; nu < DIR; nu++)
-      delta -= GAUGE_LOAD<UseTex, atype, Real>(
+      delta -= GAUGE_LOAD<atype, Real>(
           array, idx + nu * DEVPARAMS::Volume, offset);
     complex res;
     // Fg (sum_DIR uplinks)
     res.real() = -delta.realtrace();
     // Downlinks
     for (int nu = 0; nu < DIR; nu++)
-      delta += GAUGE_LOAD<UseTex, atype, Real>(
+      delta += GAUGE_LOAD<atype, Real>(
           array,
           neighborEOIndexMinusOne(id, oddbit, nu) + nu * DEVPARAMS::Volume,
           offset);
@@ -267,7 +267,7 @@ __global__ void kernel_calc_Fg_theta_delta(complex *array, complex *res_save,
   // The FLOP number does not include the reconstruction when used
 }
 
-template <bool UseTex, ArrayType atype, ArrayType atypedelta,
+template <ArrayType atype, ArrayType atypedelta,
           ArrayType atypelambda, class Real, int DIR>
 class GaugeFixFFTLambdaQuality : Tunable {
 private:
@@ -305,7 +305,7 @@ public:
     value = complex::zero();
     kernel_pointer = NULL;
     if (array.EvenOdd()) {
-      kernel_pointer = &kernel_calc_Fg_theta_delta<UseTex, atype, atypedelta,
+      kernel_pointer = &kernel_calc_Fg_theta_delta< atype, atypedelta,
                                                    atypelambda, Real, DIR>;
     }
     if (kernel_pointer == NULL)
@@ -326,7 +326,7 @@ public:
     value = complex::zero();
     kernel_pointer = NULL;
     if (array.EvenOdd()) {
-      kernel_pointer = &kernel_calc_Fg_theta_delta<UseTex, atype, atypedelta,
+      kernel_pointer = &kernel_calc_Fg_theta_delta< atype, atypedelta,
                                                    atypelambda, Real, DIR>;
     }
     if (kernel_pointer == NULL)
@@ -589,18 +589,18 @@ separately
         @param gx complex array to store g(x)
         @param Delta complex array with IFF alpha/2 (pmax^2a^2)/(p^2a^2)FFT(...)
         @param half_alpha alpha/2
-template <bool UseTex, ArrayType atypedelta, ArrayType atypegx, class Real>
+template <ArrayType atypedelta, ArrayType atypegx, class Real>
 __global__ void kernel_gauge_SUM_REUNIT_GXEO(complex *gx, complex *Delta, Real
 half_alpha)
 */
-template <bool UseTex, ArrayType atypedelta, ArrayType atypegx, class Real>
+template <ArrayType atypedelta, ArrayType atypegx, class Real>
 __global__ void kernel_gauge_SUM_REUNIT_GXEO(GaugeFixArg<Real> arg,
                                              Real half_alpha) {
   int id = INDEX1D();
   if (id >= arg.threads)
     return;
   msun de =
-      DELTA_LOAD<UseTex, atypedelta, Real>(arg.delta, id); //, arg.threads);
+      DELTA_LOAD< atypedelta, Real>(arg.delta, id); //, arg.threads);
   msun g = msun::unit();
   g += de * half_alpha;
   reunit_link<Real>(&g);
@@ -615,7 +615,7 @@ __global__ void kernel_gauge_SUM_REUNIT_GXEO(GaugeFixArg<Real> arg,
   GAUGE_SAVE<atypegx, Real>(arg.gx, g, id, arg.threads);
 }
 
-template <bool UseTex, ArrayType atypedelta, ArrayType atypegx, class Real>
+template <ArrayType atypedelta, ArrayType atypegx, class Real>
 class GaugeFix_GX : Tunable {
   GaugeFixArg<Real> arg;
   gauge gx;
@@ -641,7 +641,7 @@ public:
       errorCULQCD("delta cannot be in even/odd format...");
     kernel_pointer = NULL;
     kernel_pointer =
-        &kernel_gauge_SUM_REUNIT_GXEO<UseTex, atypedelta, atypegx, Real>;
+        &kernel_gauge_SUM_REUNIT_GXEO< atypedelta, atypegx, Real>;
     if (kernel_pointer == NULL)
       errorCULQCD("No kernel kernel_gauge_SUM_REUNIT_GXEO function exist for "
                   "this gauge array...");
@@ -706,7 +706,7 @@ public:
         @param array gauge array to be fixed.
         @param gx complex array with g(x).
 */
-template <bool UseTex, ArrayType atype, ArrayType atypegx, class Real>
+template <ArrayType atype, ArrayType atypegx, class Real>
 __global__ void kernel_gauge_fix_U(complex *array, complex *gx) {
   int idd = INDEX1D();
   if (idd < DEVPARAMS::Volume) {
@@ -719,14 +719,14 @@ __global__ void kernel_gauge_fix_U(complex *array, complex *gx) {
 #ifdef MULTI_GPU
     idd = EOIndeX(id, oddbit);
 #endif
-    msun g = GX_LOAD<UseTex, atypegx, Real>(gx, idd, DEVPARAMS::Volume);
+    msun g = GX_LOAD< atypegx, Real>(gx, idd, DEVPARAMS::Volume);
     for (int nu = 0; nu < 4; nu++) {
-      msun U = GAUGE_LOAD<UseTex, atype, Real>(
+      msun U = GAUGE_LOAD<atype, Real>(
           array, idd + nu * DEVPARAMS::Volume, DEVPARAMS::Volume * 4);
       msun U_temp = g * U;
-      // msun g0 = (GX_LOAD_DAGGER<UseTex, atypegx, Real>(gx,
+      // msun g0 = (GX_LOAD_DAGGER< atypegx, Real>(gx,
       // neighborEOIndex(id, oddbit, nu, 1)));
-      msun g0 = (GX_LOAD_DAGGER<UseTex, atypegx, Real>(
+      msun g0 = (GX_LOAD_DAGGER< atypegx, Real>(
           gx, neighborEOIndexPlusOne(id, oddbit, nu), DEVPARAMS::Volume));
       U = U_temp * g0;
       GAUGE_SAVE<atype, Real>(array, U, idd + nu * DEVPARAMS::Volume,
@@ -735,7 +735,7 @@ __global__ void kernel_gauge_fix_U(complex *array, complex *gx) {
   }
 }
 
-template <bool UseTex, ArrayType atype, ArrayType atypegx, class Real>
+template <ArrayType atype, ArrayType atypegx, class Real>
 class GaugeFix : Tunable {
   GaugeFixArg<Real> arg;
   gauge &pgauge;
@@ -759,7 +759,7 @@ public:
     if (GX.EvenOdd() == false)
       errorCULQCD("gx not set in even/odd format...");
     kernel_pointer = NULL;
-    kernel_pointer = &kernel_gauge_fix_U<UseTex, atype, atypegx, Real>;
+    kernel_pointer = &kernel_gauge_fix_U< atype, atypegx, Real>;
     if (kernel_pointer == NULL)
       errorCULQCD("No kernel GaugeFix function exist for this gauge array...");
   }
@@ -823,7 +823,7 @@ __forceinline__ __host__ __device__ int neighborNormalLatIndex(int id,
   return idx;
 }
 
-template <bool UseTex, ArrayType atype, ArrayType atypedelta, class Real>
+template <ArrayType atype, ArrayType atypedelta, class Real>
 __global__ void kernel_gauge_fix_U_NEW(complex *array, complex *delta,
                                        Real half_alpha) {
   int idd = INDEX1D();
@@ -835,16 +835,16 @@ __global__ void kernel_gauge_fix_U_NEW(complex *array, complex *delta,
     parity = 1;
     id -= DEVPARAMS::HalfVolume;
   }
-  msun de = DELTA_LOAD<UseTex, atypedelta, Real>(
+  msun de = DELTA_LOAD< atypedelta, Real>(
       delta, neighborNormalLatIndex(id, parity)); //, arg.threads);
   msun g = msun::unit();
   g += de * half_alpha;
   reunit_link<Real>(&g);
   for (int nu = 0; nu < 4; nu++) {
-    msun U = GAUGE_LOAD<UseTex, atype, Real>(
+    msun U = GAUGE_LOAD<atype, Real>(
         array, idd + nu * DEVPARAMS::Volume, DEVPARAMS::Volume * 4);
     msun U_temp = g * U;
-    de = DELTA_LOAD<UseTex, atypedelta, Real>(
+    de = DELTA_LOAD< atypedelta, Real>(
         delta, neighborNormalLatIndexPlusOne(id, parity, nu));
     msun g0 = msun::unit();
     g0 += de * half_alpha;
@@ -855,7 +855,7 @@ __global__ void kernel_gauge_fix_U_NEW(complex *array, complex *delta,
   }
 }
 
-template <bool UseTex, ArrayType atype, ArrayType atypedelta, class Real>
+template <ArrayType atype, ArrayType atypedelta, class Real>
 class GaugeFixNEW : Tunable {
   GaugeFixArg<Real> arg;
   gauge &pgauge;
@@ -880,7 +880,7 @@ public:
     if (delta.EvenOdd() == true)
       errorCULQCD("delta are set in even/odd format...");
     kernel_pointer = NULL;
-    kernel_pointer = &kernel_gauge_fix_U_NEW<UseTex, atype, atypedelta, Real>;
+    kernel_pointer = &kernel_gauge_fix_U_NEW< atype, atypedelta, Real>;
     if (kernel_pointer == NULL)
       errorCULQCD("No kernel kernel_gauge_fix_U_NEW function exist for this "
                   "gauge array...");
@@ -1223,7 +1223,7 @@ public:
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, ArrayType atype, ArrayType atypeDeltax,
+template <ArrayType atype, ArrayType atypeDeltax,
           ArrayType atypeGx, class Real, int DIR>
 complex CALL_FFT(gauge _pgauge, Real alpha, bool landautune, Real stopvalue,
                  int maxsteps, int verbose, bool useGx) {
@@ -1285,14 +1285,14 @@ complex CALL_FFT(gauge _pgauge, Real alpha, bool landautune, Real stopvalue,
   // Precalculate pmax^2/p^2, also includes the FFT normalization
   //------------------------------------------------------------------------
   GaugeFixINVPSP<Real> invpsp(arg);
-  GaugeFixFFTQuality<UseTex, atype, atypeDeltax, Real, DIR> quality(
+  GaugeFixFFTQuality< atype, atypeDeltax, Real, DIR> quality(
       _pgauge, _delta, _GxPtr, PARAMS::Grid);
   // if useGx=true
-  GaugeFix_GX<UseTex, atypeDeltax, atypeGx, Real> calcGX(arg, alpha, _gx,
+  GaugeFix_GX< atypeDeltax, atypeGx, Real> calcGX(arg, alpha, _gx,
                                                          _delta);
-  GaugeFix<UseTex, atype, atypeGx, Real> gfix(_pgauge, _gx, arg);
+  GaugeFix< atype, atypeGx, Real> gfix(_pgauge, _gx, arg);
   // if useGx=false
-  GaugeFixNEW<UseTex, atype, atypeDeltax, Real> gfixNEW(_pgauge, _delta, alpha,
+  GaugeFixNEW< atype, atypeDeltax, Real> gfixNEW(_pgauge, _delta, alpha,
                                                         arg);
   // end
   //------------------------------------------------------------------------
@@ -1462,7 +1462,7 @@ template <ArrayType atype, ArrayType atypeDeltax, ArrayType atypeGx, class Real,
           int DIR>
 complex CALL_FFT_TEX(gauge _pgauge, Real alpha, bool landautune, Real stopvalue,
                      int maxsteps, int verbose, bool useGx) {
-  return CALL_FFT<false, atype, atypeDeltax, atypeGx, Real, DIR>(
+  return CALL_FFT<atype, atypeDeltax, atypeGx, Real, DIR>(
         _pgauge, alpha, landautune, stopvalue, maxsteps, verbose, useGx);
 }
 template <ArrayType atype, ArrayType atypeDeltax, ArrayType atypeGx, class Real>
@@ -1619,7 +1619,7 @@ template complexd GaugeFixingFFT<double>(gauged _pgauge, int DIR, double alpha,
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, ArrayType atype, ArrayType atypeILambda,
+template <ArrayType atype, ArrayType atypeILambda,
           ArrayType atypeDeltax, ArrayType atypeGx, class Real, int DIR>
 complex CALL_FFT(gauge _pgauge, gauge ILambda, Real alpha, bool landautune,
                  Real stopvalue, int maxsteps, int verbose, bool useGx) {
@@ -1681,14 +1681,14 @@ complex CALL_FFT(gauge _pgauge, gauge ILambda, Real alpha, bool landautune,
   // Precalculate pmax^2/p^2, also includes the FFT normalization
   //------------------------------------------------------------------------
   GaugeFixINVPSP<Real> invpsp(arg);
-  GaugeFixFFTLambdaQuality<UseTex, atype, atypeDeltax, atypeILambda, Real, DIR>
+  GaugeFixFFTLambdaQuality< atype, atypeDeltax, atypeILambda, Real, DIR>
       quality(_pgauge, _delta, ILambda, _GxPtr, PARAMS::Grid);
   // if useGx=true
-  GaugeFix_GX<UseTex, atypeDeltax, atypeGx, Real> calcGX(arg, alpha, _gx,
+  GaugeFix_GX< atypeDeltax, atypeGx, Real> calcGX(arg, alpha, _gx,
                                                          _delta);
-  GaugeFix<UseTex, atype, atypeGx, Real> gfix(_pgauge, _gx, arg);
+  GaugeFix< atype, atypeGx, Real> gfix(_pgauge, _gx, arg);
   // if useGx=false
-  GaugeFixNEW<UseTex, atype, atypeDeltax, Real> gfixNEW(_pgauge, _delta, alpha,
+  GaugeFixNEW< atype, atypeDeltax, Real> gfixNEW(_pgauge, _delta, alpha,
                                                         arg);
   // end
   //------------------------------------------------------------------------
@@ -1858,7 +1858,7 @@ template <ArrayType atype, ArrayType atypeILambda, ArrayType atypeDeltax,
           ArrayType atypeGx, class Real, int DIR>
 complex CALL_FFT_TEX(gauge _pgauge, gauge ILambda, Real alpha, bool landautune,
                      Real stopvalue, int maxsteps, int verbose, bool useGx) {
-  return CALL_FFT<false, atype, atypeILambda, atypeDeltax, atypeGx, Real,
+  return CALL_FFT<atype, atypeILambda, atypeDeltax, atypeGx, Real,
                     DIR>(_pgauge, ILambda, alpha, landautune, stopvalue,
                          maxsteps, verbose, useGx);
 }

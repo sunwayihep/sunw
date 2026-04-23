@@ -23,36 +23,36 @@ namespace CULQCD {
 /////////////////////////////////////////////////////////////////////////////////////////
 //////// Gauge Trace
 /////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 inline __device__ complex dev_linktracesum(complex *array, int id, int offset) {
   complex sumtrace = complex::zero();
 #if (NCOLORS > 3)
 #pragma unroll
   for (int i = 0; i < NCOLORS; i++)
-    sumtrace += ELEM_LOAD<UseTex, Real>(array, id + (i + i * NCOLORS) * offset);
+    sumtrace += ELEM_LOAD< Real>(array, id + (i + i * NCOLORS) * offset);
 #else
   if (atype == SOA) {
 #pragma unroll
     for (int i = 0; i < NCOLORS; i++)
       sumtrace +=
-          ELEM_LOAD<UseTex, Real>(array, id + (i + i * NCOLORS) * offset);
+          ELEM_LOAD< Real>(array, id + (i + i * NCOLORS) * offset);
   }
   if (atype == SOA12) {
     complex tmp[4];
-    tmp[0] = ELEM_LOAD<UseTex, Real>(array, id);
-    tmp[1] = ELEM_LOAD<UseTex, Real>(array, id + 4 * offset);
-    tmp[2] = ELEM_LOAD<UseTex, Real>(array, id + offset);
-    tmp[3] = ELEM_LOAD<UseTex, Real>(array, id + 3 * offset);
+    tmp[0] = ELEM_LOAD< Real>(array, id);
+    tmp[1] = ELEM_LOAD< Real>(array, id + 4 * offset);
+    tmp[2] = ELEM_LOAD< Real>(array, id + offset);
+    tmp[3] = ELEM_LOAD< Real>(array, id + 3 * offset);
     sumtrace += tmp[0];
     sumtrace += tmp[1];
     sumtrace += ~(tmp[0] * tmp[1] - tmp[2] * tmp[3]);
   }
   if (atype == SOA8) {
     msun tmplink;
-    tmplink.e[0][1] = ELEM_LOAD<UseTex, Real>(array, id);
-    tmplink.e[0][2] = ELEM_LOAD<UseTex, Real>(array, id + offset);
-    tmplink.e[1][0] = ELEM_LOAD<UseTex, Real>(array, id + 2 * offset);
-    complex theta = ELEM_LOAD<UseTex, Real>(array, id + 3 * offset);
+    tmplink.e[0][1] = ELEM_LOAD< Real>(array, id);
+    tmplink.e[0][2] = ELEM_LOAD< Real>(array, id + offset);
+    tmplink.e[1][0] = ELEM_LOAD< Real>(array, id + 2 * offset);
+    complex theta = ELEM_LOAD< Real>(array, id + 3 * offset);
     reconstruct8p<Real>(tmplink, theta);
     sumtrace = tmplink.trace();
   }
@@ -61,7 +61,7 @@ inline __device__ complex dev_linktracesum(complex *array, int id, int offset) {
 }
 
 // #ifdef USE_CUDA_CUB
-template <int blockSize, bool UseTex, ArrayType atype, class Real>
+template <int blockSize, ArrayType atype, class Real>
 __global__ void kernel_linktracesum(TraceArg<Real> arg) {
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
@@ -90,7 +90,7 @@ __global__ void kernel_linktracesum(TraceArg<Real> arg) {
 #endif
 #pragma unroll
     for (int mu = 0; mu < NDIMS; mu++)
-      res += dev_linktracesum<UseTex, atype, Real>(arg.array,
+      res += dev_linktracesum<atype, Real>(arg.array,
                                                    id + mu * mustride, offset);
   }
   complex aggregate = BlockReduce(temp_storage).Reduce(res, Summ<complex>());
@@ -120,13 +120,13 @@ void GaugeTraceCUB<Real>::apply(const cudaStream_t &stream) {
   
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, false, SOA, Real);
+      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, SOA, Real);
     if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, false, SOA12, Real);
+      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, SOA12, Real);
     if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, false, SOA8, Real);
+      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, SOA8, Real);
 #else
-    LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, false, SOA, Real);
+    LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, SOA, Real);
 #endif
   
 }
@@ -224,7 +224,7 @@ template class GaugeTraceCUB<double>;
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_linktracesum(TraceArg<Real> arg) {
   uint idd = INDEX1D();
   if (idd < DEVPARAMS::Volume) {
@@ -251,7 +251,7 @@ __global__ void kernel_linktracesum(TraceArg<Real> arg) {
     complex res = complex::zero();
 #pragma unroll
     for (int mu = 0; mu < NDIMS; mu++)
-      res += dev_linktracesum<UseTex, atype, Real>(arg.array,
+      res += dev_linktracesum<atype, Real>(arg.array,
                                                    id + mu * mustride, offset);
     arg.value[idd] = res;
   }
@@ -274,16 +274,16 @@ template <class Real> void GaugeTrace<Real>::apply(const cudaStream_t &stream) {
     
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
-        kernel_linktracesum<false, SOA, Real>
+        kernel_linktracesum<SOA, Real>
             <<<tp.grid, tp.block, 0, stream>>>(arg);
       if (array.Type() == SOA12)
-        kernel_linktracesum<false, SOA12, Real>
+        kernel_linktracesum<SOA12, Real>
             <<<tp.grid, tp.block, 0, stream>>>(arg);
       if (array.Type() == SOA8)
-        kernel_linktracesum<false, SOA8, Real>
+        kernel_linktracesum<SOA8, Real>
             <<<tp.grid, tp.block, 0, stream>>>(arg);
 #else
-      kernel_linktracesum<false, SOA, Real>
+      kernel_linktracesum<SOA, Real>
           <<<tp.grid, tp.block, 0, stream>>>(arg);
 #endif
     

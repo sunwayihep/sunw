@@ -26,7 +26,7 @@ namespace CULQCD {
 //////// Gauge determinant
 /////////////////////////////////////////////////////////////////////////////////////////
 // #ifdef USE_CUDA_CUB
-template <int blockSize, bool UseTex, ArrayType atype, class Real>
+template <int blockSize, ArrayType atype, class Real>
 __global__ void kernel_linkUF(GaugeUFArg<Real> arg) {
   int id = INDEX1D();
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
@@ -50,29 +50,29 @@ __global__ void kernel_linkUF(GaugeUFArg<Real> arg) {
           int dx[NDIMS] = {0};
           int nuvolume = nu * mustride;
           link =
-              GAUGE_LOAD<UseTex, atype, Real>(arg.array, id + nuvolume, offset);
+              GAUGE_LOAD<atype, Real>(arg.array, id + nuvolume, offset);
           dx[nu]++;
-          link *= GAUGE_LOAD<UseTex, atype, Real>(
+          link *= GAUGE_LOAD<atype, Real>(
               arg.array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
           dx[nu]--;
           dx[mu]++;
-          link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+          link *= GAUGE_LOAD_DAGGER<atype, Real>(
               arg.array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
           staple += link;
 
           dx[mu]--;
           dx[nu]--;
-          link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+          link = GAUGE_LOAD_DAGGER<atype, Real>(
               arg.array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
-          link *= GAUGE_LOAD<UseTex, atype, Real>(
+          link *= GAUGE_LOAD<atype, Real>(
               arg.array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
           dx[mu]++;
-          link *= GAUGE_LOAD<UseTex, atype, Real>(
+          link *= GAUGE_LOAD<atype, Real>(
               arg.array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
           staple += link;
         }
       msun U =
-          GAUGE_LOAD<UseTex, atype, Real>(arg.array, id + muvolume, offset);
+          GAUGE_LOAD<atype, Real>(arg.array, id + muvolume, offset);
       res += (U * link.dagger()).trace();
     }
   }
@@ -100,13 +100,13 @@ template <class Real> void GaugeUFCUB<Real>::apply(const cudaStream_t &stream) {
   
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, false, SOA, Real);
+      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, SOA, Real);
     if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, false, SOA12, Real);
+      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, SOA12, Real);
     if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, false, SOA8, Real);
+      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, SOA8, Real);
 #else
-    LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, false, SOA, Real);
+    LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, SOA, Real);
 #endif
   
 }

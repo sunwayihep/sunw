@@ -64,7 +64,7 @@ __global__ void kernel_randgaugegx(complex *array, cuRNGState *state) {
   }
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_randgaugetransformation(complex *array, complex *gx) {
   int idd = INDEX1D();
   if (idd < DEVPARAMS::Volume) {
@@ -77,12 +77,12 @@ __global__ void kernel_randgaugetransformation(complex *array, complex *gx) {
 #ifdef MULTI_GPU
     idd = EOIndeX(id, oddbit);
 #endif
-    msun g = GAUGE_LOAD<false, SOA, Real>(gx, idd, DEVPARAMS::VolumeG);
+    msun g = GAUGE_LOAD<SOA, Real>(gx, idd, DEVPARAMS::VolumeG);
     for (int nu = 0; nu < 4; nu++) {
-      msun U = GAUGE_LOAD<UseTex, atype, Real>(
+      msun U = GAUGE_LOAD<atype, Real>(
           array, idd + nu * DEVPARAMS::VolumeG, DEVPARAMS::VolumeG * 4);
       msun U_temp = g * U;
-      msun g0 = (GAUGE_LOAD_DAGGER<false, SOA, Real>(
+      msun g0 = (GAUGE_LOAD_DAGGER<SOA, Real>(
           gx, neighborEOIndexPlusOne(id, oddbit, nu), DEVPARAMS::VolumeG));
       U = U_temp * g0;
       GAUGE_SAVE<atype, Real>(array, U, idd + nu * DEVPARAMS::VolumeG,
@@ -111,13 +111,13 @@ template <class Real> void RandGaugeTransf(gauge &gaugein, RNG &randstates) {
 #endif
   if (gaugein.EvenOdd()) {
     if (gaugein.Type() == SOA)
-      kernel_randgaugetransformation<false, SOA, Real>
+      kernel_randgaugetransformation<SOA, Real>
           <<<blockrgt, threadb>>>(gaugein.GetPtr(), gx.GetPtr());
     if (gaugein.Type() == SOA12)
-      kernel_randgaugetransformation<false, SOA12, Real>
+      kernel_randgaugetransformation<SOA12, Real>
           <<<blockrgt, threadb>>>(gaugein.GetPtr(), gx.GetPtr());
     if (gaugein.Type() == SOA8)
-      kernel_randgaugetransformation<false, SOA8, Real>
+      kernel_randgaugetransformation<SOA8, Real>
           <<<blockrgt, threadb>>>(gaugein.GetPtr(), gx.GetPtr());
   } else {
     errorCULQCD("Only defined for even/odd arrays!!!!\n");

@@ -42,7 +42,7 @@ template <class Real> struct ChromoFieldArg {
   int ny;
 };
 
-template <int blockSize, bool UseTex, class Real, bool ppdagger,
+template <int blockSize, class Real, bool ppdagger,
           bool EvenRadius>
 __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg) {
   typedef cub::BlockReduce<Real, blockSize> BlockReduce;
@@ -89,13 +89,13 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg) {
             if (id < DEVPARAMS::tstride) {
               // Ex^2
               // Real plaq = arg.plaq[s + dir1 * DEVPARAMS::tstride].real();
-              Real plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              Real plaq = ELEM_LOAD< Real>(arg.plaq,
                                                   s + dir1 * DEVPARAMS::tstride)
                               .real();
               field[0] += plaq;
               // Ey^2
               // plaq = arg.plaq[s + dir2 * DEVPARAMS::tstride].real();
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir2 * DEVPARAMS::tstride)
                          .real();
               field[1] += plaq;
@@ -103,36 +103,36 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg) {
               int s1 = Index_NDs_Neig_NM(s, dir3, -1);
               /*plaq = arg.plaq[s + dir3 * DEVPARAMS::tstride].real();
               plaq += arg.plaq[s1 + dir3 * DEVPARAMS::tstride].real();*/
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir3 * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq += ELEM_LOAD< Real>(arg.plaq,
                                               s1 + dir3 * DEVPARAMS::tstride)
                           .real();
               field[2] += plaq * 0.5;
               // Bx^2
               /*plaq = arg.plaq[s + (3 + dir1) * DEVPARAMS::tstride].real();
               plaq += arg.plaq[s1 + (3 + dir1) * DEVPARAMS::tstride].real();*/
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir1) * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(
+              plaq += ELEM_LOAD< Real>(
                           arg.plaq, s1 + (3 + dir1) * DEVPARAMS::tstride)
                           .real();
               field[3] += plaq * 0.5;
               // By^2
               /*plaq = arg.plaq[s + (3 + dir2) * DEVPARAMS::tstride].real();
               plaq += arg.plaq[s1 + (3 + dir2) * DEVPARAMS::tstride].real();*/
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir2) * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(
+              plaq += ELEM_LOAD< Real>(
                           arg.plaq, s1 + (3 + dir2) * DEVPARAMS::tstride)
                           .real();
               field[4] += plaq * 0.5;
               // Bz^2
               // plaq = arg.plaq[s + (3 + dir3) * DEVPARAMS::tstride].real();
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir3) * DEVPARAMS::tstride)
                          .real();
               field[5] += plaq;
@@ -191,42 +191,42 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg) {
 
             if (id < DEVPARAMS::tstride) {
               // Ex^2
-              Real plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              Real plaq = ELEM_LOAD< Real>(arg.plaq,
                                                   s + dir1 * DEVPARAMS::tstride)
                               .real();
               field[0] += plaq * 0.25;
               // Ey^2
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir2 * DEVPARAMS::tstride)
                          .real();
               field[1] += plaq;
               // Ez^2
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir3 * DEVPARAMS::tstride)
                          .real();
               int s1 = Index_NDs_Neig_NM(s, dir3, -1);
-              plaq += ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq += ELEM_LOAD< Real>(arg.plaq,
                                               s1 + dir3 * DEVPARAMS::tstride)
                           .real();
               field[2] += plaq * 0.25;
               // Bx^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir1) * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(
+              plaq += ELEM_LOAD< Real>(
                           arg.plaq, s1 + (3 + dir1) * DEVPARAMS::tstride)
                           .real();
               field[3] += plaq * 0.5;
               // By^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir2) * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(
+              plaq += ELEM_LOAD< Real>(
                           arg.plaq, s1 + (3 + dir2) * DEVPARAMS::tstride)
                           .real();
               field[4] += plaq * 0.125;
               // Bz^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir3) * DEVPARAMS::tstride)
                          .real();
               field[5] += plaq * 0.5;
@@ -284,7 +284,7 @@ __global__ void kernel_ChromoField(ChromoFieldArg<Real> arg) {
     CudaAtomicAdd(arg.pl, pl);
 }
 
-template <int blockSize, bool UseTex, class Real, bool ppdagger,
+template <int blockSize, class Real, bool ppdagger,
           bool EvenRadius>
 __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg) {
   typedef cub::BlockReduce<Real, blockSize> BlockReduce;
@@ -330,42 +330,42 @@ __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg) {
 
             if (id < DEVPARAMS::tstride) {
               // Ex^2
-              Real plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              Real plaq = ELEM_LOAD< Real>(arg.plaq,
                                                   s + dir1 * DEVPARAMS::tstride)
                               .real();
               field[0] += plaq;
               // Ey^2
               int s1 = Index_NDs_Neig_NM(s, dir2, -1);
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir2 * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq += ELEM_LOAD< Real>(arg.plaq,
                                               s1 + dir2 * DEVPARAMS::tstride)
                           .real();
               field[1] += plaq * 0.5;
               // Ez^2
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir3 * DEVPARAMS::tstride)
                          .real();
               field[2] += plaq;
               // Bx^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir1) * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(
+              plaq += ELEM_LOAD< Real>(
                           arg.plaq, s1 + (3 + dir1) * DEVPARAMS::tstride)
                           .real();
               field[3] += plaq * 0.5;
               // By^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir2) * DEVPARAMS::tstride)
                          .real();
               field[4] += plaq;
               // Bz^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir3) * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(
+              plaq += ELEM_LOAD< Real>(
                           arg.plaq, s1 + (3 + dir3) * DEVPARAMS::tstride)
                           .real();
               field[5] += plaq * 0.5;
@@ -446,42 +446,42 @@ __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg) {
 
             if (id < DEVPARAMS::tstride) {
               // Ex^2
-              Real plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              Real plaq = ELEM_LOAD< Real>(arg.plaq,
                                                   s + dir1 * DEVPARAMS::tstride)
                               .real();
               int s1 = Index_NDs_Neig_NM(s, dir2, 1);
-              plaq += ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq += ELEM_LOAD< Real>(arg.plaq,
                                               s1 + dir1 * DEVPARAMS::tstride)
                           .real();
               field[0] += plaq * 0.25;
               // Ey^2
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir2 * DEVPARAMS::tstride)
                          .real();
               field[1] += plaq;
               // Ez^2
-              plaq = ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq = ELEM_LOAD< Real>(arg.plaq,
                                              s + dir3 * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(arg.plaq,
+              plaq += ELEM_LOAD< Real>(arg.plaq,
                                               s1 + dir3 * DEVPARAMS::tstride)
                           .real();
               field[2] += plaq * 0.25;
               // Bx^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir1) * DEVPARAMS::tstride)
                          .real();
               field[3] += plaq * 0.5;
               // By^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir2) * DEVPARAMS::tstride)
                          .real();
-              plaq += ELEM_LOAD<UseTex, Real>(
+              plaq += ELEM_LOAD< Real>(
                           arg.plaq, s1 + (3 + dir2) * DEVPARAMS::tstride)
                           .real();
               field[4] += plaq * 0.125;
               // Bz^2
-              plaq = ELEM_LOAD<UseTex, Real>(
+              plaq = ELEM_LOAD< Real>(
                          arg.plaq, s + (3 + dir3) * DEVPARAMS::tstride)
                          .real();
               field[5] += plaq * 0.5;
@@ -538,7 +538,7 @@ __global__ void kernel_ChromoFieldMidFluxTube(ChromoFieldArg<Real> arg) {
     CudaAtomicAdd(arg.pl, pl);
 }
 
-template <bool UseTex, class Real, bool chargeplane, bool ppdagger,
+template <class Real, bool chargeplane, bool ppdagger,
           bool EvenRadius>
 class ChromoField : Tunable {
 private:
@@ -562,10 +562,10 @@ private:
         arg.field, 0, TOTAL_NUM_PLAQS * arg.nx * arg.ny * sizeof(Real)));
     CUDA_SAFE_CALL(cudaMemset(arg.pl, 0, sizeof(Real)));
     if (chargeplane) {
-      LAUNCH_KERNEL(kernel_ChromoField, tp, stream, arg, UseTex, Real, ppdagger,
+      LAUNCH_KERNEL(kernel_ChromoField, tp, stream, arg, Real, ppdagger,
                     EvenRadius);
     } else {
-      LAUNCH_KERNEL(kernel_ChromoFieldMidFluxTube, tp, stream, arg, UseTex,
+      LAUNCH_KERNEL(kernel_ChromoFieldMidFluxTube, tp, stream, arg,
                     Real, ppdagger, EvenRadius);
     }
   }
@@ -660,13 +660,13 @@ public:
   void postTune() {}
 };
 
-template <bool UseTex, class Real, bool chargeplane, bool ppdagger,
+template <class Real, bool chargeplane, bool ppdagger,
           bool EvenRadius>
 void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
                      int radius, int nx, int ny) {
   Timer mtime;
   mtime.start();
-  ChromoField<UseTex, Real, chargeplane, ppdagger, EvenRadius> cfield(
+  ChromoField< Real, chargeplane, ppdagger, EvenRadius> cfield(
       ploop, plaqfield, field, pl, radius, nx, ny);
   cfield.Run();
   cfield.stat();
@@ -676,44 +676,37 @@ void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
   COUT << "Time ChromoField:  " << mtime.getElapsedTimeInSec() << " s" << endl;
 }
 
-template <bool UseTex, class Real, bool chargeplane, bool ppdagger>
+template <class Real, bool chargeplane, bool ppdagger>
 void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
                      int radius, int nx, int ny) {
   if (radius % 2 == 0)
-    CalcChromoField<UseTex, Real, chargeplane, ppdagger, true>(
+    CalcChromoField< Real, chargeplane, ppdagger, true>(
         ploop, plaqfield, field, pl, radius, nx, ny);
   else
-    CalcChromoField<UseTex, Real, chargeplane, ppdagger, false>(
+    CalcChromoField< Real, chargeplane, ppdagger, false>(
         ploop, plaqfield, field, pl, radius, nx, ny);
 }
 
-template <bool UseTex, class Real, bool chargeplane>
+template <class Real, bool chargeplane>
 void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
                      int radius, int nx, int ny, bool ppdagger) {
   if (ppdagger)
-    CalcChromoField<UseTex, Real, chargeplane, true>(ploop, plaqfield, field,
+    CalcChromoField< Real, chargeplane, true>(ploop, plaqfield, field,
                                                      pl, radius, nx, ny);
   else
-    CalcChromoField<UseTex, Real, chargeplane, false>(ploop, plaqfield, field,
+    CalcChromoField< Real, chargeplane, false>(ploop, plaqfield, field,
                                                       pl, radius, nx, ny);
-}
-template <bool UseTex, class Real>
-void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
-                     int radius, int nx, int ny, bool chargeplane,
-                     bool ppdagger) {
-  if (chargeplane)
-    CalcChromoField<UseTex, Real, true>(ploop, plaqfield, field, pl, radius, nx,
-                                        ny, ppdagger);
-  else
-    CalcChromoField<UseTex, Real, false>(ploop, plaqfield, field, pl, radius,
-                                         nx, ny, ppdagger);
 }
 template <class Real>
 void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
                      int radius, int nx, int ny, bool ppdagger,
                      bool chargeplane) {
-  CalcChromoField<false, Real>(ploop, plaqfield, field, pl, radius, nx, ny,
-                                 chargeplane, ppdagger);
+  if (chargeplane)
+    CalcChromoField< Real, true>(ploop, plaqfield, field, pl, radius, nx, ny,
+                                 ppdagger);
+  else
+    CalcChromoField< Real, false>(ploop, plaqfield, field, pl, radius, nx, ny,
+                                  ppdagger);
 }
 template void CalcChromoField<float>(complexs *ploop, complexs *plaqfield,
                                      float *field, float *pl, int radius,

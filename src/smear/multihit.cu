@@ -23,7 +23,7 @@ using namespace std;
 
 namespace CULQCD {
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ void inline CalcStaple(complex *array, msun &staple, int idx,
                                   int mu) {
   int x[NDIMS];
@@ -38,31 +38,31 @@ __device__ void inline CalcStaple(complex *array, msun &staple, int idx,
       int nuvolume = nu * mustride;
       msun link;
       // UP
-      link = GAUGE_LOAD<UseTex, atype, Real>(array, idx + nuvolume, offset);
+      link = GAUGE_LOAD<atype, Real>(array, idx + nuvolume, offset);
       dx[nu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[nu]--;
       dx[mu]++;
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
       dx[mu]--;
       // DOWN
       dx[nu]--;
-      link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link = GAUGE_LOAD_DAGGER<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[mu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
     }
 }
 
 // kernel MultiHit, uses random array state with volume/2 size
-template <bool UseTex, ArrayType atypeIn, ArrayType atypeOut, class Real>
+template <ArrayType atypeIn, ArrayType atypeOut, class Real>
 __global__ void kernel_multihit_1D_halfrng(complex *arrayin, complex *arrayout,
                                            cuRNGState *state, int mu,
                                            int nhit) {
@@ -74,9 +74,9 @@ __global__ void kernel_multihit_1D_halfrng(complex *arrayin, complex *arrayout,
     int id = idd + lat * DEVPARAMS::HalfVolume;
     msun staple = msun::zero();
     // calculate the staple
-    CalcStaple<UseTex, atypeIn, Real>(arrayin, staple, id, mu);
+    CalcStaple< atypeIn, Real>(arrayin, staple, id, mu);
     msun U =
-        GAUGE_LOAD<UseTex, atypeIn, Real>(arrayin, id + mu * DEVPARAMS::Volume);
+        GAUGE_LOAD< atypeIn, Real>(arrayin, id + mu * DEVPARAMS::Volume);
     staple = staple.dagger();
     msun link = U;
     for (int iter = 0; iter < nhit; iter++) {
@@ -89,7 +89,7 @@ __global__ void kernel_multihit_1D_halfrng(complex *arrayin, complex *arrayout,
   state[idd] = localState;
 }
 
-template <bool UseTex, ArrayType atype, ArrayType atypehit, class Real>
+template <ArrayType atype, ArrayType atypehit, class Real>
 __global__ void kernel_evenodd(complex *arrayin, complex *arrayout,
                                cuRNGState *state, int mu, int oddbit,
                                int nhit) {
@@ -110,25 +110,25 @@ __global__ void kernel_evenodd(complex *arrayin, complex *arrayout,
     int nuvolume = nu * mustride;
     // UP
     link =
-        GAUGE_LOAD<UseTex, atype, Real>(arrayin, idxoddbit + nuvolume, offset);
-    link *= GAUGE_LOAD<UseTex, atype, Real>(
+        GAUGE_LOAD<atype, Real>(arrayin, idxoddbit + nuvolume, offset);
+    link *= GAUGE_LOAD<atype, Real>(
         arrayin, Index_ND_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);
-    link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arrayin, newidmu1 + nuvolume,
+    link *= GAUGE_LOAD_DAGGER<atype, Real>(arrayin, newidmu1 + nuvolume,
                                                    offset);
     staple += link;
     // DOWN
     int newidnum1 = Index_ND_Neig_EO(id, oddbit, nu, -1);
-    link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(arrayin, newidnum1 + nuvolume,
+    link = GAUGE_LOAD_DAGGER<atype, Real>(arrayin, newidnum1 + nuvolume,
                                                   offset);
     link *=
-        GAUGE_LOAD<UseTex, atype, Real>(arrayin, newidnum1 + muvolume, offset);
-    link *= GAUGE_LOAD<UseTex, atype, Real>(
+        GAUGE_LOAD<atype, Real>(arrayin, newidnum1 + muvolume, offset);
+    link *= GAUGE_LOAD<atype, Real>(
         arrayin, Index_ND_Neig_EO(id, oddbit, mu, 1, nu, -1) + nuvolume,
         offset);
     staple += link;
   }
   idxoddbit += muvolume;
-  msun U = GAUGE_LOAD<UseTex, atype, Real>(arrayin, idxoddbit, offset);
+  msun U = GAUGE_LOAD<atype, Real>(arrayin, idxoddbit, offset);
 
   cuRNGState localState = state[id];
 
@@ -143,7 +143,7 @@ __global__ void kernel_evenodd(complex *arrayin, complex *arrayout,
   GAUGE_SAVE<atypehit, Real>(arrayout, link, idxoddbit, offset);
 }
 
-template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real,
+template <ArrayType atypein, ArrayType atypeout, class Real,
           bool even>
 class MultiHit : Tunable {
 private:
@@ -165,16 +165,16 @@ private:
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
     if (even) {
-      kernel_evenodd<UseTex, atypein, atypeout, Real>
+      kernel_evenodd< atypein, atypeout, Real>
           <<<tp.grid, tp.block, 0, stream>>>(arrayin.GetPtr(),
                                              arrayout.GetPtr(),
                                              randstates.State(), mu, 0, nhit);
-      kernel_evenodd<UseTex, atypein, atypeout, Real>
+      kernel_evenodd< atypein, atypeout, Real>
           <<<tp.grid, tp.block, 0, stream>>>(arrayin.GetPtr(),
                                              arrayout.GetPtr(),
                                              randstates.State(), mu, 1, nhit);
     } else
-      kernel_multihit_1D_halfrng<UseTex, atypein, atypeout, Real>
+      kernel_multihit_1D_halfrng< atypein, atypeout, Real>
           <<<tp.grid, tp.block, 0, stream>>>(arrayin.GetPtr(),
                                              arrayout.GetPtr(),
                                              randstates.State(), mu, nhit);
@@ -244,19 +244,19 @@ public:
   void Run() { return Run(0); }
 };
 
-template <class Real, bool tex, ArrayType atypein, ArrayType atypeout>
+template <class Real, ArrayType atypein, ArrayType atypeout>
 void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit) {
 
   COUT << "MultiHit: nhit = " << nhit << endl;
   Timer mtime;
   mtime.start();
   if (array.EvenOdd() && arrayout.EvenOdd()) {
-    MultiHit<tex, atypein, atypeout, Real, true> mhit(
+    MultiHit<atypein, atypeout, Real, true> mhit(
         array, arrayout, randstates, NDIMS - 1, nhit);
     mhit.Run();
     mhit.stat();
   } else if (!array.EvenOdd() && !arrayout.EvenOdd()) {
-    MultiHit<tex, atypein, atypeout, Real, false> mhit(
+    MultiHit<atypein, atypeout, Real, false> mhit(
         array, arrayout, randstates, NDIMS - 1, nhit);
     mhit.Run();
     mhit.stat();
@@ -267,22 +267,16 @@ void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit) {
   COUT << "Time MultiHit:  " << mtime.getElapsedTimeInSec() << " s" << endl;
 }
 
-template <class Real, bool tex>
+template <class Real>
 void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit) {
   if (arrayout.Type() != SOA)
     errorCULQCD("Only defined for SOA arrays in arrayout...\n");
   if (array.Type() == SOA)
-    ApplyMultiHit<Real, tex, SOA, SOA>(array, arrayout, randstates, nhit);
+    ApplyMultiHit<Real, SOA, SOA>(array, arrayout, randstates, nhit);
   else if (array.Type() == SOA12)
-    ApplyMultiHit<Real, tex, SOA12, SOA>(array, arrayout, randstates, nhit);
+    ApplyMultiHit<Real, SOA12, SOA>(array, arrayout, randstates, nhit);
   else
     errorCULQCD("Not defined for SOA8 arrays in array...\n");
-}
-
-template <class Real>
-void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit) {
-
-  ApplyMultiHit<Real, false>(array, arrayout, randstates, nhit);
 }
 template void ApplyMultiHit<float>(gauges array, gauges arrayout,
                                    RNG &randstates, int nhit);

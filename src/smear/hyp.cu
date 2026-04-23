@@ -45,7 +45,7 @@ namespace CULQCD {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ msun inline CalcStaple(complex *array, int x[NDIMS], int mu,
                                   int nu) {
   int muvolume = mu * DEVPARAMS::Volume;
@@ -53,40 +53,40 @@ __device__ msun inline CalcStaple(complex *array, int x[NDIMS], int mu,
   int nuvolume = nu * DEVPARAMS::Volume;
   msun link;
   // UP
-  link = GAUGE_LOAD<UseTex, atype, Real>(array, Index_ND_NM(x) + nuvolume,
+  link = GAUGE_LOAD<atype, Real>(array, Index_ND_NM(x) + nuvolume,
                                          DEVPARAMS::size);
   dx[nu]++;
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_NM(x, dx) + muvolume, DEVPARAMS::size);
   dx[nu]--;
   dx[mu]++;
-  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+  link *= GAUGE_LOAD_DAGGER<atype, Real>(
       array, Index_ND_Neig_NM(x, dx) + nuvolume, DEVPARAMS::size);
   msun staple = link;
   dx[mu]--;
   // DOWN
   dx[nu]--;
-  link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+  link = GAUGE_LOAD_DAGGER<atype, Real>(
       array, Index_ND_Neig_NM(x, dx) + nuvolume, DEVPARAMS::size);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_NM(x, dx) + muvolume, DEVPARAMS::size);
   dx[mu]++;
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_NM(x, dx) + nuvolume, DEVPARAMS::size);
   staple += link;
   return staple;
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ msun HYPSmearVbar(complex *array, int idx[NDIMS], int mu, int nu,
                              int rho, int nhits, Real tol) {
   int eta = 0;
   for (int i = 0; i < NDIMS; ++i)
     if (i != mu && i != nu && i != rho)
       eta = i;
-  msun vbar = CalcStaple<UseTex, atype, Real>(array, idx, mu, eta);
+  msun vbar = CalcStaple< atype, Real>(array, idx, mu, eta);
   vbar *= (0.5 * DEVPARAMS::hypalpha3);
-  msun link = GAUGE_LOAD<UseTex, atype, Real>(
+  msun link = GAUGE_LOAD<atype, Real>(
       array, Index_ND_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
   vbar += link * (1.0 - DEVPARAMS::hypalpha3);
 #if defined(PROJECT_LINK_START_WREUNIT)
@@ -97,36 +97,36 @@ __device__ msun HYPSmearVbar(complex *array, int idx[NDIMS], int mu, int nu,
   return link;
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ msun HYPSmearVtil(complex *array, int idx[NDIMS], int mu, int nu,
                              int nhits, Real tol) {
   msun link;
   msun vtil = msun::zero();
   for (int rho = 0; rho < NDIMS; ++rho)
     if (rho != mu && rho != nu) {
-      link = HYPSmearVbar<UseTex, atype, Real>(array, idx, rho, nu, mu, nhits,
+      link = HYPSmearVbar< atype, Real>(array, idx, rho, nu, mu, nhits,
                                                tol);
       int y[NDIMS];
       Index_ND_Neig_NM(y, idx, rho, 1);
       link *=
-          HYPSmearVbar<UseTex, atype, Real>(array, y, mu, rho, nu, nhits, tol);
+          HYPSmearVbar< atype, Real>(array, y, mu, rho, nu, nhits, tol);
       Index_ND_Neig_NM(y, idx, mu, 1);
       link *=
-          HYPSmearVbar<UseTex, atype, Real>(array, y, rho, nu, mu, nhits, tol)
+          HYPSmearVbar< atype, Real>(array, y, rho, nu, mu, nhits, tol)
               .dagger();
       vtil += link;
       Index_ND_Neig_NM(y, idx, rho, -1);
       link =
-          HYPSmearVbar<UseTex, atype, Real>(array, y, rho, nu, mu, nhits, tol)
+          HYPSmearVbar< atype, Real>(array, y, rho, nu, mu, nhits, tol)
               .dagger();
       link *=
-          HYPSmearVbar<UseTex, atype, Real>(array, y, mu, rho, nu, nhits, tol);
+          HYPSmearVbar< atype, Real>(array, y, mu, rho, nu, nhits, tol);
       Index_ND_Neig_NM(y, idx, rho, -1, mu, 1);
       link *=
-          HYPSmearVbar<UseTex, atype, Real>(array, y, rho, nu, mu, nhits, tol);
+          HYPSmearVbar< atype, Real>(array, y, rho, nu, mu, nhits, tol);
       vtil += link;
     }
-  link = GAUGE_LOAD<UseTex, atype, Real>(
+  link = GAUGE_LOAD<atype, Real>(
       array, Index_ND_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
   vtil *= (0.25 * DEVPARAMS::hypalpha2);
   vtil += link * (1.0 - DEVPARAMS::hypalpha2);
@@ -138,7 +138,7 @@ __device__ msun HYPSmearVtil(complex *array, int idx[NDIMS], int mu, int nu,
   return link;
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ msun HYPSmearV(complex *array, int idx[NDIMS], int mu, int nhits,
                           Real tol) {
 
@@ -146,24 +146,24 @@ __device__ msun HYPSmearV(complex *array, int idx[NDIMS], int mu, int nhits,
   msun link;
   for (int nu = 0; nu < NDIMS; ++nu) {
     if (mu != nu) {
-      link = HYPSmearVtil<UseTex, atype, Real>(array, idx, nu, mu, nhits, tol);
+      link = HYPSmearVtil< atype, Real>(array, idx, nu, mu, nhits, tol);
       int y[NDIMS];
       Index_ND_Neig_NM(y, idx, nu, 1);
-      link *= HYPSmearVtil<UseTex, atype, Real>(array, y, mu, nu, nhits, tol);
+      link *= HYPSmearVtil< atype, Real>(array, y, mu, nu, nhits, tol);
       Index_ND_Neig_NM(y, idx, mu, 1);
-      link *= HYPSmearVtil<UseTex, atype, Real>(array, y, nu, mu, nhits, tol)
+      link *= HYPSmearVtil< atype, Real>(array, y, nu, mu, nhits, tol)
                   .dagger();
       v += link;
       Index_ND_Neig_NM(y, idx, nu, -1);
-      link = HYPSmearVtil<UseTex, atype, Real>(array, y, nu, mu, nhits, tol)
+      link = HYPSmearVtil< atype, Real>(array, y, nu, mu, nhits, tol)
                  .dagger();
-      link *= HYPSmearVtil<UseTex, atype, Real>(array, y, mu, nu, nhits, tol);
+      link *= HYPSmearVtil< atype, Real>(array, y, mu, nu, nhits, tol);
       Index_ND_Neig_NM(y, idx, nu, -1, mu, 1);
-      link *= HYPSmearVtil<UseTex, atype, Real>(array, y, nu, mu, nhits, tol);
+      link *= HYPSmearVtil< atype, Real>(array, y, nu, mu, nhits, tol);
       v += link;
     }
   }
-  link = GAUGE_LOAD<UseTex, atype, Real>(
+  link = GAUGE_LOAD<atype, Real>(
       array, Index_ND_NM(idx) + mu * DEVPARAMS::Volume, DEVPARAMS::size);
   v *= DEVPARAMS::hypalpha1 / 6.0;
   v += link * (1.0 - DEVPARAMS::hypalpha1);
@@ -185,7 +185,7 @@ template <class Real> struct HYPArg {
   int nhits;
 };
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_HYPSmear(HYPArg<Real> arg, int mu) {
   int id = INDEX1D();
   if (id >= DEVPARAMS::Volume)
@@ -193,12 +193,12 @@ __global__ void kernel_HYPSmear(HYPArg<Real> arg, int mu) {
   int x[NDIMS];
   Index_ND_NM(id, x);
   msun vhyp =
-      HYPSmearV<UseTex, atype, Real>(arg.arrayin, x, mu, arg.nhits, arg.tol);
+      HYPSmearV< atype, Real>(arg.arrayin, x, mu, arg.nhits, arg.tol);
   GAUGE_SAVE<atype, Real>(arg.arrayout, vhyp, id + mu * DEVPARAMS::Volume,
                           DEVPARAMS::size);
 }
 
-template <bool UseTex, ArrayType atypein, class Real> class ApplyHYP : Tunable {
+template <ArrayType atypein, class Real> class ApplyHYP : Tunable {
 private:
   gauge arrayin;
   gauge arrayout;
@@ -216,7 +216,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_HYPSmear<UseTex, atypein, Real>
+    kernel_HYPSmear< atypein, Real>
         <<<tp.grid, tp.block, 0, stream>>>(arg, mu);
   }
 
@@ -304,7 +304,7 @@ void ApplyHYPinSpace(gauge array, int steps, int nhits, Real tol,
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
 
-  ApplyHYP<false, atypein, Real> hyp_runner(array, arrayout, nhits, tol);
+  ApplyHYP<atypein, Real> hyp_runner(array, arrayout, nhits, tol);
   for (int st = 0; st < steps; st++) {
     for (int mu = 0; mu < NDIMS - 1; mu++) {
       hyp_runner.SetDir(mu);
@@ -343,7 +343,7 @@ void ApplyHYPinTime(gauge array, int steps, int nhits, Real tol, ParamHYP hyp) {
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
 
-  ApplyHYP<false, atypein, Real> hyp_runner(array, arrayout, nhits, tol);
+  ApplyHYP<atypein, Real> hyp_runner(array, arrayout, nhits, tol);
   hyp_runner.SetDir(NDIMS - 1);
   for (int st = 0; st < steps; st++) {
     hyp_runner.Run();

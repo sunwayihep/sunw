@@ -30,7 +30,7 @@ template <class Real> struct APEArg {
   int nhits;
 };
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_APE_Space(APEArg<Real> arg, int mu) {
 
   int id = INDEX1D();
@@ -51,28 +51,28 @@ __global__ void kernel_APE_Space(APEArg<Real> arg, int mu) {
       int dx[NDIMS] = {0};
       int nuvolume = nu * mustride;
       link =
-          GAUGE_LOAD<UseTex, atype, Real>(arg.arrayin, id + nuvolume, offset);
+          GAUGE_LOAD<atype, Real>(arg.arrayin, id + nuvolume, offset);
       dx[nu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[nu]--;
       dx[mu]++;
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
 
       dx[mu]--;
       dx[nu]--;
-      link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[mu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
     }
-  msun U = GAUGE_LOAD<UseTex, atype, Real>(arg.arrayin, id + muvolume, offset);
+  msun U = GAUGE_LOAD<atype, Real>(arg.arrayin, id + muvolume, offset);
   link = U + staple * arg.w;
   link /= (1.0 + 6.0 * arg.w);
   if (0) {
@@ -96,7 +96,7 @@ __global__ void kernel_APE_Space(APEArg<Real> arg, int mu) {
   //}
 }
 
-template <bool UseTex, ArrayType atypein, class Real> class ApplyAPE : Tunable {
+template <ArrayType atypein, class Real> class ApplyAPE : Tunable {
 private:
   gauge arrayin;
   gauge arrayout;
@@ -114,7 +114,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_APE_Space<UseTex, atypein, Real>
+    kernel_APE_Space< atypein, Real>
         <<<tp.grid, tp.block, 0, stream>>>(arg, mu);
   }
 
@@ -195,7 +195,7 @@ void ApplyAPEinSpace(gauge array, Real w, int steps, int nhits, Real tol) {
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
   
-    ApplyAPE<false, atypein, Real> ape(array, arrayout, w, nhits, tol);
+    ApplyAPE<atypein, Real> ape(array, arrayout, w, nhits, tol);
     for (int st = 0; st < steps; st++) {
       for (int mu = 0; mu < NDIMS - 1; mu++) {
         ape.SetDir(mu);
@@ -225,7 +225,7 @@ void ApplyAPEinTime(gauge array, Real w, int steps, int nhits, Real tol) {
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
   
-    ApplyAPE<false, atypein, Real> ape(array, arrayout, w, nhits, tol);
+    ApplyAPE<atypein, Real> ape(array, arrayout, w, nhits, tol);
     ape.SetDir(NDIMS - 1);
     for (int st = 0; st < steps; st++) {
       ape.Run();

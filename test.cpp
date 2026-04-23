@@ -55,7 +55,6 @@ void RunOnDeviceTEST(int argc, char **argv) {
 
   float beta0 = atof(argv[NDIMS + 1]);
   int gpuid = atoi(argv[NDIMS + 2]);
-  PARAMS::UseTex = false;
   int iter = 1;
 
   // if TUNE_YES user must set export CULQCD_RESOURCE_PATH="path to folder where
@@ -74,9 +73,7 @@ void RunOnDeviceTEST(int argc, char **argv) {
   // Set Lattice Gauge Parameters and copy to Device constant memory
   // also sets some kernel launch parameters
   //---------------------------------------------------------------------------------------
-  SETPARAMS(PARAMS::UseTex, beta0, lattice_size, true);
-  // TO ENABLE/DISABLE READS FROM TEXTURES anywhere in the code....!!!!!!
-  // UseTextureMemory(true/false);
+  SETPARAMS(beta0, lattice_size, true);
 
   gauge AA(mygaugein, Device, PARAMS::Volume * NDIMS, true);
   AA.Details();

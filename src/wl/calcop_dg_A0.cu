@@ -44,7 +44,7 @@
 using namespace std;
 namespace CULQCD {
 
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   int id = INDEX1D();
   if (id >= DEVPARAMS::Volume)
@@ -58,7 +58,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   msun link = msun::identity();
   for (int r = 0; r < arg.radius; r++) {
     int idx = Index_ND_Neig_NM(x, arg.mu, r);
-    link *= GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, idx + muvolume,
+    link *= GAUGE_LOAD<atype, Real>(arg.gaugefield, idx + muvolume,
                                             DEVPARAMS::size);
   }
   if (arg.opN == 1) {
@@ -71,15 +71,15 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   /*
           //COMMON PART
           int halfline = (arg.radius + 1) / 2;
-          msun line_left = GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, id +
+          msun line_left = GAUGE_LOAD<atype, Real>( arg.gaugefield, id +
   muvolume, DEVPARAMS::size); for(int ir = 1; ir < halfline; ++ir) line_left *=
-  GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield, Index_4D_Neig_NM(id, arg.mu,
+  GAUGE_LOAD<atype, Real>( arg.gaugefield, Index_4D_Neig_NM(id, arg.mu,
   ir) + muvolume, DEVPARAMS::size);
 
           halfline = arg.radius/2;
-          msun line_right = GAUGE_LOAD<UseTex, atype, Real>( arg.gaugefield,
+          msun line_right = GAUGE_LOAD<atype, Real>( arg.gaugefield,
   Index_4D_Neig_NM(id, arg.mu, halfline) + muvolume, DEVPARAMS::size); for(int
-  ir = halfline + 1; ir < arg.radius; ++ir) line_right *= GAUGE_LOAD<UseTex,
+  ir = halfline + 1; ir < arg.radius; ++ir) line_right *= GAUGE_LOAD<
   atype, Real>( arg.gaugefield, Index_4D_Neig_NM(id, arg.mu, ir) + muvolume,
   DEVPARAMS::size);
   // extended stape
@@ -115,7 +115,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
           static int len2_N2[n]={1,2,1,2,3,1};
           #pragma unroll
           for(int i=0; i<n; i++){
-                  mop=N2<UseTex, Real,atype>(arg, id, len1_N2[i], len2_N2[i],
+                  mop=N2< Real,atype>(arg, id, len1_N2[i], len2_N2[i],
   muvolume, line_left, line_right); GAUGE_SAVE<SOA, Real>( arg.fieldOp, mop, id
   + index * DEVPARAMS::Volume, gfoffset1); index++;
           }
@@ -131,7 +131,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
           static int len_N3[n]={1,2,3};
           #pragma unroll
           for(int i=0; i<n; i++){
-                  mop=N3<UseTex, Real, atype>(arg, id, len_N3[i], muvolume,
+                  mop=N3< Real, atype>(arg, id, len_N3[i], muvolume,
   line_left, line_right); GAUGE_SAVE<SOA, Real>( arg.fieldOp, mop, id + index *
   DEVPARAMS::Volume, gfoffset1); index++;
           }
@@ -144,7 +144,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     static int set0_l[n] = {1, 2, 3, 4, 5, 6, 7, 8};
 #pragma unroll
     for (int i = 0; i < n; i++) {
-      mop = MO0<UseTex, Real, atype>(arg, id, set0_l[i], muvolume);
+      mop = MO0< Real, atype>(arg, id, set0_l[i], muvolume);
       GAUGE_SAVE<SOA, Real>(arg.fieldOp, mop, id + index * DEVPARAMS::Volume,
                             gfoffset1);
       index++;
@@ -160,7 +160,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   static int set1_lx[n]={1,2,2,3,3,3,4,4,4,4,5,5,5,5,5,5,6,6,6,7};
   static int set1_ly[n]={1,1,2,1,2,3,1,2,3,4,1,2,3,3,4,5,1,2,3,1};
   //2,5,5,8,10,10,13,13,18,17,17,20,20,25,25,32,26,26,29,29,34,34,41,41, 37, 37,
-  39, 39,45,45 #pragma unroll for(int i=0;i< n;i++){ mop=MO1<UseTex, Real,
+  39, 39,45,45 #pragma unroll for(int i=0;i< n;i++){ mop=MO1< Real,
   atype>(arg, id, set1_lx[i], set1_ly[i],  muvolume); GAUGE_SAVE<SOA, Real>(
   arg.fieldOp, mop, id + index * DEVPARAMS::Volume, gfoffset1); index++;
   }
@@ -178,7 +178,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   static int set2_l2x[n]={1,2,1,1,1,2,3,1,2};
   #pragma unroll
   for(int i=0;i<n;i++){
-          mop=MO2<UseTex, Real, atype>(arg, id, set2_l1x[i], set2_ly[i],
+          mop=MO2< Real, atype>(arg, id, set2_l1x[i], set2_ly[i],
   set2_l2x[i],  muvolume); GAUGE_SAVE<SOA, Real>( arg.fieldOp, mop, id + index*
   DEVPARAMS::Volume, gfoffset1); index++;
   }
@@ -197,7 +197,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
           static int set4_l2[n]={1,2,3};
           #pragma unroll
           for(int i=0; i<n; i++){
-                  mop=MO4<UseTex, Real, atype>(arg, id, set4_l1[i] , set4_l2[i]
+                  mop=MO4< Real, atype>(arg, id, set4_l1[i] , set4_l2[i]
   ,link , muvolume); GAUGE_SAVE<SOA, Real>( arg.fieldOp, mop, id + index*
   DEVPARAMS::Volume, gfoffset1); index++;
           }
@@ -214,7 +214,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
           static int set3_l3[n]={1,2,1};
           #pragma unroll
           for(int i=0; i<n; i++){
-                  mop=MO3<UseTex, Real, atype>(arg, id, set3_l1[i],
+                  mop=MO3< Real, atype>(arg, id, set3_l1[i],
   set3_l2[i],set3_l3[i],link, muvolume); GAUGE_SAVE<SOA, Real>( arg.fieldOp,
   mop, id + index* DEVPARAMS::Volume, gfoffset1); index++;
           }
@@ -225,7 +225,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
 // end of kernal for calculation of //
 // operators                        //
 //////////////////////////////////////
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 class CalcOPsF_A0 : Tunable {
 private:
   WLOPArg<Real> arg;
@@ -247,7 +247,7 @@ private:
     // CUDA_SAFE_CALL(cudaMemset(arg.fieldOp, 0, PARAMS::Volume * arg.opN *
     // sizeof(msun)));
     fieldOp.Clean();
-    kernel_CalcOPsF_A0_33<UseTex, Real, atype>
+    kernel_CalcOPsF_A0_33< Real, atype>
         <<<tp.grid, tp.block, 0, stream>>>(arg);
   }
 
@@ -327,7 +327,7 @@ public:
   void postTune() {}
 };
 
-template <bool UseTex, class Real>
+template <class Real>
 void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
   Timer mtime;
   mtime.start();
@@ -343,7 +343,7 @@ void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
   if (array.EvenOdd() == true || arg->fieldOp.EvenOdd() == true)
     errorCULQCD("Not defined for EvenOdd arrays...\n");
 
-  CalcOPsF_A0<UseTex, Real, SOA> wl(argK, array, arg->fieldOp);
+  CalcOPsF_A0< Real, SOA> wl(argK, array, arg->fieldOp);
   wl.Run();
   if (getVerbosity() >= VERBOSE)
     wl.stat();
@@ -352,11 +352,6 @@ void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
   if (getVerbosity() >= VERBOSE)
     COUT << "Time CalcOPsF_A0:  " << mtime.getElapsedTimeInSec() << " s"
          << endl;
-}
-
-template <class Real>
-void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
-  CalcWLOPs_A0<false, Real>(array, arg, radius, mu);
 }
 
 template void CalcWLOPs_A0<double>(gauged array, Sigma_g_plus<double> *arg,

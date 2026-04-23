@@ -42,7 +42,7 @@ template <class Real> struct TPloopArg {
   complex *mean;
 };
 
-template <int blockSize, bool UseTex, ArrayType atypein, class Real>
+template <int blockSize, ArrayType atypein, class Real>
 __global__ void kernel_calc_Tpolyakovloop(TPloopArg<Real> arg) {
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
@@ -53,9 +53,9 @@ __global__ void kernel_calc_Tpolyakovloop(TPloopArg<Real> arg) {
     int index = id + (NDIMS - 1) * DEVPARAMS::Volume;
     int offset = DEVPARAMS::Volume * NDIMS;
 
-    msun L = GAUGE_LOAD<UseTex, atypein, Real>(arg.array, index, offset);
+    msun L = GAUGE_LOAD<atypein, Real>(arg.array, index, offset);
     for (int t = 1; t < DEVPARAMS::Grid[NDIMS - 1]; t++)
-      L *= GAUGE_LOAD<UseTex, atypein, Real>(
+      L *= GAUGE_LOAD<atypein, Real>(
           arg.array, index + t * DEVPARAMS::tstride, offset);
     value = L.trace();
     arg.ploop[id] = value;
@@ -65,7 +65,7 @@ __global__ void kernel_calc_Tpolyakovloop(TPloopArg<Real> arg) {
     CudaAtomicAdd(arg.mean, aggregate);
 }
 
-template <bool UseTex, ArrayType atypein, class Real> class TPloop : Tunable {
+template <ArrayType atypein, class Real> class TPloop : Tunable {
 private:
   gauge arrayin;
   TPloopArg<Real> arg;
@@ -83,7 +83,7 @@ private:
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
     CUDA_SAFE_CALL(cudaMemset(arg.mean, 0, sizeof(complex)));
-    LAUNCH_KERNEL(kernel_calc_Tpolyakovloop, tp, stream, arg, UseTex, atypein,
+    LAUNCH_KERNEL(kernel_calc_Tpolyakovloop, tp, stream, arg, atypein,
                   Real);
   }
 
@@ -149,9 +149,9 @@ public:
   complex Run() { return Run(0); }
 };
 
-template <bool UseTex, ArrayType atypein, class Real>
+template <ArrayType atypein, class Real>
 complex TracePloop(gauge array, complex *ploop) {
-  TPloop<UseTex, atypein, Real> onepl(array, ploop);
+  TPloop< atypein, Real> onepl(array, ploop);
   return onepl.Run();
 }
 /**
@@ -166,7 +166,7 @@ template <class Real> complex TracePloop(gauge array, complex *ploop) {
   const ArrayType atypein = SOA;
   complex value = complex::zero();
   
-    value = TracePloop<false, atypein, Real>(array, ploop);
+    value = TracePloop<atypein, Real>(array, ploop);
   
   return value;
 }

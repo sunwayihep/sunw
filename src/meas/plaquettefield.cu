@@ -31,7 +31,7 @@ template <class Real> struct PlaquettedArg {
   complex *meanplaq;
 };
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 inline __device__ complex Plaquette(const complex *array, const int idx,
                                     const int mu, const int nu) {
   int x[NDIMS];
@@ -41,33 +41,33 @@ inline __device__ complex Plaquette(const complex *array, const int idx,
   int nuvolume = nu * mustride;
   int offset = DEVPARAMS::size;
   int dx[NDIMS] = {0};
-  msun link = GAUGE_LOAD<UseTex, atype, Real>(array, idx + muvolume, offset);
+  msun link = GAUGE_LOAD<atype, Real>(array, idx + muvolume, offset);
   dx[mu]++;
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
   dx[mu]--;
   dx[nu]++;
-  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+  link *= GAUGE_LOAD_DAGGER<atype, Real>(
       array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
   dx[nu]--;
-  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(array, idx + nuvolume, offset);
+  link *= GAUGE_LOAD_DAGGER<atype, Real>(array, idx + nuvolume, offset);
 
   // return -link.trace() / 3.0 + 1.0;
   return (link.trace() / NCOLORS);
 }
 
-template <bool UseTex, ArrayType atypein, class Real>
+template <ArrayType atypein, class Real>
 inline __device__ void SixPlaquette(const complex *array, complex *plaq,
                                     const int idx) {
-  plaq[0] += Plaquette<UseTex, atypein, Real>(array, idx, 0, 3);
-  plaq[1] += Plaquette<UseTex, atypein, Real>(array, idx, 1, 3);
-  plaq[2] += Plaquette<UseTex, atypein, Real>(array, idx, 2, 3);
-  plaq[3] += Plaquette<UseTex, atypein, Real>(array, idx, 1, 2);
-  plaq[4] += Plaquette<UseTex, atypein, Real>(array, idx, 2, 0);
-  plaq[5] += Plaquette<UseTex, atypein, Real>(array, idx, 0, 1);
+  plaq[0] += Plaquette<atypein, Real>(array, idx, 0, 3);
+  plaq[1] += Plaquette<atypein, Real>(array, idx, 1, 3);
+  plaq[2] += Plaquette<atypein, Real>(array, idx, 2, 3);
+  plaq[3] += Plaquette<atypein, Real>(array, idx, 1, 2);
+  plaq[4] += Plaquette<atypein, Real>(array, idx, 2, 0);
+  plaq[5] += Plaquette<atypein, Real>(array, idx, 0, 1);
 }
 
-template <int blockSize, bool UseTex, ArrayType atypein, class Real,
+template <int blockSize, ArrayType atypein, class Real,
           bool spacetime>
 __global__ void kernel_calc_plaquette(PlaquettedArg<Real> arg) {
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
@@ -80,14 +80,14 @@ __global__ void kernel_calc_plaquette(PlaquettedArg<Real> arg) {
     plaq[d] = complex::zero();
   if (spacetime) {
     if (id < DEVPARAMS::Volume) {
-      SixPlaquette<UseTex, atypein, Real>(arg.array, plaq, id);
+      SixPlaquette<atypein, Real>(arg.array, plaq, id);
     }
     for (int d = 0; d < 6; d++)
       arg.plaq[id + d * DEVPARAMS::Volume] = plaq[d];
   } else {
     if (id < DEVPARAMS::tstride) {
       for (int it = 0; it < DEVPARAMS::Grid[NDIMS - 1]; it++) {
-        SixPlaquette<UseTex, atypein, Real>(arg.array, plaq,
+        SixPlaquette<atypein, Real>(arg.array, plaq,
                                             id + it * DEVPARAMS::tstride);
       }
       for (int d = 0; d < 6; d++)
@@ -105,7 +105,7 @@ __global__ void kernel_calc_plaquette(PlaquettedArg<Real> arg) {
   }
 }
 
-template <bool UseTex, ArrayType atypein, class Real, bool spacetime>
+template <ArrayType atypein, class Real, bool spacetime>
 class PlaqField : Tunable {
 private:
   gauge arrayin;
@@ -122,10 +122,10 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    // kernel_calc_plaquette<UseTex, atypein, Real><<<tp.grid,tp.block, 0,
+    // kernel_calc_plaquette< atypein, Real><<<tp.grid,tp.block, 0,
     // stream>>>(arg);
     CUDA_SAFE_CALL(cudaMemset(arg.meanplaq, 0, 6 * sizeof(complex)));
-    LAUNCH_KERNEL(kernel_calc_plaquette, tp, stream, arg, UseTex, atypein, Real,
+    LAUNCH_KERNEL(kernel_calc_plaquette, tp, stream, arg, atypein, Real,
                   spacetime);
   }
 
@@ -201,7 +201,7 @@ void PlaquetteFieldSpace(gauge array, complex *plaq, complex *meanplaq) {
 
   const ArrayType atypein = SOA;
   
-    PlaqField<false, atypein, Real, false> pf(array, plaq, meanplaq);
+    PlaqField<atypein, Real, false> pf(array, plaq, meanplaq);
     pf.Run();
     pf.stat();
   
@@ -221,7 +221,7 @@ void PlaquetteField(gauge array, complex *plaq, complex *meanplaq) {
 
   const ArrayType atypein = SOA;
   
-    PlaqField<false, atypein, Real, true> pf(array, plaq, meanplaq);
+    PlaqField<atypein, Real, true> pf(array, plaq, meanplaq);
     pf.Run();
     pf.stat();
   

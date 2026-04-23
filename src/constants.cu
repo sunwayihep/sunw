@@ -19,8 +19,6 @@ namespace CULQCD {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace PARAMS {
-/*! \brief If true uses texture memory instead of global memory */
-bool UseTex = false;
 double Beta = 6.2;
 /*! \brief Size = Nx x Ny */
 int kstride = 0;
@@ -147,8 +145,7 @@ void PrintDetails() {
        << std::endl;
 }
 
-void SETPARAMS(bool _usetex, double beta, int nx, int ny, int nz, int nt,
-               bool verbose) {
+void SETPARAMS(double beta, int nx, int ny, int nz, int nt, bool verbose) {
   /*static bool setparams = false;
   if(setparams){
           COUT << "Local parameters already set... Nothing to do here..." <<
@@ -157,8 +154,6 @@ void SETPARAMS(bool _usetex, double beta, int nx, int ny, int nz, int nt,
   PARAMS::Beta = beta;
 
   COUT << "Setting up lattice parameters..." << std::endl;
-  // Set Host parameters
-  PARAMS::UseTex = _usetex;
   setup_hyper_prime(nx, ny, nz, nt);
   PARAMS::NX = nx;
   PARAMS::NY = ny;
@@ -278,14 +273,11 @@ void SETPARAMS(bool _usetex, double beta, int nx, int ny, int nz, int nt,
 #endif
 }
 
-void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size,
-               bool verbose) {
+void SETPARAMS(double beta, std::vector<int> lattice_size, bool verbose) {
   PARAMS::Beta = beta;
   PARAMS::lattice_size = lattice_size;
 
   COUT << "Setting up lattice parameters..." << std::endl;
-  // Set Host parameters
-  PARAMS::UseTex = _usetex;
   if (lattice_size.size() < 2) {
     std::cerr << "Number of space-time dimension NDIMS = "
               << lattice_size.size() << ", should no less than 2" << std::endl;
@@ -414,7 +406,7 @@ void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size,
 #endif
 }
 
-void SETPARAMS(bool _usetex, int latticedim[4], const int nodesperdim[4],
+void SETPARAMS(int latticedim[4], const int nodesperdim[4],
                const int logical_coordinate[4], bool verbose) {
   /*static bool setparams = false;
   if(setparams){
@@ -423,7 +415,6 @@ void SETPARAMS(bool _usetex, int latticedim[4], const int nodesperdim[4],
   }*/
   COUT << "Setting up lattice parameters..." << std::endl;
 
-  PARAMS::UseTex = _usetex;
   PARAMS::NX = latticedim[0];
   PARAMS::NY = latticedim[1];
   PARAMS::NZ = latticedim[2];
@@ -542,8 +533,6 @@ void SETPARAMS(bool _usetex, int latticedim[4], const int nodesperdim[4],
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace DEVPARAMS {
-/*! \brief If true uses texture memory instead of global memory */
-__constant__ bool UseTex;
 /*! \brief inverse of the gauge coupling, beta = 2 Nc / g_0^2 */
 __constant__ double Beta;
 /*! \brief inverse of the gauge coupling over Nc, betaOverNc = 2 / g_0^2 */
@@ -574,16 +563,8 @@ __constant__ float hypalpha3;
 
 } // namespace DEVPARAMS
 
-/*! \brief Setups the texture memory reading, if TexOn is false then uses global
- * memory */
-void UseTextureMemory(bool TexOn) {
-  PARAMS::UseTex = TexOn;
-  memcpyToSymbol(DEVPARAMS::UseTex, &PARAMS::UseTex, bool);
-}
-
 void copyConstantsToGPU() {
   COUT << "Copying lattice constants to GPU Constant memory." << std::endl;
-  memcpyToSymbol(DEVPARAMS::UseTex, &PARAMS::UseTex, bool);
   memcpyToSymbol(DEVPARAMS::Beta, &PARAMS::Beta, double);
   double _betaOverNc = PARAMS::Beta / (double)NCOLORS;
   memcpyToSymbol(DEVPARAMS::BetaOverNc, &_betaOverNc, double);

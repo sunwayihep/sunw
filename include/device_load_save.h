@@ -21,30 +21,24 @@ namespace CULQCD {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
     @brief Get an element from Device memory,
-    it uses texture memory if DEVPARAMS::UseTex is true.
+    Loads directly from device memory.
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, class Real>
+template <class Real>
 __device__ inline complex ELEM_LOAD(const complex *array, const uint id) {
-  if (UseTex)
-    return array[id];
-  else
-    return array[id];
+  return array[id];
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
     @brief Get a conjugate element from Device memory,
-    it uses texture memory if DEVPARAMS::UseTex is true.
+    Loads directly from device memory.
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, class Real>
+template <class Real>
 __device__ inline complex ELEM_LOAD_CONJ(const complex *array, const uint id) {
-  if (UseTex)
-    return array[id].conj();
-  else
-    return array[id].conj();
+  return array[id].conj();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,9 +132,9 @@ __host__ __device__ inline void GAUGE_SAVE(complex *array, const msun A,
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GAUGE_LOAD(const complex *array, const uint id) {
-  return GAUGE_LOAD<UseTex, atype, Real>(array, id, DEVPARAMS::size);
+  return GAUGE_LOAD<atype, Real>(array, id, DEVPARAMS::size);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -149,7 +143,7 @@ __device__ inline msun GAUGE_LOAD(const complex *array, const uint id) {
     @param id array index
     @param offset stride between SU(Nc) elements in gauge field
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GAUGE_LOAD(const complex *array, const uint id,
                                   const uint offset) {
   msun A;
@@ -159,45 +153,45 @@ __device__ inline msun GAUGE_LOAD(const complex *array, const uint id,
 #pragma unroll
     for (int j = 0; j < NCOLORS; j++)
       A.e[i][j] =
-          ELEM_LOAD<UseTex, Real>(array, id + (j + i * NCOLORS) * offset);
+          ELEM_LOAD< Real>(array, id + (j + i * NCOLORS) * offset);
   return A;
 #else
   if (atype == SOA) {
-    A.e[0][0] = ELEM_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][0] = ELEM_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[1][2] = ELEM_LOAD<UseTex, Real>(array, id + 5 * offset);
-    A.e[2][0] = ELEM_LOAD<UseTex, Real>(array, id + 6 * offset);
-    A.e[2][1] = ELEM_LOAD<UseTex, Real>(array, id + 7 * offset);
-    A.e[2][2] = ELEM_LOAD<UseTex, Real>(array, id + 8 * offset);
+    A.e[0][0] = ELEM_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][0] = ELEM_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_LOAD< Real>(array, id + 4 * offset);
+    A.e[1][2] = ELEM_LOAD< Real>(array, id + 5 * offset);
+    A.e[2][0] = ELEM_LOAD< Real>(array, id + 6 * offset);
+    A.e[2][1] = ELEM_LOAD< Real>(array, id + 7 * offset);
+    A.e[2][2] = ELEM_LOAD< Real>(array, id + 8 * offset);
   }
   if (atype == SOA12) {
-    A.e[0][0] = ELEM_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][0] = ELEM_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[1][2] = ELEM_LOAD<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][0] = ELEM_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_LOAD< Real>(array, id + 4 * offset);
+    A.e[1][2] = ELEM_LOAD< Real>(array, id + 5 * offset);
     reconstruct12p<Real>(A);
   }
   if (atype == SOA12A) {
-    A.e[0][0] = ELEM_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][1] = ELEM_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][2] = ELEM_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][2] = ELEM_LOAD<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][1] = ELEM_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][2] = ELEM_LOAD< Real>(array, id + 4 * offset);
+    A.e[2][2] = ELEM_LOAD< Real>(array, id + 5 * offset);
     A.e[1][0] = complex::make_complex(-A.e[0][1].real(), A.e[0][1].imag());
     A.e[2][0] = complex::make_complex(-A.e[0][2].real(), A.e[0][2].imag());
     A.e[2][1] = complex::make_complex(-A.e[1][2].real(), A.e[1][2].imag());
   }
   if (atype == SOA8) {
-    A.e[0][1] = ELEM_LOAD<UseTex, Real>(array, id);
-    A.e[0][2] = ELEM_LOAD<UseTex, Real>(array, id + offset);
-    A.e[1][0] = ELEM_LOAD<UseTex, Real>(array, id + 2 * offset);
-    complex theta = ELEM_LOAD<UseTex, Real>(array, id + 3 * offset);
+    A.e[0][1] = ELEM_LOAD< Real>(array, id);
+    A.e[0][2] = ELEM_LOAD< Real>(array, id + offset);
+    A.e[1][0] = ELEM_LOAD< Real>(array, id + 2 * offset);
+    complex theta = ELEM_LOAD< Real>(array, id + 3 * offset);
     reconstruct8p<Real>(A, theta);
   }
   return A;
@@ -211,7 +205,7 @@ __device__ inline msun GAUGE_LOAD(const complex *array, const uint id,
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id) {
   msun A;
 #if (NCOLORS > 3) || (NCOLORS == 2)
@@ -219,47 +213,47 @@ __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id) {
   for (int i = 0; i < NCOLORS; i++)
 #pragma unroll
     for (int j = 0; j < NCOLORS; j++)
-      A.e[j][i] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + (j + i * NCOLORS) *
+      A.e[j][i] = ELEM_LOAD_CONJ< Real>(array, id + (j + i * NCOLORS) *
                                                                DEVPARAMS::size);
   return A;
 #else
   if (atype == SOA) {
-    A.e[0][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + DEVPARAMS::size);
-    A.e[2][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 2 * DEVPARAMS::size);
-    A.e[0][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 3 * DEVPARAMS::size);
-    A.e[1][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 4 * DEVPARAMS::size);
-    A.e[2][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 5 * DEVPARAMS::size);
-    A.e[0][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 6 * DEVPARAMS::size);
-    A.e[1][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 7 * DEVPARAMS::size);
-    A.e[2][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 8 * DEVPARAMS::size);
+    A.e[0][0] = ELEM_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_LOAD_CONJ< Real>(array, id + DEVPARAMS::size);
+    A.e[2][0] = ELEM_LOAD_CONJ< Real>(array, id + 2 * DEVPARAMS::size);
+    A.e[0][1] = ELEM_LOAD_CONJ< Real>(array, id + 3 * DEVPARAMS::size);
+    A.e[1][1] = ELEM_LOAD_CONJ< Real>(array, id + 4 * DEVPARAMS::size);
+    A.e[2][1] = ELEM_LOAD_CONJ< Real>(array, id + 5 * DEVPARAMS::size);
+    A.e[0][2] = ELEM_LOAD_CONJ< Real>(array, id + 6 * DEVPARAMS::size);
+    A.e[1][2] = ELEM_LOAD_CONJ< Real>(array, id + 7 * DEVPARAMS::size);
+    A.e[2][2] = ELEM_LOAD_CONJ< Real>(array, id + 8 * DEVPARAMS::size);
   }
   if (atype == SOA12) {
-    A.e[0][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + DEVPARAMS::size);
-    A.e[2][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 2 * DEVPARAMS::size);
-    A.e[0][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 3 * DEVPARAMS::size);
-    A.e[1][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 4 * DEVPARAMS::size);
-    A.e[2][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 5 * DEVPARAMS::size);
+    A.e[0][0] = ELEM_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_LOAD_CONJ< Real>(array, id + DEVPARAMS::size);
+    A.e[2][0] = ELEM_LOAD_CONJ< Real>(array, id + 2 * DEVPARAMS::size);
+    A.e[0][1] = ELEM_LOAD_CONJ< Real>(array, id + 3 * DEVPARAMS::size);
+    A.e[1][1] = ELEM_LOAD_CONJ< Real>(array, id + 4 * DEVPARAMS::size);
+    A.e[2][1] = ELEM_LOAD_CONJ< Real>(array, id + 5 * DEVPARAMS::size);
     reconstruct12p_dagger<Real>(A);
   }
   if (atype == SOA12A) {
-    A.e[0][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + DEVPARAMS::size);
-    A.e[2][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 2 * DEVPARAMS::size);
-    A.e[1][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 3 * DEVPARAMS::size);
-    A.e[2][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 4 * DEVPARAMS::size);
-    A.e[2][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 5 * DEVPARAMS::size);
+    A.e[0][0] = ELEM_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_LOAD_CONJ< Real>(array, id + DEVPARAMS::size);
+    A.e[2][0] = ELEM_LOAD_CONJ< Real>(array, id + 2 * DEVPARAMS::size);
+    A.e[1][1] = ELEM_LOAD_CONJ< Real>(array, id + 3 * DEVPARAMS::size);
+    A.e[2][1] = ELEM_LOAD_CONJ< Real>(array, id + 4 * DEVPARAMS::size);
+    A.e[2][2] = ELEM_LOAD_CONJ< Real>(array, id + 5 * DEVPARAMS::size);
     A.e[0][1] = complex::make_complex(-A.e[1][0].real(), A.e[1][0].imag());
     A.e[0][2] = complex::make_complex(-A.e[2][0].real(), A.e[2][0].imag());
     A.e[1][2] = complex::make_complex(-A.e[2][1].real(), A.e[2][1].imag());
   }
   if (atype == SOA8) {
     // THIS PART CAN BE OPTIMIZED
-    A.e[0][1] = ELEM_LOAD<UseTex, Real>(array, id);
-    A.e[0][2] = ELEM_LOAD<UseTex, Real>(array, id + DEVPARAMS::size);
-    A.e[1][0] = ELEM_LOAD<UseTex, Real>(array, id + 2 * DEVPARAMS::size);
-    complex theta = ELEM_LOAD<UseTex, Real>(array, id + 3 * DEVPARAMS::size);
+    A.e[0][1] = ELEM_LOAD< Real>(array, id);
+    A.e[0][2] = ELEM_LOAD< Real>(array, id + DEVPARAMS::size);
+    A.e[1][0] = ELEM_LOAD< Real>(array, id + 2 * DEVPARAMS::size);
+    complex theta = ELEM_LOAD< Real>(array, id + 3 * DEVPARAMS::size);
     reconstruct8p<Real>(A, theta);
     A = A.dagger();
   }
@@ -273,7 +267,7 @@ __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id) {
     @param id array index
     @param offset stride between SU(Nc) elements in gauge field
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id,
                                          const uint offset) {
   msun A;
@@ -283,46 +277,46 @@ __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id,
 #pragma unroll
     for (int j = 0; j < NCOLORS; j++)
       A.e[j][i] =
-          ELEM_LOAD_CONJ<UseTex, Real>(array, id + (j + i * NCOLORS) * offset);
+          ELEM_LOAD_CONJ< Real>(array, id + (j + i * NCOLORS) * offset);
   return A;
 #else
   if (atype == SOA) {
-    A.e[0][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + offset);
-    A.e[2][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 2 * offset);
-    A.e[0][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 5 * offset);
-    A.e[0][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 6 * offset);
-    A.e[1][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 7 * offset);
-    A.e[2][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 8 * offset);
+    A.e[0][0] = ELEM_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_LOAD_CONJ< Real>(array, id + offset);
+    A.e[2][0] = ELEM_LOAD_CONJ< Real>(array, id + 2 * offset);
+    A.e[0][1] = ELEM_LOAD_CONJ< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_LOAD_CONJ< Real>(array, id + 4 * offset);
+    A.e[2][1] = ELEM_LOAD_CONJ< Real>(array, id + 5 * offset);
+    A.e[0][2] = ELEM_LOAD_CONJ< Real>(array, id + 6 * offset);
+    A.e[1][2] = ELEM_LOAD_CONJ< Real>(array, id + 7 * offset);
+    A.e[2][2] = ELEM_LOAD_CONJ< Real>(array, id + 8 * offset);
   }
   if (atype == SOA12) {
-    A.e[0][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + offset);
-    A.e[2][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 2 * offset);
-    A.e[0][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_LOAD_CONJ< Real>(array, id + offset);
+    A.e[2][0] = ELEM_LOAD_CONJ< Real>(array, id + 2 * offset);
+    A.e[0][1] = ELEM_LOAD_CONJ< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_LOAD_CONJ< Real>(array, id + 4 * offset);
+    A.e[2][1] = ELEM_LOAD_CONJ< Real>(array, id + 5 * offset);
     reconstruct12p_dagger<Real>(A);
   }
   if (atype == SOA12A) {
-    A.e[0][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + offset);
-    A.e[2][0] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 3 * offset);
-    A.e[2][1] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][2] = ELEM_LOAD_CONJ<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_LOAD_CONJ< Real>(array, id + offset);
+    A.e[2][0] = ELEM_LOAD_CONJ< Real>(array, id + 2 * offset);
+    A.e[1][1] = ELEM_LOAD_CONJ< Real>(array, id + 3 * offset);
+    A.e[2][1] = ELEM_LOAD_CONJ< Real>(array, id + 4 * offset);
+    A.e[2][2] = ELEM_LOAD_CONJ< Real>(array, id + 5 * offset);
     A.e[0][1] = complex::make_complex(-A.e[1][0].real(), A.e[1][0].imag());
     A.e[0][2] = complex::make_complex(-A.e[2][0].real(), A.e[2][0].imag());
     A.e[1][2] = complex::make_complex(-A.e[2][1].real(), A.e[2][1].imag());
   }
   if (atype == SOA8) {
     // THIS PART CAN BE OPTIMIZED
-    A.e[0][1] = ELEM_LOAD<UseTex, Real>(array, id);
-    A.e[0][2] = ELEM_LOAD<UseTex, Real>(array, id + offset);
-    A.e[1][0] = ELEM_LOAD<UseTex, Real>(array, id + 2 * offset);
-    complex theta = ELEM_LOAD<UseTex, Real>(array, id + 3 * offset);
+    A.e[0][1] = ELEM_LOAD< Real>(array, id);
+    A.e[0][2] = ELEM_LOAD< Real>(array, id + offset);
+    A.e[1][0] = ELEM_LOAD< Real>(array, id + 2 * offset);
+    complex theta = ELEM_LOAD< Real>(array, id + 3 * offset);
     reconstruct8p<Real>(A, theta);
     A = A.dagger();
   }
@@ -355,30 +349,24 @@ __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
     @brief Get a Delta(x) element from Device memory,
-    it uses texture memory if DEVPARAMS::UseTex is true.
+    Loads directly from device memory.
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, class Real>
+template <class Real>
 __device__ inline complex ELEM_DELTA_LOAD(const complex *array, const uint id) {
-  if (UseTex)
-    return array[id];
-  else
-    return array[id];
+  return array[id];
 }
 /**
     @brief Get a Delta(x) conjugate element from Device memory,
-    it uses texture memory if DEVPARAMS::UseTex is true.
+    Loads directly from device memory.
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, class Real>
+template <class Real>
 __device__ inline complex ELEM_DELTA_LOAD_CONJ(const complex *array,
                                                const uint id) {
-  if (UseTex)
-    return array[id].conj();
-  else
-    return array[id].conj();
+  return array[id].conj();
 }
 
 /**
@@ -386,9 +374,9 @@ __device__ inline complex ELEM_DELTA_LOAD_CONJ(const complex *array,
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun DELTA_LOAD(const complex *array, const uint id) {
-  return DELTA_LOAD<UseTex, atype, Real>(array, id, DEVPARAMS::Volume);
+  return DELTA_LOAD<atype, Real>(array, id, DEVPARAMS::Volume);
 }
 /**
     @brief Load complex conjugate transpose Delta(x) SU(Nc) matrix from Device
@@ -397,9 +385,9 @@ __device__ inline msun DELTA_LOAD(const complex *array, const uint id) {
     @param id array index
     @param offset stride between SU(Nc) elements in gauge field
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun DELTA_LOAD_DAGGER(const complex *array, const uint id) {
-  return DELTA_LOAD_DAGGER<UseTex, atype, Real>(array, id, DEVPARAMS::Volume);
+  return DELTA_LOAD_DAGGER<atype, Real>(array, id, DEVPARAMS::Volume);
 }
 
 /**
@@ -407,7 +395,7 @@ __device__ inline msun DELTA_LOAD_DAGGER(const complex *array, const uint id) {
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun DELTA_LOAD(const complex *array, const uint id,
                                   const uint offset) {
   msun A;
@@ -417,27 +405,27 @@ __device__ inline msun DELTA_LOAD(const complex *array, const uint id,
 #pragma unroll
     for (int j = 0; j < NCOLORS; j++)
       A.e[i][j] =
-          ELEM_DELTA_LOAD<UseTex, Real>(array, id + (j + i * NCOLORS) * offset);
+          ELEM_DELTA_LOAD< Real>(array, id + (j + i * NCOLORS) * offset);
   return A;
 #else
   if (atype == SOA) {
-    A.e[0][0] = ELEM_DELTA_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][0] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[1][2] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 5 * offset);
-    A.e[2][0] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 6 * offset);
-    A.e[2][1] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 7 * offset);
-    A.e[2][2] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 8 * offset);
+    A.e[0][0] = ELEM_DELTA_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_DELTA_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_DELTA_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][0] = ELEM_DELTA_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_DELTA_LOAD< Real>(array, id + 4 * offset);
+    A.e[1][2] = ELEM_DELTA_LOAD< Real>(array, id + 5 * offset);
+    A.e[2][0] = ELEM_DELTA_LOAD< Real>(array, id + 6 * offset);
+    A.e[2][1] = ELEM_DELTA_LOAD< Real>(array, id + 7 * offset);
+    A.e[2][2] = ELEM_DELTA_LOAD< Real>(array, id + 8 * offset);
   }
   if (atype == SOA12A) {
-    A.e[0][0] = ELEM_DELTA_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][1] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][2] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][2] = ELEM_DELTA_LOAD<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_DELTA_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_DELTA_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_DELTA_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][1] = ELEM_DELTA_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][2] = ELEM_DELTA_LOAD< Real>(array, id + 4 * offset);
+    A.e[2][2] = ELEM_DELTA_LOAD< Real>(array, id + 5 * offset);
     A.e[1][0] = complex::make_complex(-A.e[0][1].real(), A.e[0][1].imag());
     A.e[2][0] = complex::make_complex(-A.e[0][2].real(), A.e[0][2].imag());
     A.e[2][1] = complex::make_complex(-A.e[1][2].real(), A.e[1][2].imag());
@@ -501,31 +489,25 @@ __host__ __device__ inline void DELTA_SAVE(complex *array, msun A, uint id,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
     @brief Get a g(x) element from Device memory,
-    it uses texture memory if DEVPARAMS::UseTex is true.
+    Loads directly from device memory.
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, class Real>
+template <class Real>
 __device__ inline complex ELEM_GX_LOAD(const complex *array, const uint id) {
-  if (UseTex)
-    return array[id];
-  else
-    return array[id];
+  return array[id];
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
     @brief Get a g(x) conjugate element from Device memory,
-    it uses texture memory if DEVPARAMS::UseTex is true.
+    Loads directly from device memory.
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, class Real>
+template <class Real>
 __device__ inline complex ELEM_GX_LOAD_CONJ(const complex *array,
                                             const uint id) {
-  if (UseTex)
-    return array[id].conj();
-  else
-    return array[id].conj();
+  return array[id].conj();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -533,9 +515,9 @@ __device__ inline complex ELEM_GX_LOAD_CONJ(const complex *array,
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GX_LOAD(const complex *array, const uint id) {
-  return GX_LOAD<UseTex, atype, Real>(array, id, DEVPARAMS::Volume);
+  return GX_LOAD<atype, Real>(array, id, DEVPARAMS::Volume);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
@@ -544,9 +526,9 @@ __device__ inline msun GX_LOAD(const complex *array, const uint id) {
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GX_LOAD_DAGGER(const complex *array, const uint id) {
-  return GX_LOAD_DAGGER<UseTex, atype, Real>(array, id, DEVPARAMS::Volume);
+  return GX_LOAD_DAGGER<atype, Real>(array, id, DEVPARAMS::Volume);
 }
 
 /**
@@ -554,7 +536,7 @@ __device__ inline msun GX_LOAD_DAGGER(const complex *array, const uint id) {
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GX_LOAD(const complex *array, const uint id,
                                const uint offset) {
   msun A;
@@ -564,35 +546,35 @@ __device__ inline msun GX_LOAD(const complex *array, const uint id,
 #pragma unroll
     for (int j = 0; j < NCOLORS; j++)
       A.e[i][j] =
-          ELEM_GX_LOAD<UseTex, Real>(array, id + (j + i * NCOLORS) * offset);
+          ELEM_GX_LOAD< Real>(array, id + (j + i * NCOLORS) * offset);
   return A;
 
 #else
   if (atype == SOA) {
-    A.e[0][0] = ELEM_GX_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_GX_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_GX_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][0] = ELEM_GX_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_GX_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[1][2] = ELEM_GX_LOAD<UseTex, Real>(array, id + 5 * offset);
-    A.e[2][0] = ELEM_GX_LOAD<UseTex, Real>(array, id + 6 * offset);
-    A.e[2][1] = ELEM_GX_LOAD<UseTex, Real>(array, id + 7 * offset);
-    A.e[2][2] = ELEM_GX_LOAD<UseTex, Real>(array, id + 8 * offset);
+    A.e[0][0] = ELEM_GX_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_GX_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_GX_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][0] = ELEM_GX_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_GX_LOAD< Real>(array, id + 4 * offset);
+    A.e[1][2] = ELEM_GX_LOAD< Real>(array, id + 5 * offset);
+    A.e[2][0] = ELEM_GX_LOAD< Real>(array, id + 6 * offset);
+    A.e[2][1] = ELEM_GX_LOAD< Real>(array, id + 7 * offset);
+    A.e[2][2] = ELEM_GX_LOAD< Real>(array, id + 8 * offset);
   }
   if (atype == SOA12) {
-    A.e[0][0] = ELEM_GX_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_GX_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_GX_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][0] = ELEM_GX_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_GX_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[1][2] = ELEM_GX_LOAD<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_GX_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_GX_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_GX_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][0] = ELEM_GX_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_GX_LOAD< Real>(array, id + 4 * offset);
+    A.e[1][2] = ELEM_GX_LOAD< Real>(array, id + 5 * offset);
     reconstruct12p<Real>(A);
   }
   if (atype == SOA8) {
-    A.e[0][1] = ELEM_GX_LOAD<UseTex, Real>(array, id);
-    A.e[0][2] = ELEM_GX_LOAD<UseTex, Real>(array, id + offset);
-    A.e[1][0] = ELEM_GX_LOAD<UseTex, Real>(array, id + 2 * offset);
-    complex theta = ELEM_GX_LOAD<UseTex, Real>(array, id + 3 * offset);
+    A.e[0][1] = ELEM_GX_LOAD< Real>(array, id);
+    A.e[0][2] = ELEM_GX_LOAD< Real>(array, id + offset);
+    A.e[1][0] = ELEM_GX_LOAD< Real>(array, id + 2 * offset);
+    complex theta = ELEM_GX_LOAD< Real>(array, id + 3 * offset);
     reconstruct8p<Real>(A, theta);
   }
   return A;
@@ -605,7 +587,7 @@ __device__ inline msun GX_LOAD(const complex *array, const uint id,
     @param array gauge field
     @param id array index
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun GX_LOAD_DAGGER(const complex *array, const uint id,
                                       const uint offset) {
   msun A;
@@ -614,36 +596,36 @@ __device__ inline msun GX_LOAD_DAGGER(const complex *array, const uint id,
   for (int i = 0; i < NCOLORS; i++)
 #pragma unroll
     for (int j = 0; j < NCOLORS; j++)
-      A.e[j][i] = ELEM_GX_LOAD_CONJ<UseTex, Real>(
+      A.e[j][i] = ELEM_GX_LOAD_CONJ< Real>(
           array, id + (j + i * NCOLORS) * offset);
   return A;
 #else
   if (atype == SOA) {
-    A.e[0][0] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + offset);
-    A.e[2][0] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 2 * offset);
-    A.e[0][1] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][1] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 5 * offset);
-    A.e[0][2] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 6 * offset);
-    A.e[1][2] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 7 * offset);
-    A.e[2][2] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 8 * offset);
+    A.e[0][0] = ELEM_GX_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_GX_LOAD_CONJ< Real>(array, id + offset);
+    A.e[2][0] = ELEM_GX_LOAD_CONJ< Real>(array, id + 2 * offset);
+    A.e[0][1] = ELEM_GX_LOAD_CONJ< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_GX_LOAD_CONJ< Real>(array, id + 4 * offset);
+    A.e[2][1] = ELEM_GX_LOAD_CONJ< Real>(array, id + 5 * offset);
+    A.e[0][2] = ELEM_GX_LOAD_CONJ< Real>(array, id + 6 * offset);
+    A.e[1][2] = ELEM_GX_LOAD_CONJ< Real>(array, id + 7 * offset);
+    A.e[2][2] = ELEM_GX_LOAD_CONJ< Real>(array, id + 8 * offset);
   }
   if (atype == SOA12) {
-    A.e[0][0] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id);
-    A.e[1][0] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + offset);
-    A.e[2][0] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 2 * offset);
-    A.e[0][1] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][1] = ELEM_GX_LOAD_CONJ<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_GX_LOAD_CONJ< Real>(array, id);
+    A.e[1][0] = ELEM_GX_LOAD_CONJ< Real>(array, id + offset);
+    A.e[2][0] = ELEM_GX_LOAD_CONJ< Real>(array, id + 2 * offset);
+    A.e[0][1] = ELEM_GX_LOAD_CONJ< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_GX_LOAD_CONJ< Real>(array, id + 4 * offset);
+    A.e[2][1] = ELEM_GX_LOAD_CONJ< Real>(array, id + 5 * offset);
     reconstruct12p_dagger<Real>(A);
   }
   if (atype == SOA8) {
     // THIS PART CAN BE OPTIMIZED
-    A.e[0][1] = ELEM_GX_LOAD<UseTex, Real>(array, id);
-    A.e[0][2] = ELEM_GX_LOAD<UseTex, Real>(array, id + offset);
-    A.e[1][0] = ELEM_GX_LOAD<UseTex, Real>(array, id + 2 * offset);
-    complex theta = ELEM_GX_LOAD<UseTex, Real>(array, id + 3 * offset);
+    A.e[0][1] = ELEM_GX_LOAD< Real>(array, id);
+    A.e[0][2] = ELEM_GX_LOAD< Real>(array, id + offset);
+    A.e[1][0] = ELEM_GX_LOAD< Real>(array, id + 2 * offset);
+    complex theta = ELEM_GX_LOAD< Real>(array, id + 3 * offset);
     reconstruct8p<Real>(A, theta);
     A = A.dagger();
   }
@@ -652,16 +634,13 @@ __device__ inline msun GX_LOAD_DAGGER(const complex *array, const uint id,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, class Real>
+template <class Real>
 __device__ inline complex ELEM_LAMBDA_LOAD(const complex *array,
                                            const uint id) {
-  if (UseTex)
-    return array[id];
-  else
-    return array[id];
+  return array[id];
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ inline msun LAMBDA_LOAD(const complex *array, const uint id,
                                    const uint offset) {
   msun A;
@@ -670,29 +649,29 @@ __device__ inline msun LAMBDA_LOAD(const complex *array, const uint id,
   for (int i = 0; i < NCOLORS; i++)
 #pragma unroll
     for (int j = 0; j < NCOLORS; j++)
-      A.e[i][j] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + (j + i * NCOLORS) *
+      A.e[i][j] = ELEM_LAMBDA_LOAD< Real>(array, id + (j + i * NCOLORS) *
                                                                  offset);
   return A;
 
 #else
   if (atype == SOA) {
-    A.e[0][0] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][0] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][1] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[1][2] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 5 * offset);
-    A.e[2][0] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 6 * offset);
-    A.e[2][1] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 7 * offset);
-    A.e[2][2] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 8 * offset);
+    A.e[0][0] = ELEM_LAMBDA_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_LAMBDA_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_LAMBDA_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][0] = ELEM_LAMBDA_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][1] = ELEM_LAMBDA_LOAD< Real>(array, id + 4 * offset);
+    A.e[1][2] = ELEM_LAMBDA_LOAD< Real>(array, id + 5 * offset);
+    A.e[2][0] = ELEM_LAMBDA_LOAD< Real>(array, id + 6 * offset);
+    A.e[2][1] = ELEM_LAMBDA_LOAD< Real>(array, id + 7 * offset);
+    A.e[2][2] = ELEM_LAMBDA_LOAD< Real>(array, id + 8 * offset);
   }
   if (atype == SOA12A) {
-    A.e[0][0] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id);
-    A.e[0][1] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + offset);
-    A.e[0][2] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 2 * offset);
-    A.e[1][1] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 3 * offset);
-    A.e[1][2] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 4 * offset);
-    A.e[2][2] = ELEM_LAMBDA_LOAD<UseTex, Real>(array, id + 5 * offset);
+    A.e[0][0] = ELEM_LAMBDA_LOAD< Real>(array, id);
+    A.e[0][1] = ELEM_LAMBDA_LOAD< Real>(array, id + offset);
+    A.e[0][2] = ELEM_LAMBDA_LOAD< Real>(array, id + 2 * offset);
+    A.e[1][1] = ELEM_LAMBDA_LOAD< Real>(array, id + 3 * offset);
+    A.e[1][2] = ELEM_LAMBDA_LOAD< Real>(array, id + 4 * offset);
+    A.e[2][2] = ELEM_LAMBDA_LOAD< Real>(array, id + 5 * offset);
     A.e[1][0] = complex::make_complex(-A.e[0][1].real(), A.e[0][1].imag());
     A.e[2][0] = complex::make_complex(-A.e[0][2].real(), A.e[0][2].imag());
     A.e[2][1] = complex::make_complex(-A.e[1][2].real(), A.e[1][2].imag());

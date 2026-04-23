@@ -23,7 +23,7 @@ namespace CULQCD {
 
 #ifdef USE_GAUGE_FIX
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 __global__ void kernel_calc_Fg_theta_dir(complex *array, complex *res_save) {
   int idd = INDEX1D();
   if (idd < DEVPARAMS::Volume) {
@@ -38,14 +38,14 @@ __global__ void kernel_calc_Fg_theta_dir(complex *array, complex *res_save) {
     msun delta = msun::zero();
     // Uplinks
     for (int nu = 0; nu < DIR; nu++)
-      delta -= GAUGE_LOAD<UseTex, atype, Real>(
+      delta -= GAUGE_LOAD<atype, Real>(
           array, idx + nu * DEVPARAMS::VolumeG, offset);
     complex res;
     // Fg (sum_DIR uplinks)
     res.real() = -delta.realtrace();
     // Downlinks
     for (int nu = 0; nu < DIR; nu++)
-      delta += GAUGE_LOAD<UseTex, atype, Real>(
+      delta += GAUGE_LOAD<atype, Real>(
           array,
           neighborEOIndexMinusOne(id, oddbit, nu) + nu * DEVPARAMS::VolumeG,
           offset);
@@ -56,15 +56,15 @@ __global__ void kernel_calc_Fg_theta_dir(complex *array, complex *res_save) {
   }
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-void GaugeFixQuality<DIR, UseTex, atype, Real>::apply(
+template <int DIR, ArrayType atype, class Real>
+void GaugeFixQuality<DIR, atype, Real>::apply(
     const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-  kernel_calc_Fg_theta_dir<DIR, UseTex, atype, Real>
+  kernel_calc_Fg_theta_dir<DIR, atype, Real>
       <<<tp.grid, tp.block, 0, stream>>>(array.GetPtr(), sum);
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-GaugeFixQuality<DIR, UseTex, atype, Real>::GaugeFixQuality(gauge &array)
+template <int DIR, ArrayType atype, class Real>
+GaugeFixQuality<DIR, atype, Real>::GaugeFixQuality(gauge &array)
     : array(array) {
   if (array.Type() != atype)
     errorCULQCD("gauge array type and template types do not match...");
@@ -80,17 +80,16 @@ GaugeFixQuality<DIR, UseTex, atype, Real>::GaugeFixQuality(gauge &array)
   sum = (complex *)dev_malloc(size * sizeof(complex));
   timesec = 0.0;
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-GaugeFixQuality<DIR, UseTex, atype, Real>::~GaugeFixQuality() {
+template <int DIR, ArrayType atype, class Real>
+GaugeFixQuality<DIR, atype, Real>::~GaugeFixQuality() {
   dev_free(sum);
 };
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 complex
-GaugeFixQuality<DIR, UseTex, atype, Real>::Run(const cudaStream_t &stream) {
+GaugeFixQuality<DIR, atype, Real>::Run(const cudaStream_t &stream) {
 #ifdef TIMMINGS
   mtime.start();
 #endif
-  if (UseTex)
   apply(stream);
   value = reduction<complex>(sum, size, stream);
   value /= (Real)(PARAMS::Volume * NCOLORS);
@@ -106,43 +105,43 @@ GaugeFixQuality<DIR, UseTex, atype, Real>::Run(const cudaStream_t &stream) {
 #endif
   return value;
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-complex GaugeFixQuality<DIR, UseTex, atype, Real>::Run() {
+template <int DIR, ArrayType atype, class Real>
+complex GaugeFixQuality<DIR, atype, Real>::Run() {
   return Run(0);
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-double GaugeFixQuality<DIR, UseTex, atype, Real>::flops() {
+template <int DIR, ArrayType atype, class Real>
+double GaugeFixQuality<DIR, atype, Real>::flops() {
   return ((double)flop() * 1.0e-9) / timesec;
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-double GaugeFixQuality<DIR, UseTex, atype, Real>::bandwidth() {
+template <int DIR, ArrayType atype, class Real>
+double GaugeFixQuality<DIR, atype, Real>::bandwidth() {
   return (double)bytes() / (timesec * (double)(1 << 30));
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-long long GaugeFixQuality<DIR, UseTex, atype, Real>::flop() const {
+template <int DIR, ArrayType atype, class Real>
+long long GaugeFixQuality<DIR, atype, Real>::flop() const {
   long long arrayflops = 2LL * DIR * array.getNumFlop(true);
   return (arrayflops + 2LL * NCOLORS * NCOLORS * (DIR + 1) +
           4LL * NCOLORS * (1 + NCOLORS)) *
          size * numnodes();
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-long long GaugeFixQuality<DIR, UseTex, atype, Real>::bytes() const {
+template <int DIR, ArrayType atype, class Real>
+long long GaugeFixQuality<DIR, atype, Real>::bytes() const {
   return (2LL * DIR * array.getNumParams() + 2LL) * size * sizeof(Real) *
          numnodes();
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-double GaugeFixQuality<DIR, UseTex, atype, Real>::time() {
+template <int DIR, ArrayType atype, class Real>
+double GaugeFixQuality<DIR, atype, Real>::time() {
   return timesec;
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-void GaugeFixQuality<DIR, UseTex, atype, Real>::stat() {
+template <int DIR, ArrayType atype, class Real>
+void GaugeFixQuality<DIR, atype, Real>::stat() {
   COUT << "GaugeFixQuality:  " << time() << " s\t" << bandwidth() << " GB/s\t"
        << flops() << " GFlops" << endl;
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-void GaugeFixQuality<DIR, UseTex, atype, Real>::printValue() {
+template <int DIR, ArrayType atype, class Real>
+void GaugeFixQuality<DIR, atype, Real>::printValue() {
   printfCULQCD("GaugeFixQuality:Fg = %.12e\ttheta = %.12e\n", value.real(),
                value.imag());
 }

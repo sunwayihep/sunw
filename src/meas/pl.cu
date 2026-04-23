@@ -32,23 +32,23 @@ namespace CULQCD {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// Onepolyakovloop /////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
+template <ArrayType atypein, ArrayType atypeout, class Real>
 __global__ void kernel_calc_Mpolyakovloop(complex *array, complex *ploop) {
   int id = INDEX1D();
   if (id < DEVPARAMS::tstride) {
     int index = id + (NDIMS - 1) * DEVPARAMS::Volume;
     int offset = DEVPARAMS::Volume * NDIMS;
 
-    msun L = GAUGE_LOAD<UseTex, atypein, Real>(array, index, offset);
+    msun L = GAUGE_LOAD<atypein, Real>(array, index, offset);
     for (int t = 1; t < DEVPARAMS::Grid[NDIMS - 1]; t++)
-      L *= GAUGE_LOAD<UseTex, atypein, Real>(
+      L *= GAUGE_LOAD<atypein, Real>(
           array, index + t * DEVPARAMS::tstride, offset);
 
     GAUGE_SAVE<atypeout, Real>(ploop, L, id, DEVPARAMS::tstride);
   }
 }
 
-template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
+template <ArrayType atypein, ArrayType atypeout, class Real>
 class MPloop : Tunable {
 private:
   gauge arrayin;
@@ -65,7 +65,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_calc_Mpolyakovloop<UseTex, atypein, atypeout, Real>
+    kernel_calc_Mpolyakovloop<atypein, atypeout, Real>
         <<<tp.grid, tp.block, 0, stream>>>(arrayin.GetPtr(), arrayout.GetPtr());
   }
 
@@ -137,7 +137,7 @@ template <class Real> void MatrixPloop(gauge array, gauge ploop) {
   const ArrayType atypein = SOA;
   const ArrayType atypeout = SOA;
   
-    MPloop<false, atypein, atypeout, Real> onepl(array, ploop);
+    MPloop<atypein, atypeout, Real> onepl(array, ploop);
     onepl.Run();
   
 }
@@ -211,7 +211,7 @@ public:
   void postTune() {}
 };
 
-template <int blockSize, bool UseTex, ArrayType atypein, class Real>
+template <int blockSize, ArrayType atypein, class Real>
 __global__ void kernel_calc_polyakovloop(PLoopArg<Real> arg) {
   int id = INDEX1D();
 
@@ -224,9 +224,9 @@ __global__ void kernel_calc_polyakovloop(PLoopArg<Real> arg) {
     int index = id + (NDIMS - 1) * DEVPARAMS::Volume;
     int offset = DEVPARAMS::Volume * NDIMS;
 
-    msun L = GAUGE_LOAD<UseTex, atypein, Real>(arg.array, index, offset);
+    msun L = GAUGE_LOAD<atypein, Real>(arg.array, index, offset);
     for (int t = 1; t < DEVPARAMS::Grid[NDIMS - 1]; t++)
-      L *= GAUGE_LOAD<UseTex, atypein, Real>(
+      L *= GAUGE_LOAD<atypein, Real>(
           arg.array, index + t * DEVPARAMS::tstride, offset);
 
     value = L.trace();
@@ -236,7 +236,7 @@ __global__ void kernel_calc_polyakovloop(PLoopArg<Real> arg) {
     CudaAtomicAdd(arg.value, aggregate);
 }
 
-template <int blockSize, bool UseTex, ArrayType atypein, class Real>
+template <int blockSize, ArrayType atypein, class Real>
 __global__ void kernel_calc_polyakovloopEO(PLoopArg<Real> arg) {
   int idd = INDEX1D();
 
@@ -269,7 +269,7 @@ __global__ void kernel_calc_polyakovloopEO(PLoopArg<Real> arg) {
     for (int t = 0; t < DEVPARAMS::Grid[NDIMS - 1]; t++) {
       int id0 = (idx + t * stride) >> 1;
       id0 += ((idl + t) & 1) * param_HalfVolumeG();
-      L *= GAUGE_LOAD<UseTex, atypein, Real>(
+      L *= GAUGE_LOAD<atypein, Real>(
           arg.array, id0 + (NDIMS - 1) * mustride, offset);
     }
     value = L.trace();
@@ -302,16 +302,16 @@ template <class Real> void PLoop<Real>::apply(const cudaStream_t &stream) {
     
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, false, SOA,
+        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, SOA,
                       Real);
       if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, false, SOA12,
+        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, SOA12,
                       Real);
       if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, false, SOA8,
+        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, SOA8,
                       Real);
 #else
-      LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, false, SOA,
+      LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, SOA,
                     Real);
 #endif
     
@@ -319,16 +319,16 @@ template <class Real> void PLoop<Real>::apply(const cudaStream_t &stream) {
     
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA,
+        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, SOA,
                       Real);
       if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA12,
+        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, SOA12,
                       Real);
       if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA8,
+        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, SOA8,
                       Real);
 #else
-      LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA,
+      LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, SOA,
                     Real);
 #endif
     

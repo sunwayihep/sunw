@@ -25,7 +25,7 @@ namespace CULQCD {
 
 // kernel to calculate the plaquette at each site of the lattice in EvenOdd
 // order
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_calc_plaquette_evenodd(complex *array,
                                               complex *plaquette) {
   uint idd = INDEX1D();
@@ -61,16 +61,16 @@ __global__ void kernel_calc_plaquette_evenodd(complex *array,
   msun link, link1;
   // #pragma unroll
   for (int mu = 0; mu < NDIMS; mu++) {
-    link1 = GAUGE_LOAD<UseTex, atype, Real>(array, idxoddbit + mu * mustride,
+    link1 = GAUGE_LOAD<atype, Real>(array, idxoddbit + mu * mustride,
                                             offset);
     int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
     // #pragma unroll
     for (int nu = (mu + 1); nu < NDIMS; nu++) {
-      link = GAUGE_LOAD<UseTex, atype, Real>(array, newidmu1 + nu * mustride,
+      link = GAUGE_LOAD<atype, Real>(array, newidmu1 + nu * mustride,
                                              offset);
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           array, Index_ND_Neig_EO(id, oddbit, nu, 1) + mu * mustride, offset);
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           array, idxoddbit + nu * mustride, offset);
       if (nu == (NDIMS - 1))
         plaq.imag() += (link1 * link).realtrace();
@@ -99,32 +99,18 @@ Plaquette<Real>::Plaquette(gauge &array, complex *sum) : array(array) {
   SetFunctionPtr();
 }
 template <class Real> void Plaquette<Real>::SetFunctionPtr() {
-  tex = false;
   kernel_pointer = NULL;
   if (array.EvenOdd()) {
-    if (tex) {
 #if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_pointer = &kernel_calc_plaquette_evenodd<true, SOA, Real>;
-      if (array.Type() == SOA12)
-        kernel_pointer = &kernel_calc_plaquette_evenodd<true, SOA12, Real>;
-      if (array.Type() == SOA8)
-        kernel_pointer = &kernel_calc_plaquette_evenodd<true, SOA8, Real>;
+    if (array.Type() == SOA)
+      kernel_pointer = &kernel_calc_plaquette_evenodd<SOA, Real>;
+    if (array.Type() == SOA12)
+      kernel_pointer = &kernel_calc_plaquette_evenodd<SOA12, Real>;
+    if (array.Type() == SOA8)
+      kernel_pointer = &kernel_calc_plaquette_evenodd<SOA8, Real>;
 #else
-      kernel_pointer = &kernel_calc_plaquette_evenodd<true, SOA, Real>;
+    kernel_pointer = &kernel_calc_plaquette_evenodd<SOA, Real>;
 #endif
-    } else {
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_pointer = &kernel_calc_plaquette_evenodd<false, SOA, Real>;
-      if (array.Type() == SOA12)
-        kernel_pointer = &kernel_calc_plaquette_evenodd<false, SOA12, Real>;
-      if (array.Type() == SOA8)
-        kernel_pointer = &kernel_calc_plaquette_evenodd<false, SOA8, Real>;
-#else
-      kernel_pointer = &kernel_calc_plaquette_evenodd<false, SOA, Real>;
-#endif
-    }
   }
   if (kernel_pointer == NULL)
     errorCULQCD("No kernel plaquette function exist for this gauge array...");

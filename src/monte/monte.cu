@@ -35,7 +35,7 @@ namespace CULQCD {
    sites
         @param mu lattice direction to update links
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_PHeatBath_evenodd(complex *array, cuRNGState *state,
                                          int oddbit, int mu) {
   int id = INDEX1D();
@@ -67,32 +67,32 @@ __global__ void kernel_PHeatBath_evenodd(complex *array, cuRNGState *state,
     msun link;
     int nuvolume = nu * mustride;
     // UP
-    link = GAUGE_LOAD<UseTex, atype, Real>(array, idxoddbit + nuvolume, offset);
-    link *= GAUGE_LOAD<UseTex, atype, Real>(
+    link = GAUGE_LOAD<atype, Real>(array, idxoddbit + nuvolume, offset);
+    link *= GAUGE_LOAD<atype, Real>(
         array, Index_ND_Neig_EO(id, oddbit, nu, 1) + muvolume, offset);
-    link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(array, newidmu1 + nuvolume,
+    link *= GAUGE_LOAD_DAGGER<atype, Real>(array, newidmu1 + nuvolume,
                                                    offset);
     staple += link;
     // DOWN
     int newidnum1 = Index_ND_Neig_EO(id, oddbit, nu, -1);
-    link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(array, newidnum1 + nuvolume,
+    link = GAUGE_LOAD_DAGGER<atype, Real>(array, newidnum1 + nuvolume,
                                                   offset);
     link *=
-        GAUGE_LOAD<UseTex, atype, Real>(array, newidnum1 + muvolume, offset);
-    link *= GAUGE_LOAD<UseTex, atype, Real>(
+        GAUGE_LOAD<atype, Real>(array, newidnum1 + muvolume, offset);
+    link *= GAUGE_LOAD<atype, Real>(
         array, Index_ND_Neig_EO(id, oddbit, mu, 1, nu, -1) + nuvolume, offset);
     staple += link;
   }
   // Copy state to local memory for efficiency
   cuRNGState localState = state[id];
   idxoddbit += muvolume;
-  msun U = GAUGE_LOAD<UseTex, atype, Real>(array, idxoddbit, offset);
+  msun U = GAUGE_LOAD<atype, Real>(array, idxoddbit, offset);
   heatBathSUN<Real>(U, staple.dagger(), localState);
   state[id] = localState;
   GAUGE_SAVE<atype, Real>(array, U, idxoddbit, offset);
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_PHeatBath_evenodd_SOA12(complex *array,
                                                cuRNGState *state, int oddbit,
                                                int mu) {
@@ -126,16 +126,16 @@ __global__ void kernel_PHeatBath_evenodd_SOA12(complex *array,
       msun link;
       int nuvolume = nu * mustride;
       link =
-          GAUGE_LOAD<UseTex, atype, Real>(array, idxoddbit + nuvolume, offset);
+          GAUGE_LOAD<atype, Real>(array, idxoddbit + nuvolume, offset);
       dx[nu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array,
           Index_ND_Neig_EO(x, dx, DEVPARAMS::GridWGhost) +
               (1 - oddbit) * param_HalfVolumeG() + muvolume,
           offset);
       dx[nu]--;
       dx[mu]++;
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           array,
           Index_ND_Neig_EO(x, dx, DEVPARAMS::GridWGhost) +
               (1 - oddbit) * param_HalfVolumeG() + nuvolume,
@@ -144,18 +144,18 @@ __global__ void kernel_PHeatBath_evenodd_SOA12(complex *array,
 
       dx[mu]--;
       dx[nu]--;
-      link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link = GAUGE_LOAD_DAGGER<atype, Real>(
           array,
           Index_ND_Neig_EO(x, dx, DEVPARAMS::GridWGhost) +
               (1 - oddbit) * param_HalfVolumeG() + nuvolume,
           offset);
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array,
           Index_ND_Neig_EO(x, dx, DEVPARAMS::GridWGhost) +
               (1 - oddbit) * param_HalfVolumeG() + muvolume,
           offset);
       dx[mu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array,
           Index_ND_Neig_EO(x, dx, DEVPARAMS::GridWGhost) +
               oddbit * param_HalfVolumeG() + nuvolume,
@@ -165,7 +165,7 @@ __global__ void kernel_PHeatBath_evenodd_SOA12(complex *array,
   // Copy state to local memory for efficiency
   cuRNGState localState = state[id];
   idxoddbit += muvolume;
-  msun U = GAUGE_LOAD<UseTex, atype, Real>(array, idxoddbit, offset);
+  msun U = GAUGE_LOAD<atype, Real>(array, idxoddbit, offset);
   heatBathSUN<Real>(U, staple.dagger(), localState);
   state[id] = localState;
   GAUGE_SAVE<atype, Real>(array, U, idxoddbit, offset);
@@ -186,31 +186,17 @@ HeatBath<Real>::HeatBath(gauge &array, RNG &randstates)
 
 template <class Real> void HeatBath<Real>::SetFunctionPtr() {
   kernel_pointer = NULL;
-  tex = false;
   if (array.EvenOdd()) {
-    if (tex) {
 #if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_pointer = &kernel_PHeatBath_evenodd<true, SOA, Real>;
-      if (array.Type() == SOA12)
-        kernel_pointer = &kernel_PHeatBath_evenodd_SOA12<true, SOA12, Real>;
-      if (array.Type() == SOA8)
-        kernel_pointer = &kernel_PHeatBath_evenodd<true, SOA8, Real>;
+    if (array.Type() == SOA)
+      kernel_pointer = &kernel_PHeatBath_evenodd<SOA, Real>;
+    if (array.Type() == SOA12)
+      kernel_pointer = &kernel_PHeatBath_evenodd_SOA12<SOA12, Real>;
+    if (array.Type() == SOA8)
+      kernel_pointer = &kernel_PHeatBath_evenodd<SOA8, Real>;
 #else
-      kernel_pointer = &kernel_PHeatBath_evenodd<true, SOA, Real>;
+    kernel_pointer = &kernel_PHeatBath_evenodd<SOA, Real>;
 #endif
-    } else {
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_pointer = &kernel_PHeatBath_evenodd<false, SOA, Real>;
-      if (array.Type() == SOA12)
-        kernel_pointer = &kernel_PHeatBath_evenodd_SOA12<false, SOA12, Real>;
-      if (array.Type() == SOA8)
-        kernel_pointer = &kernel_PHeatBath_evenodd<false, SOA8, Real>;
-#else
-      kernel_pointer = &kernel_PHeatBath_evenodd<false, SOA, Real>;
-#endif
-    }
   }
   if (kernel_pointer == NULL)
     errorCULQCD("No kernel HeatBath function exist for this gauge array...");

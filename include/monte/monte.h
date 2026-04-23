@@ -20,7 +20,6 @@ private:
   int size;
   double timesec;
   int grid[NDIMS];
-  bool tex;
 #ifdef TIMMINGS
   Timer mtime;
 #endif

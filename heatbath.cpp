@@ -56,7 +56,6 @@ void runHeatBath(int argc, char **argv) {
   for (int i = 1; i <= NDIMS; i++)
     lattice_size.push_back(atoi(argv[i]));
   float beta0 = atof(argv[NDIMS + 1]);
-  PARAMS::UseTex = false;
   int ntraj = atoi(argv[NDIMS + 2]);
 
   const int num_warmup_updates = 0;
@@ -83,7 +82,7 @@ void runHeatBath(int argc, char **argv) {
   // also sets some kernel launch parameters
   // true for verbosity
   //---------------------------------------------------------------------------------------
-  SETPARAMS(PARAMS::UseTex, beta0, lattice_size, true);
+  SETPARAMS(beta0, lattice_size, true);
   gauge conf(mygaugein, Device, PARAMS::Volume * NDIMS, true);
   conf.Details();
 

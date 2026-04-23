@@ -42,7 +42,7 @@ template <class Real> struct WLOPArg {
   int opN;
 };
 
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   int id = INDEX1D();
   if (id >= DEVPARAMS::Volume)
@@ -56,7 +56,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   msun link = msun::identity();
   for (int r = 0; r < arg.radius; r++) {
     int idx = Index_ND_Neig_NM(x, arg.mu, r);
-    link *= GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, idx + muvolume,
+    link *= GAUGE_LOAD<atype, Real>(arg.gaugefield, idx + muvolume,
                                             DEVPARAMS::size);
   }
   if (arg.opN == 1) {
@@ -67,19 +67,19 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
 
   // COMMON PART
   int halfline = (arg.radius + 1) / 2;
-  msun line_left = GAUGE_LOAD<UseTex, atype, Real>(
+  msun line_left = GAUGE_LOAD<atype, Real>(
       arg.gaugefield, id + muvolume, DEVPARAMS::size);
   for (int ir = 1; ir < halfline; ++ir)
-    line_left *= GAUGE_LOAD<UseTex, atype, Real>(
+    line_left *= GAUGE_LOAD<atype, Real>(
         arg.gaugefield, Index_ND_Neig_NM(id, arg.mu, ir) + muvolume,
         DEVPARAMS::size);
 
   halfline = arg.radius / 2;
-  msun line_right = GAUGE_LOAD<UseTex, atype, Real>(
+  msun line_right = GAUGE_LOAD<atype, Real>(
       arg.gaugefield, Index_ND_Neig_NM(id, arg.mu, halfline) + muvolume,
       DEVPARAMS::size);
   for (int ir = halfline + 1; ir < arg.radius; ++ir)
-    line_right *= GAUGE_LOAD<UseTex, atype, Real>(
+    line_right *= GAUGE_LOAD<atype, Real>(
         arg.gaugefield, Index_ND_Neig_NM(id, arg.mu, ir) + muvolume,
         DEVPARAMS::size);
 
@@ -105,14 +105,14 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     halfline = arg.radius / 2;
     // 2 comp, in upway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, id + dmu[il],
+      msun link0 = GAUGE_LOAD<atype, Real>(arg.gaugefield, id + dmu[il],
                                                    DEVPARAMS::size);
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, Index_ND_Neig_NM(id, dir1, halfline) + dmu[il],
           DEVPARAMS::size);
       mop += link0 * line_right;
@@ -121,14 +121,14 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(x, dir3, -1);
     // 2 comp, in downway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       mop += link0 * line_right;
     }
@@ -146,14 +146,14 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(s2, dir3, 1);
     // 2 comp, in upway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, s2 + dmu[il],
+      msun link0 = GAUGE_LOAD<atype, Real>(arg.gaugefield, s2 + dmu[il],
                                                    DEVPARAMS::size);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, Index_ND_Neig_NM(id, dir1, arg.radius) + dmu[il],
           DEVPARAMS::size);
       mop += line_left * link0;
@@ -162,14 +162,14 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(s2, dir3, -1);
     // 2 comp, in downway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       mop += line_left * link0;
     }
@@ -204,22 +204,22 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     halfline = arg.radius / 2;
     // 2 comp, 1st upway 2nd foward  0/1
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD<atype, Real>(
           arg.gaugefield, id + dmu[il] * DEVPARAMS::Volume, DEVPARAMS::size);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(id, dmu[il], 1, dmu1[il], 1);
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield,
           Index_ND_Neig_NM(id, dir1, halfline) + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
@@ -227,22 +227,22 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     }
     // 2 comp, 1st upway 2nd backward  2/3
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD<atype, Real>(
           arg.gaugefield, id + dmu[il] * DEVPARAMS::Volume, DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(id, dmu[il], 1, dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
 
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield,
           Index_ND_Neig_NM(id, dir1, halfline) + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
@@ -253,23 +253,23 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(x, dir3, -1);
     // 2 comp, 1st downway 2nd foward 4/5
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], 1);
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       mop += link0 * line_right;
@@ -279,23 +279,23 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(x, dir3, -1);
     // 2 comp, 1st downway 2nd backward 6/7
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], 1);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       mop += link0 * line_right;
@@ -316,46 +316,46 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(s2, dir3, 1);
     // 2 comp, 1st upway 2nd foward 8/9
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD<atype, Real>(
           arg.gaugefield, s2 + dmu[il] * DEVPARAMS::Volume, DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(s2, dmu[il], 1);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], 1);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       mop += line_left * link0;
     }
     // 2 comp, 1st upway 2nd backward 10/11
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD<atype, Real>(
           arg.gaugefield, s2 + dmu[il] * DEVPARAMS::Volume, DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(s2, dmu[il], 1, dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], -1, dmu1[il], 1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       mop += line_left * link0;
@@ -364,23 +364,23 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(s2, dir3, -1);
     // 2 comp, 1st downway 2nd foward 12/13
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], 1);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       mop += line_left * link0;
@@ -389,23 +389,23 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(s2, dir3, -1);
     // 2 comp, 1st downway 2nd backward 14/15
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], -1);
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu1[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       ids[il] = Index_ND_Neig_NM(ids[il], dmu1[il], 1);
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
           DEVPARAMS::size);
       mop += line_left * link0;
@@ -435,22 +435,22 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     dmu[0] = dir2 * DEVPARAMS::Volume;
     dmu[1] = dir3 * DEVPARAMS::Volume;
     halfline = arg.radius / 2;
-    msun line0 = GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, id + muvolume,
+    msun line0 = GAUGE_LOAD<atype, Real>(arg.gaugefield, id + muvolume,
                                                  DEVPARAMS::size);
     for (int ir = 1; ir < halfline; ++ir)
-      line0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      line0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, Index_ND_Neig_NM(id, dir1, ir) + muvolume,
           DEVPARAMS::size);
     // 2 comp, in upway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, id + dmu[il],
+      msun link0 = GAUGE_LOAD<atype, Real>(arg.gaugefield, id + dmu[il],
                                                    DEVPARAMS::size);
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, Index_ND_Neig_NM(id, dir1, halfline) + dmu[il],
           DEVPARAMS::size);
       msun link = line0 * link0.dagger() * line0 * line_right;
@@ -460,14 +460,14 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(x, dir3, -1);
     // 2 comp, in downway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       msun link = line0 * link0.dagger() * line0 * line_right;
       mop += link;
@@ -484,23 +484,23 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     int s2 = Index_ND_Neig_NM(x, dir1, halfline);
     ids[0] = Index_ND_Neig_NM(s2, dir2, 1);
     ids[1] = Index_ND_Neig_NM(s2, dir3, 1);
-    line0 = GAUGE_LOAD<UseTex, atype, Real>(
+    line0 = GAUGE_LOAD<atype, Real>(
         arg.gaugefield, Index_ND_Neig_NM(id, dir1, halfline) + muvolume,
         DEVPARAMS::size);
     for (int ir = halfline + 1; ir < arg.radius; ++ir)
-      line0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      line0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, Index_ND_Neig_NM(id, dir1, ir) + muvolume,
           DEVPARAMS::size);
     // 2 comp, in upway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield, s2 + dmu[il],
+      msun link0 = GAUGE_LOAD<atype, Real>(arg.gaugefield, s2 + dmu[il],
                                                    DEVPARAMS::size);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, Index_ND_Neig_NM(id, dir1, arg.radius) + dmu[il],
           DEVPARAMS::size);
       msun link = line_left * line0 * link0.dagger() * line0;
@@ -510,14 +510,14 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
     ids[1] = Index_ND_Neig_NM(s2, dir3, -1);
     // 2 comp, in downway
     for (int il = 0; il < 2; il++) {
-      msun link0 = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      msun link0 = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
-      link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+      link0 *= GAUGE_LOAD<atype, Real>(
           arg.gaugefield, ids[il] + dmu[il], DEVPARAMS::size);
       msun link = line_left * line0 * link0.dagger() * line0;
       mop += link;
@@ -528,7 +528,7 @@ __global__ void kernel_CalcOPsF_A0_33(WLOPArg<Real> arg) {
   }
 }
 
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 class CalcOPsF_A0 : Tunable {
 private:
   WLOPArg<Real> arg;
@@ -550,7 +550,7 @@ private:
     // CUDA_SAFE_CALL(cudaMemset(arg.fieldOp, 0, PARAMS::Volume * arg.opN *
     // sizeof(msun)));
     fieldOp.Clean();
-    kernel_CalcOPsF_A0_33<UseTex, Real, atype>
+    kernel_CalcOPsF_A0_33< Real, atype>
         <<<tp.grid, tp.block, 0, stream>>>(arg);
   }
 
@@ -630,7 +630,7 @@ public:
   void postTune() {}
 };
 
-template <bool UseTex, class Real>
+template <class Real>
 void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
   Timer mtime;
   mtime.start();
@@ -646,7 +646,7 @@ void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
   if (array.EvenOdd() == true || arg->fieldOp.EvenOdd() == true)
     errorCULQCD("Not defined for EvenOdd arrays...\n");
 
-  CalcOPsF_A0<UseTex, Real, SOA> wl(argK, array, arg->fieldOp);
+  CalcOPsF_A0< Real, SOA> wl(argK, array, arg->fieldOp);
   wl.Run();
   if (getVerbosity() >= VERBOSE)
     wl.stat();
@@ -659,7 +659,7 @@ void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
 
 template <class Real>
 void CalcWLOPs_A0(gauge array, Sigma_g_plus<Real> *arg, int radius, int mu) {
-  CalcWLOPs_A0<false, Real>(array, arg, radius, mu);
+  CalcWLOPs_A0<Real>(array, arg, radius, mu);
 }
 
 template void CalcWLOPs_A0<double>(gauged array, Sigma_g_plus<double> *arg,

@@ -44,7 +44,7 @@ template <class Real> struct WLArgR {
   int Tmax;
 };
 
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 __global__ void kernel_WilsonLineSP(WLArgR<Real> arg) {
   int id = INDEX1D();
 
@@ -54,7 +54,7 @@ __global__ void kernel_WilsonLineSP(WLArgR<Real> arg) {
   for (int mu = 0; mu < NDIMS - 1; mu++) {
     msun link = msun::identity();
     for (int radius = 0; radius < arg.radius; radius++) {
-      link *= GAUGE_LOAD<UseTex, atype, Real>(arg.gaugefield,
+      link *= GAUGE_LOAD<atype, Real>(arg.gaugefield,
                                               Index_ND_Neig_NM(id, mu, radius) +
                                                   mu * DEVPARAMS::Volume,
                                               DEVPARAMS::size);
@@ -67,12 +67,12 @@ __global__ void kernel_WilsonLineSP(WLArgR<Real> arg) {
 }
 
 #ifdef __WILSON_LOOP_USE_CUB__
-template <int blockSize, bool UseTex, class Real, ArrayType atype>
+template <int blockSize, class Real, ArrayType atype>
 __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg) {
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
 #else
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg) {
 #endif
 
@@ -85,7 +85,7 @@ __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg) {
     for (int radius = 0; radius <= arg.radius; radius++) {
       msun linkb = msun::identity();
       if (id < DEVPARAMS::Volume && radius > 0)
-        linkb = GAUGE_LOAD<UseTex, atype, Real>(
+        linkb = GAUGE_LOAD<atype, Real>(
             arg.WLsp,
             id + mu * DEVPARAMS::Volume +
                 (radius - 1) * DEVPARAMS::Volume * (NDIMS - 1),
@@ -98,7 +98,7 @@ __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg) {
         int idt = Index_ND_Neig_NM(id, NDIMS - 1, it);
         msun linktop = msun::identity();
         if (id < DEVPARAMS::Volume && radius > 0)
-          linktop = GAUGE_LOAD<UseTex, atype, Real>(
+          linktop = GAUGE_LOAD<atype, Real>(
               arg.WLsp,
               idt + mu * DEVPARAMS::Volume +
                   (radius - 1) * DEVPARAMS::Volume * (NDIMS - 1),
@@ -120,9 +120,9 @@ __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg) {
         __syncthreads();
 
         if (id < DEVPARAMS::Volume && it < arg.Tmax) {
-          t0 *= GAUGE_LOAD<UseTex, atype, Real>(
+          t0 *= GAUGE_LOAD<atype, Real>(
               arg.gaugefield, idt + tdirvolume, DEVPARAMS::size);
-          t1 *= GAUGE_LOAD<UseTex, atype, Real>(
+          t1 *= GAUGE_LOAD<atype, Real>(
               arg.gaugefield, Index_ND_Neig_NM(idt, mu, radius) + tdirvolume,
               DEVPARAMS::size);
         }
@@ -131,7 +131,7 @@ __global__ void kernel_WilsonLoopSP(WLArgR<Real> arg) {
   }
 }
 
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 class WilsonLineSP : Tunable {
 private:
   WLArgR<Real> arg;
@@ -150,7 +150,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_WilsonLineSP<UseTex, Real, atype>
+    kernel_WilsonLineSP< Real, atype>
         <<<tp.grid, tp.block, 0, stream>>>(arg);
   }
 
@@ -207,7 +207,7 @@ public:
   void postTune() {}
 };
 
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 class WilsonLoopSP : Tunable {
 private:
   WLArgR<Real> arg;
@@ -232,9 +232,9 @@ private:
     CUDA_SAFE_CALL(cudaMemset(
         arg.res, 0, (arg.radius + 1) * (arg.Tmax + 1) * sizeof(complex)));
 #ifdef __WILSON_LOOP_USE_CUB__
-    LAUNCH_KERNEL(kernel_WilsonLoopSP, tp, stream, arg, UseTex, Real, atype);
+    LAUNCH_KERNEL(kernel_WilsonLoopSP, tp, stream, arg, Real, atype);
 #else
-    kernel_WilsonLoopSP<UseTex, Real, atype>
+    kernel_WilsonLoopSP< Real, atype>
         <<<tp.grid, tp.block, tp.block.x * sizeof(complex), stream>>>(arg);
 #endif
   }
@@ -293,12 +293,12 @@ public:
 };
 
 #ifdef __WILSON_LOOP_USE_CUB__
-template <int blockSize, bool UseTex, class Real, ArrayType atype>
+template <int blockSize, class Real, ArrayType atype>
 __global__ void kernel_WilsonLoopR(WLArgR<Real> arg) {
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
 #else
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 __global__ void kernel_WilsonLoopR(WLArgR<Real> arg) {
 #endif
 
@@ -310,7 +310,7 @@ __global__ void kernel_WilsonLoopR(WLArgR<Real> arg) {
     msun linkb = msun::identity();
     for (int radius = 0; radius <= arg.radius; radius++) {
       if (id < DEVPARAMS::Volume && radius > 0)
-        linkb *= GAUGE_LOAD<UseTex, atype, Real>(
+        linkb *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield,
             Index_ND_Neig_NM(id, mu, radius - 1) + mu * DEVPARAMS::Volume,
             DEVPARAMS::size);
@@ -323,7 +323,7 @@ __global__ void kernel_WilsonLoopR(WLArgR<Real> arg) {
         msun linktop = msun::identity();
         if (id < DEVPARAMS::Volume)
           for (int r = 0; r < radius; r++)
-            linktop *= GAUGE_LOAD<UseTex, atype, Real>(
+            linktop *= GAUGE_LOAD<atype, Real>(
                 arg.gaugefield,
                 Index_ND_Neig_NM(idt, mu, r) + mu * DEVPARAMS::Volume,
                 DEVPARAMS::size);
@@ -343,9 +343,9 @@ __global__ void kernel_WilsonLoopR(WLArgR<Real> arg) {
 #endif
 
         if (id < DEVPARAMS::Volume && it < arg.Tmax) {
-          t0 *= GAUGE_LOAD<UseTex, atype, Real>(
+          t0 *= GAUGE_LOAD<atype, Real>(
               arg.gaugefield, idt + tdirvolume, DEVPARAMS::size);
-          t1 *= GAUGE_LOAD<UseTex, atype, Real>(
+          t1 *= GAUGE_LOAD<atype, Real>(
               arg.gaugefield, Index_ND_Neig_NM(idt, mu, radius) + tdirvolume,
               DEVPARAMS::size);
         }
@@ -354,7 +354,7 @@ __global__ void kernel_WilsonLoopR(WLArgR<Real> arg) {
   }
 }
 
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 class WilsonLoopR : Tunable {
 private:
   WLArgR<Real> arg;
@@ -376,9 +376,9 @@ private:
     CUDA_SAFE_CALL(cudaMemset(
         arg.res, 0, (arg.radius + 1) * (arg.Tmax + 1) * sizeof(complex)));
 #ifdef __WILSON_LOOP_USE_CUB__
-    LAUNCH_KERNEL(kernel_WilsonLoopR, tp, stream, arg, UseTex, Real, atype);
+    LAUNCH_KERNEL(kernel_WilsonLoopR, tp, stream, arg, Real, atype);
 #else
-    kernel_WilsonLoopR<UseTex, Real, atype>
+    kernel_WilsonLoopR< Real, atype>
         <<<tp.grid, tp.block, tp.block.x * sizeof(complex), stream>>>(arg);
 #endif
   }
@@ -436,7 +436,7 @@ public:
   void postTune() {}
 };
 
-template <bool UseTex, class Real>
+template <class Real>
 void CWilsonLoop(gauge array, complex *res, int radius, int Tmax) {
   Timer mtime;
   mtime.start();
@@ -451,7 +451,7 @@ void CWilsonLoop(gauge array, complex *res, int radius, int Tmax) {
   if (array.EvenOdd() == true)
     errorCULQCD("Not defined for EvenOdd arrays...\n");
 
-  WilsonLoopR<UseTex, Real, SOA> wl(arg, array);
+  WilsonLoopR< Real, SOA> wl(arg, array);
   wl.Run();
   wl.stat();
 
@@ -468,17 +468,12 @@ void CWilsonLoop(gauge array, complex *res, int radius, int Tmax) {
   COUT << "Time WilsonLoop:  " << mtime.getElapsedTimeInSec() << " s" << endl;
 }
 
-template <class Real>
-void CWilsonLoop(gauge array, complex *res, int radius, int Tmax) {
-  CWilsonLoop<false, Real>(array, res, radius, Tmax);
-}
-
 template void CWilsonLoop<float>(gauges array, complexs *res, int radius,
                                  int Tmax);
 template void CWilsonLoop<double>(gauged array, complexd *res, int radius,
                                   int Tmax);
 
-template <bool UseTex, class Real>
+template <class Real>
 void WilsonLoop(gauge array, complex *res, int radius, int Tmax) {
   Timer mtime;
   mtime.start();
@@ -496,8 +491,8 @@ void WilsonLoop(gauge array, complex *res, int radius, int Tmax) {
   if (array.EvenOdd() == true)
     errorCULQCD("Not defined for EvenOdd arrays...\n");
 
-  WilsonLineSP<UseTex, Real, SOA> wline(arg, array);
-  WilsonLoopSP<UseTex, Real, SOA> wlsp(arg, array);
+  WilsonLineSP< Real, SOA> wline(arg, array);
+  WilsonLoopSP< Real, SOA> wlsp(arg, array);
   wline.Run();
   wline.stat();
   wlsp.Run();
@@ -515,11 +510,6 @@ void WilsonLoop(gauge array, complex *res, int radius, int Tmax) {
   CUDA_SAFE_DEVICE_SYNC();
   mtime.stop();
   COUT << "Time WilsonLoop:  " << mtime.getElapsedTimeInSec() << " s" << endl;
-}
-
-template <class Real>
-void WilsonLoop(gauge array, complex *res, int radius, int Tmax) {
-  WilsonLoop<false, Real>(array, res, radius, Tmax);
 }
 
 template void WilsonLoop<float>(gauges array, complexs *res, int radius,

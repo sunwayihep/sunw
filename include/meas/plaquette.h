@@ -28,7 +28,6 @@ private:
   double timesec;
   int grid[NDIMS];
   bool reduced;
-  bool tex;
 #ifdef TIMMINGS
   Timer plaqtime;
 #endif

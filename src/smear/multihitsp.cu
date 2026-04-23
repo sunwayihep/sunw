@@ -23,7 +23,7 @@ using namespace std;
 
 namespace CULQCD {
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ void inline CalcStapleSP(complex *array, msun &staple, int idx,
                                     int mu) {
   int x[NDIMS];
@@ -38,30 +38,30 @@ __device__ void inline CalcStapleSP(complex *array, msun &staple, int idx,
       int nuvolume = nu * mustride;
       msun link;
       // UP
-      link = GAUGE_LOAD<UseTex, atype, Real>(array, idx + nuvolume, offset);
+      link = GAUGE_LOAD<atype, Real>(array, idx + nuvolume, offset);
       dx[nu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[nu]--;
       dx[mu]++;
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
       dx[mu]--;
       // DOWN
       dx[nu]--;
-      link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link = GAUGE_LOAD_DAGGER<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[mu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
     }
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ void inline CalcStaple(complex *array, msun &staple, int idx,
                                   int mu) {
   int x[NDIMS];
@@ -76,31 +76,31 @@ __device__ void inline CalcStaple(complex *array, msun &staple, int idx,
       int nuvolume = nu * mustride;
       msun link;
       // UP
-      link = GAUGE_LOAD<UseTex, atype, Real>(array, idx + nuvolume, offset);
+      link = GAUGE_LOAD<atype, Real>(array, idx + nuvolume, offset);
       dx[nu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[nu]--;
       dx[mu]++;
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
       dx[mu]--;
       // DOWN
       dx[nu]--;
-      link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link = GAUGE_LOAD_DAGGER<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[mu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           array, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
     }
 }
 
 // kernel MultiHitSP, uses random array state with volume/2 size
-template <bool UseTex, ArrayType atypeIn, ArrayType atypeOut, class Real>
+template <ArrayType atypeIn, ArrayType atypeOut, class Real>
 __global__ void
 kernel_MultiHitSP_1D_halfrng(complex *arrayin, complex *arrayout,
                              cuRNGState *state, int mmu, int nhit) {
@@ -114,8 +114,8 @@ kernel_MultiHitSP_1D_halfrng(complex *arrayin, complex *arrayout,
     for (int mu = 0; mu < NDIMS - 1; mu++) {
       msun staple = msun::zero();
       // calculate the staple
-      CalcStapleSP<UseTex, atypeIn, Real>(arrayin, staple, id, mu);
-      msun U = GAUGE_LOAD<UseTex, atypeIn, Real>(arrayin,
+      CalcStapleSP< atypeIn, Real>(arrayin, staple, id, mu);
+      msun U = GAUGE_LOAD< atypeIn, Real>(arrayin,
                                                  id + mu * DEVPARAMS::Volume);
       staple = staple.dagger();
       msun link = msun::zero();
@@ -131,8 +131,8 @@ kernel_MultiHitSP_1D_halfrng(complex *arrayin, complex *arrayout,
       int mu = 3;
       msun staple = msun::zero();
       // calculate the staple
-      CalcStaple<UseTex, atypeIn, Real>(arrayin, staple, id, mu);
-      msun U = GAUGE_LOAD<UseTex, atypeIn, Real>(arrayin,
+      CalcStaple< atypeIn, Real>(arrayin, staple, id, mu);
+      msun U = GAUGE_LOAD< atypeIn, Real>(arrayin,
                                                  id + mu * DEVPARAMS::Volume);
       staple = staple.dagger();
       msun link = msun::zero();
@@ -148,7 +148,7 @@ kernel_MultiHitSP_1D_halfrng(complex *arrayin, complex *arrayout,
   state[idd] = localState;
 }
 
-template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
+template <ArrayType atypein, ArrayType atypeout, class Real>
 class MultiHitSP : Tunable {
 private:
   gauge arrayin;
@@ -168,7 +168,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_MultiHitSP_1D_halfrng<UseTex, atypein, atypeout, Real>
+    kernel_MultiHitSP_1D_halfrng< atypein, atypeout, Real>
         <<<tp.grid, tp.block, 0, stream>>>(arrayin.GetPtr(), arrayout.GetPtr(),
                                            randstates.State(), mu, nhit);
   }
@@ -249,7 +249,7 @@ void ApplyMultiHitSpace(gauge array, gauge arrayout, RNG &randstates,
   const ArrayType atypein = SOA;
   const ArrayType atypeout = SOA;
   
-    MultiHitSP<false, atypein, atypeout, Real> mhit(array, arrayout, randstates,
+    MultiHitSP<atypein, atypeout, Real> mhit(array, arrayout, randstates,
                                                     NDIMS - 1, nhit);
     mhit.Run();
     mhit.stat();

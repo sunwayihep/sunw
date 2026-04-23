@@ -19,26 +19,26 @@ namespace CULQCD {
   @param nu direction
   @param oddbit parity of the current lattice site.
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ void inline Staple(complex *array, msun &staple, int idx, int mu,
                               int nu, int oddbit) {
   msun link;
   int nuvolume = nu * DEVPARAMS::Volume;
   int muvolume = mu * DEVPARAMS::Volume;
   // UP
-  link = GAUGE_LOAD<UseTex, atype, Real>(
+  link = GAUGE_LOAD<atype, Real>(
       array, idx + oddbit * DEVPARAMS::HalfVolume + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_EO(idx, oddbit, nu, 1) + muvolume);
-  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+  link *= GAUGE_LOAD_DAGGER<atype, Real>(
       array, Index_ND_Neig_EO(idx, oddbit, mu, 1) + nuvolume);
   staple += link;
   // DOWN
-  link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+  link = GAUGE_LOAD_DAGGER<atype, Real>(
       array, Index_ND_Neig_EO(idx, oddbit, nu, -1) + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_EO(idx, oddbit, nu, -1) + muvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_EO(idx, oddbit, mu, 1, nu, -1) + nuvolume);
   staple += link;
 }
@@ -51,25 +51,25 @@ __device__ void inline Staple(complex *array, msun &staple, int idx, int mu,
   @param mu direction
   @param nu direction
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __device__ void inline Staple(complex *array, msun &staple, int idx, int mu,
                               int nu) {
   msun link;
   int nuvolume = nu * DEVPARAMS::Volume;
   int muvolume = mu * DEVPARAMS::Volume;
   // UP
-  link = GAUGE_LOAD<UseTex, atype, Real>(array, idx + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(array, Index_ND_Neig_NM(idx, nu, 1) +
+  link = GAUGE_LOAD<atype, Real>(array, idx + nuvolume);
+  link *= GAUGE_LOAD<atype, Real>(array, Index_ND_Neig_NM(idx, nu, 1) +
                                                      muvolume);
-  link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+  link *= GAUGE_LOAD_DAGGER<atype, Real>(
       array, Index_ND_Neig_NM(idx, mu, 1) + nuvolume);
   staple += link;
   // DOWN
-  link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+  link = GAUGE_LOAD_DAGGER<atype, Real>(
       array, Index_ND_Neig_NM(idx, nu, -1) + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(array, Index_ND_Neig_NM(idx, nu, -1) +
+  link *= GAUGE_LOAD<atype, Real>(array, Index_ND_Neig_NM(idx, nu, -1) +
                                                      muvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>(
+  link *= GAUGE_LOAD<atype, Real>(
       array, Index_ND_Neig_NM(idx, mu, 1, nu, -1) + nuvolume);
   staple += link;
 }
@@ -89,36 +89,36 @@ __device__ void inline Staple(complex *array, msun &staple, int idx, int mu,
   int muvolume = mu * DEVPARAMS::Volume;
   if(evenoddarray){
   //UP
-  link = GAUGE_LOAD<UseTex, atype, Real>( array,  idx + oddbit *
+  link = GAUGE_LOAD<atype, Real>( array,  idx + oddbit *
   DEVPARAMS::HalfVolume + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborEOIndex(idx, oddbit,
+  link *= GAUGE_LOAD<atype, Real>( array, neighborEOIndex(idx, oddbit,
   nu, 1) +muvolume );
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborEOIndex(idx, oddbit,
+  link *= GAUGE_LOAD<atype, Real>( array, neighborEOIndex(idx, oddbit,
   mu, 1) + nuvolume ).dagger();
   staple += link;
   //DOWN
-  link = GAUGE_LOAD<UseTex, atype, Real>( array,  neighborEOIndex(idx, oddbit,
+  link = GAUGE_LOAD<atype, Real>( array,  neighborEOIndex(idx, oddbit,
   nu, -1) +nuvolume ).dagger();
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborEOIndex(idx, oddbit,
+  link *= GAUGE_LOAD<atype, Real>( array, neighborEOIndex(idx, oddbit,
   nu, -1)  + muvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborEOIndex(idx, oddbit,
+  link *= GAUGE_LOAD<atype, Real>( array, neighborEOIndex(idx, oddbit,
   mu, 1, nu,  -1)+ nuvolume);
   staple += link;
   }
   else{
   //UP
-  link = GAUGE_LOAD<UseTex, atype, Real>( array, idx + nuvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborIndex(idx, nu, 1) +
+  link = GAUGE_LOAD<atype, Real>( array, idx + nuvolume);
+  link *= GAUGE_LOAD<atype, Real>( array, neighborIndex(idx, nu, 1) +
   muvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborIndex(idx, mu, 1) +
+  link *= GAUGE_LOAD<atype, Real>( array, neighborIndex(idx, mu, 1) +
   nuvolume).dagger();
   staple += link;
   //DOWN
-  link = GAUGE_LOAD<UseTex, atype, Real>( array, neighborIndex(idx, nu, -1) +
+  link = GAUGE_LOAD<atype, Real>( array, neighborIndex(idx, nu, -1) +
   nuvolume).dagger();
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborIndex(idx, nu, -1) +
+  link *= GAUGE_LOAD<atype, Real>( array, neighborIndex(idx, nu, -1) +
   muvolume);
-  link *= GAUGE_LOAD<UseTex, atype, Real>( array, neighborIndex(idx, mu, 1, nu,
+  link *= GAUGE_LOAD<atype, Real>( array, neighborIndex(idx, mu, 1, nu,
   -1) + nuvolume);
   staple += link;
   }

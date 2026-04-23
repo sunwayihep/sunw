@@ -44,7 +44,7 @@ namespace CULQCD {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, int DIR, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
                            int maxsteps, int reunit_interval, int verbose) {
   COUT << "####################################################################"
@@ -96,16 +96,16 @@ complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
 #endif
 
 #ifdef USE_CUDA_CUB
-  GaugeFixQualityCUB<DIR, UseTex, atype, Real> quality(_pgauge);
+  GaugeFixQualityCUB<DIR, atype, Real> quality(_pgauge);
 #else
-  GaugeFixQuality<DIR, UseTex, atype, Real> quality(_pgauge);
+  GaugeFixQuality<DIR, atype, Real> quality(_pgauge);
 #endif
   Reunitarize<Real> reu(_pgauge);
 #ifdef MULTI_GPU
-  GaugeFix_Interior<DIR, UseTex, atype, Real> fix(_pgauge, relax_boost);
-  GaugeFix_Border<DIR, UseTex, atype, Real> fixborder(_pgauge, relax_boost);
+  GaugeFix_Interior<DIR, atype, Real> fix(_pgauge, relax_boost);
+  GaugeFix_Border<DIR, atype, Real> fixborder(_pgauge, relax_boost);
 #else
-  GaugeFix_SingleNode<DIR, UseTex, atype, Real> fixsingle(_pgauge, relax_boost);
+  GaugeFix_SingleNode<DIR, atype, Real> fixsingle(_pgauge, relax_boost);
 #endif
   //------------------------------------------------------------------------
   // Measure initial gauge fixing quality
@@ -209,12 +209,6 @@ complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
           "###########"
        << endl;
   return complex::make_complex(data.imag(), (Real)iterations);
-}
-template <int DIR, ArrayType atype, class Real>
-complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
-                           int maxsteps, int reunit_interval, int verbose) {
-  return PerformGaugeFixOVR<false, DIR, atype, Real>(
-        _pgauge, relax_boost, stopvalue, maxsteps, reunit_interval, verbose);
 }
 template <ArrayType atype, class Real>
 complex PerformGaugeFixOVR(gauge _pgauge, int DIR, Real relax_boost,

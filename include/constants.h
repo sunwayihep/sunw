@@ -55,9 +55,6 @@ DIRS:
 
 /*! @brief HOST Lattice parameters.*/
 namespace PARAMS {
-/*! \brief If true uses texture memory instead of global memory */
-extern bool UseTex;
-
 extern double Beta;
 extern std::vector<int> lattice_size;
 /*! \brief Number of lattice points in X, Y, Z, T direction */
@@ -131,13 +128,11 @@ void PrintDetails();
     @brief Set the global lattice parameters. This function also copies these
    global parameters to GPU constant memory, void copyConstantsToGPU();
 */
-void SETPARAMS(bool _usetex, double beta, int nx, int ny, int nz, int nt,
-               bool verbose);
+void SETPARAMS(double beta, int nx, int ny, int nz, int nt, bool verbose);
 
-void SETPARAMS(bool _usetex, double beta, std::vector<int> lattice_size,
-               bool verbose);
+void SETPARAMS(double beta, std::vector<int> lattice_size, bool verbose);
 
-void SETPARAMS(bool _usetex, int latticedim[4], const int nodesperdim[4],
+void SETPARAMS(int latticedim[4], const int nodesperdim[4],
                const int logical_coordinate[4], bool verbose);
 
 /**
@@ -213,8 +208,6 @@ void Details();
 /*! @brief GPU/DEVICE Lattice parameters, must be copied to GPU constant memory.
  */
 namespace DEVPARAMS {
-/*! \brief If true uses texture memory instead of global memory */
-extern __constant__ bool UseTex;
 /*! \brief inverse of the gauge coupling, beta = 2 Nc / g_0^2 */
 extern __constant__ double Beta;
 /*! \brief inverse of the gauge coupling over Nc, betaOverNc = 2 / g_0^2 */
@@ -251,13 +244,6 @@ int __host__ __device__ inline param_border(int i) {
 #endif
 }
 
-bool __host__ __device__ inline param_Tex() {
-#ifdef __CUDA_ARCH__
-  return DEVPARAMS::UseTex;
-#else
-  return PARAMS::UseTex;
-#endif
-}
 double __host__ __device__ inline param_Beta() {
 #ifdef __CUDA_ARCH__
   return DEVPARAMS::Beta;
@@ -332,7 +318,6 @@ void copyConstantsToGPU0();
     @brief Allows to turn ON/OFF the use of Textures.
     @param TexOn if true turn on reads from texture.
 */
-void UseTextureMemory(bool TexOn);
 /**
     @brief Set constants for the HYP smearing.
 */

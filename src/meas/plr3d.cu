@@ -86,7 +86,7 @@ public:
   void postTune() {}
 };
 
-template <int blockSize, bool UseTex, ArrayType atypein, class Real>
+template <int blockSize, ArrayType atypein, class Real>
 __global__ void kernel_calc_polyakovloop3D(PotPLoop3DArg<Real> arg) {
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
@@ -94,7 +94,7 @@ __global__ void kernel_calc_polyakovloop3D(PotPLoop3DArg<Real> arg) {
   int id = INDEX1D();
   msun plup = msun::zero();
   if (id < DEVPARAMS::tstride)
-    plup = GAUGE_LOAD<UseTex, atypein, Real>(arg.array, id, DEVPARAMS::tstride);
+    plup = GAUGE_LOAD<atypein, Real>(arg.array, id, DEVPARAMS::tstride);
   int x[NDIMS - 1];
   Index_NDs_NM(id, x);
   for (int k = 0; k <= arg.radius; k++)
@@ -107,7 +107,7 @@ __global__ void kernel_calc_polyakovloop3D(PotPLoop3DArg<Real> arg) {
         complex ppdagger = complex::zero();
         if (id < DEVPARAMS::tstride) {
           int dx[NDIMS - 1] = {i, j, k};
-          msun pldown = GAUGE_LOAD<UseTex, atypein, Real>(
+          msun pldown = GAUGE_LOAD<atypein, Real>(
               arg.array, Index_NDs_Neig_NM(x, dx), DEVPARAMS::tstride);
           pp = plup.trace() * pldown.trace();
           ppdagger = plup.trace() * pldown.dagger().trace();
@@ -146,16 +146,16 @@ template <class Real> void PotPLoop3D<Real>::apply(const cudaStream_t &stream) {
   
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, false, SOA,
+      LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, SOA,
                     Real);
     if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, false, SOA12,
+      LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, SOA12,
                     Real);
     if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, false, SOA8,
+      LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, SOA8,
                     Real);
 #else
-    LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, false, SOA,
+    LAUNCH_KERNEL(kernel_calc_polyakovloop3D, tp, stream, arg, SOA,
                   Real);
 #endif
   

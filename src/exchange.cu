@@ -209,7 +209,7 @@ inline __device__ int LatticeFaceIndex00(int idd, int oddbit, int faceid,
   return idx;
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void PackUnpack_Ghost_Gauge(complex *array, complex *arraypack,
                                        int facesize, bool pack, int borderid,
                                        int faceid, int dir, int oddbit) {
@@ -217,11 +217,11 @@ __global__ void PackUnpack_Ghost_Gauge(complex *array, complex *arraypack,
   if (id < facesize) {
     int idx = LatticeFaceIndex00(id, oddbit, faceid, borderid);
     if (pack) {
-      msun link = GAUGE_LOAD<UseTex, atype, Real>(
+      msun link = GAUGE_LOAD<atype, Real>(
           array, idx + dir * DEVPARAMS::VolumeG, DEVPARAMS::VolumeG * 4);
       GAUGE_SAVE<atype, Real>(arraypack, link, id, facesize);
     } else {
-      msun link = GAUGE_LOAD<UseTex, atype, Real>(arraypack, id, facesize);
+      msun link = GAUGE_LOAD<atype, Real>(arraypack, id, facesize);
       GAUGE_SAVE<atype, Real>(array, link, idx + dir * DEVPARAMS::VolumeG,
                               DEVPARAMS::VolumeG * 4);
     }
@@ -233,31 +233,19 @@ void CALL_PACK_UNPACK_BORDERGHOST_LINKS_FACE_GAUGE(
     dim3 nblocks, dim3 threads, gauge _pgauge, complex *arraypack, int size,
     bool pack, int borderid, int faceid, bool usetex, int dir, int parity,
     cudaStream_t *streamid) {
+  (void)usetex;
   typedef void (*TFuncPtr)(complex *, complex *, int, bool, int, int, int, int);
   TFuncPtr ptr = NULL;
-  if (usetex) {
 #if (NCOLORS == 3)
-    if (_pgauge.Type() == SOA)
-      ptr = &PackUnpack_Ghost_Gauge<true, SOA, Real>;
-    if (_pgauge.Type() == SOA12)
-      ptr = &PackUnpack_Ghost_Gauge<true, SOA12, Real>;
-    if (_pgauge.Type() == SOA8)
-      ptr = &PackUnpack_Ghost_Gauge<true, SOA8, Real>;
+  if (_pgauge.Type() == SOA)
+    ptr = &PackUnpack_Ghost_Gauge<SOA, Real>;
+  if (_pgauge.Type() == SOA12)
+    ptr = &PackUnpack_Ghost_Gauge<SOA12, Real>;
+  if (_pgauge.Type() == SOA8)
+    ptr = &PackUnpack_Ghost_Gauge<SOA8, Real>;
 #else
-    ptr = &PackUnpack_Ghost_Gauge<true, SOA, Real>;
+  ptr = &PackUnpack_Ghost_Gauge<SOA, Real>;
 #endif
-  } else {
-#if (NCOLORS == 3)
-    if (_pgauge.Type() == SOA)
-      ptr = &PackUnpack_Ghost_Gauge<false, SOA, Real>;
-    if (_pgauge.Type() == SOA12)
-      ptr = &PackUnpack_Ghost_Gauge<false, SOA12, Real>;
-    if (_pgauge.Type() == SOA8)
-      ptr = &PackUnpack_Ghost_Gauge<false, SOA8, Real>;
-#else
-    ptr = &PackUnpack_Ghost_Gauge<false, SOA, Real>;
-#endif
-  }
   if (ptr != NULL)
     ptr<<<nblocks, threads, 0, *streamid>>>(
         _pgauge.GetPtr(), arraypack, size, pack, borderid, faceid, dir, parity);
@@ -814,7 +802,7 @@ template void EndExchange_gauge_fix_links_gauge<float>(gauges _pgauge,
 template void EndExchange_gauge_fix_links_gauge<double>(gauged _pgauge,
                                                         int parity);
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void
 PackUnpack_Ghost_GX(complex *array, complex *arraypack, int facesize, bool pack,
                     int borderid, int faceid, int dir, int oddbit, int offset) {
@@ -822,11 +810,11 @@ PackUnpack_Ghost_GX(complex *array, complex *arraypack, int facesize, bool pack,
   if (id < facesize) {
     int idx = LatticeFaceIndex00(id, oddbit, faceid, borderid);
     if (pack) {
-      msun link = GAUGE_LOAD<UseTex, atype, Real>(
+      msun link = GAUGE_LOAD<atype, Real>(
           array, idx + dir * DEVPARAMS::VolumeG, offset);
       GAUGE_SAVE<atype, Real>(arraypack, link, id, facesize);
     } else {
-      msun link = GAUGE_LOAD<UseTex, atype, Real>(arraypack, id, facesize);
+      msun link = GAUGE_LOAD<atype, Real>(arraypack, id, facesize);
       GAUGE_SAVE<atype, Real>(array, link, idx + dir * DEVPARAMS::VolumeG,
                               offset);
     }
@@ -838,32 +826,20 @@ void CALL_PACK_UNPACK_BORDERGHOST_LINKS_FACE_GX(
     dim3 nblocks, dim3 threads, gauge array, complex *arraypack, int size,
     bool pack, int borderid, int faceid, bool usetex, int dir, int parity,
     int offset, cudaStream_t *streamid) {
+  (void)usetex;
   typedef void (*TFuncPtr)(complex *, complex *, int, bool, int, int, int, int,
                            int);
   TFuncPtr ptr = NULL;
-  if (usetex) {
 #if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      ptr = &PackUnpack_Ghost_GX<true, SOA, Real>;
-    if (array.Type() == SOA12)
-      ptr = &PackUnpack_Ghost_GX<true, SOA12, Real>;
-    if (array.Type() == SOA8)
-      ptr = &PackUnpack_Ghost_GX<true, SOA8, Real>;
+  if (array.Type() == SOA)
+    ptr = &PackUnpack_Ghost_GX<SOA, Real>;
+  if (array.Type() == SOA12)
+    ptr = &PackUnpack_Ghost_GX<SOA12, Real>;
+  if (array.Type() == SOA8)
+    ptr = &PackUnpack_Ghost_GX<SOA8, Real>;
 #else
-    ptr = &PackUnpack_Ghost_GX<true, SOA, Real>;
+  ptr = &PackUnpack_Ghost_GX<SOA, Real>;
 #endif
-  } else {
-#if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      ptr = &PackUnpack_Ghost_GX<false, SOA, Real>;
-    if (array.Type() == SOA12)
-      ptr = &PackUnpack_Ghost_GX<false, SOA12, Real>;
-    if (array.Type() == SOA8)
-      ptr = &PackUnpack_Ghost_GX<false, SOA8, Real>;
-#else
-    ptr = &PackUnpack_Ghost_GX<false, SOA, Real>;
-#endif
-  }
   if (ptr != NULL)
     ptr<<<nblocks, threads, 0, *streamid>>>(array.GetPtr(), arraypack, size,
                                             pack, borderid, faceid, dir, parity,

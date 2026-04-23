@@ -28,7 +28,7 @@ namespace CULQCD {
 //////// Gauge determinant
 /////////////////////////////////////////////////////////////////////////////////////////
 // #ifdef USE_CUDA_CUB
-template <int blockSize, bool UseTex, ArrayType atype, class Real>
+template <int blockSize, ArrayType atype, class Real>
 __global__ void kernel_linkdetsum(DetArg<Real> arg) {
   int idd = INDEX1D();
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
@@ -60,7 +60,7 @@ __global__ void kernel_linkdetsum(DetArg<Real> arg) {
     // #pragma unroll
     for (int mu = 0; mu < NDIMS; mu++)
       res +=
-          GAUGE_LOAD<UseTex, atype, Real>(arg.array, id + mu * mustride, offset)
+          GAUGE_LOAD<atype, Real>(arg.array, id + mu * mustride, offset)
               .det();
   }
   complex aggregate = BlockReduce(temp_storage).Reduce(res, Summ<complex>());
@@ -88,13 +88,13 @@ void GaugeDetCUB<Real>::apply(const cudaStream_t &stream) {
   
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, false, SOA, Real);
+      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, SOA, Real);
     if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, false, SOA12, Real);
+      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, SOA12, Real);
     if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, false, SOA8, Real);
+      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, SOA8, Real);
 #else
-    LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, false, SOA, Real);
+    LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, SOA, Real);
 #endif
   
 }
@@ -170,7 +170,7 @@ template class GaugeDetCUB<double>;
 // #else
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_linkdetsum(DetArg<Real> arg) {
   uint idd = INDEX1D();
   complex res = complex::zero();
@@ -198,7 +198,7 @@ __global__ void kernel_linkdetsum(DetArg<Real> arg) {
     // #pragma unroll
     for (int mu = 0; mu < NDIMS; mu++)
       res +=
-          GAUGE_LOAD<UseTex, atype, Real>(arg.array, id + mu * mustride, offset)
+          GAUGE_LOAD<atype, Real>(arg.array, id + mu * mustride, offset)
               .det();
   }
   reduce_block_1d<complex>(arg.value, res);
@@ -221,16 +221,16 @@ template <class Real> void GaugeDet<Real>::apply(const cudaStream_t &stream) {
     
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
-        kernel_linkdetsum<false, SOA, Real>
+        kernel_linkdetsum<SOA, Real>
             <<<tp.grid, tp.block, memshared, stream>>>(arg);
       if (array.Type() == SOA12)
-        kernel_linkdetsum<false, SOA12, Real>
+        kernel_linkdetsum<SOA12, Real>
             <<<tp.grid, tp.block, memshared, stream>>>(arg);
       if (array.Type() == SOA8)
-        kernel_linkdetsum<false, SOA8, Real>
+        kernel_linkdetsum<SOA8, Real>
             <<<tp.grid, tp.block, memshared, stream>>>(arg);
 #else
-      kernel_linkdetsum<false, SOA, Real>
+      kernel_linkdetsum<SOA, Real>
           <<<tp.grid, tp.block, memshared, stream>>>(arg);
 #endif
     

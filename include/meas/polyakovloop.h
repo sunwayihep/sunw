@@ -23,7 +23,6 @@ private:
   int size;
   complex poly_value;
   double timesec;
-  bool tex;
   int grid[NDIMS];
 #ifdef TIMMINGS
   Timer mtime;

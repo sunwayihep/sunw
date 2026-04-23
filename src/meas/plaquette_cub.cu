@@ -36,7 +36,7 @@ inline __host__ __device__ int neighborNormalIndex(int id, int mu, int lmu) {
 
 // kernel to calculate the plaquette at each site of the lattice in EvenOdd
 // order
-template <int blockSize, bool UseTex, ArrayType atype, class Real>
+template <int blockSize, ArrayType atype, class Real>
 __global__ void kernel_calc_plaquette_normal_cub(PlaqArg<Real> arg) {
   uint id = INDEX1D();
 
@@ -65,16 +65,16 @@ __global__ void kernel_calc_plaquette_normal_cub(PlaqArg<Real> arg) {
     msun link, link1;
     // #pragma unroll
     for (int mu = 0; mu < NDIMS; mu++) {
-      link1 = GAUGE_LOAD<UseTex, atype, Real>(arg.pgauge, id + mu * mustride,
+      link1 = GAUGE_LOAD<atype, Real>(arg.pgauge, id + mu * mustride,
                                               offset);
       int newidmu1 = neighborNormalIndex(id, mu, 1);
       // #pragma unroll
       for (int nu = (mu + 1); nu < NDIMS; nu++) {
-        link = GAUGE_LOAD<UseTex, atype, Real>(
+        link = GAUGE_LOAD<atype, Real>(
             arg.pgauge, newidmu1 + nu * mustride, offset);
-        link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.pgauge, neighborNormalIndex(id, nu, 1) + mu * mustride, offset);
-        link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.pgauge, id + nu * mustride, offset);
         if (nu == (NDIMS - 1))
           plaq.imag() += (link1 * link).realtrace();
@@ -95,7 +95,7 @@ __global__ void kernel_calc_plaquette_normal_cub(PlaqArg<Real> arg) {
 
 // kernel to calculate the plaquette at each site of the lattice in EvenOdd
 // order
-template <int blockSize, bool UseTex, ArrayType atype, class Real>
+template <int blockSize, ArrayType atype, class Real>
 __global__ void kernel_calc_plaquette_evenodd_cub(PlaqArg<Real> arg) {
   uint idd = INDEX1D();
 
@@ -135,17 +135,17 @@ __global__ void kernel_calc_plaquette_evenodd_cub(PlaqArg<Real> arg) {
     msun link, link1;
     // #pragma unroll
     for (int mu = 0; mu < NDIMS; mu++) {
-      link1 = GAUGE_LOAD<UseTex, atype, Real>(
+      link1 = GAUGE_LOAD<atype, Real>(
           arg.pgauge, idxoddbit + mu * mustride, offset);
       int newidmu1 = Index_ND_Neig_EO(id, oddbit, mu, 1);
       // #pragma unroll
       for (int nu = (mu + 1); nu < NDIMS; nu++) {
-        link = GAUGE_LOAD<UseTex, atype, Real>(
+        link = GAUGE_LOAD<atype, Real>(
             arg.pgauge, newidmu1 + nu * mustride, offset);
-        link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.pgauge, Index_ND_Neig_EO(id, oddbit, nu, 1) + mu * mustride,
             offset);
-        link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.pgauge, idxoddbit + nu * mustride, offset);
         if (nu == (NDIMS - 1))
           plaq.imag() += (link1 * link).realtrace();
@@ -187,16 +187,16 @@ void PlaquetteCUB<Real>::apply(const cudaStream_t &stream) {
     
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, false,
+        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg,
                       SOA, Real);
       if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, false,
+        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg,
                       SOA12, Real);
       if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, false,
+        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg,
                       SOA8, Real);
 #else
-      LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, false,
+      LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg,
                     SOA, Real);
 #endif
     
@@ -204,16 +204,16 @@ void PlaquetteCUB<Real>::apply(const cudaStream_t &stream) {
     
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, false,
+        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg,
                       SOA, Real);
       if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, false,
+        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg,
                       SOA12, Real);
       if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, false,
+        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg,
                       SOA8, Real);
 #else
-      LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, false,
+      LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg,
                     SOA, Real);
 #endif
     

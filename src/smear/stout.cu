@@ -558,7 +558,7 @@ template <class Real> struct StoutArg {
   Real w;
 };
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_Stout(StoutArg<Real> arg, int mu) {
 
   int id = INDEX1D();
@@ -578,34 +578,34 @@ __global__ void kernel_Stout(StoutArg<Real> arg, int mu) {
       int dx[NDIMS] = {0};
       int nuvolume = nu * mustride;
       link =
-          GAUGE_LOAD<UseTex, atype, Real>(arg.arrayin, id + nuvolume, offset);
+          GAUGE_LOAD<atype, Real>(arg.arrayin, id + nuvolume, offset);
       dx[nu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[nu]--;
       dx[mu]++;
-      link *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link *= GAUGE_LOAD_DAGGER<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
 
       dx[mu]--;
       dx[nu]--;
-      link = GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+      link = GAUGE_LOAD_DAGGER<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + muvolume, offset);
       dx[mu]++;
-      link *= GAUGE_LOAD<UseTex, atype, Real>(
+      link *= GAUGE_LOAD<atype, Real>(
           arg.arrayin, Index_ND_Neig_NM(x, dx) + nuvolume, offset);
       staple += link;
     }
-  msun U = GAUGE_LOAD<UseTex, atype, Real>(arg.arrayin, id + muvolume, offset);
+  msun U = GAUGE_LOAD<atype, Real>(arg.arrayin, id + muvolume, offset);
   msun sm;
   stout_smear<Real>(sm, staple * arg.w, U);
   GAUGE_SAVE<atype, Real>(arg.arrayout, sm, id + muvolume, offset);
 }
 
-template <bool UseTex, ArrayType atypein, class Real>
+template <ArrayType atypein, class Real>
 class ApplyStout : Tunable {
 private:
   gauge arrayin;
@@ -624,7 +624,7 @@ private:
   unsigned int minThreads() const { return size; }
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
-    kernel_Stout<UseTex, atypein, Real>
+    kernel_Stout< atypein, Real>
         <<<tp.grid, tp.block, 0, stream>>>(arg, mu);
   }
 
@@ -702,7 +702,7 @@ template <class Real> void ApplyStoutinSpace(gauge array, Real w, int steps) {
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
   
-    ApplyStout<false, atypein, Real> Stout(array, arrayout, w);
+    ApplyStout<atypein, Real> Stout(array, arrayout, w);
     for (int st = 0; st < steps; st++) {
       for (int mu = 0; mu < NDIMS - 1; mu++) {
         Stout.SetDir(mu);
@@ -729,7 +729,7 @@ template <class Real> void ApplyStoutinTime(gauge array, Real w, int steps) {
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
   
-    ApplyStout<false, atypein, Real> Stout(array, arrayout, w);
+    ApplyStout<atypein, Real> Stout(array, arrayout, w);
     Stout.SetDir(NDIMS - 1);
     for (int st = 0; st < steps; st++) {
       Stout.Run();

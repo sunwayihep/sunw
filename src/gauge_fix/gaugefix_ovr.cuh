@@ -212,7 +212,7 @@ template <class Real> struct GaugeFixArg {
   int parity;
 };
 
-template <int FUNCTIONTYPE, int NTPVOL, int DIR, bool UseTex, ArrayType atype,
+template <int FUNCTIONTYPE, int NTPVOL, int DIR, ArrayType atype,
           class Real>
 __global__ void kernel_do_hit_EO_shared_combo(GaugeFixArg<Real> arg) {
   // Get the local thread id for each site, since at each site we are assigning
@@ -258,7 +258,7 @@ __global__ void kernel_do_hit_EO_shared_combo(GaugeFixArg<Real> arg) {
     ids += mu * DEVPARAMS::VolumeG;
     // Load uplink and downlink from global memory
     msun link =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
     // Gauge fix hits
     if (FUNCTIONTYPE == 0)
       GaugeFixHit_NoAtomicAdd<DIR, NTPVOL, Real>(link, arg.relax_boost, tid);
@@ -285,7 +285,7 @@ __global__ void kernel_do_hit_EO_shared_combo(GaugeFixArg<Real> arg) {
     ids += mu * DEVPARAMS::VolumeG;
     // Load uplink from global memory
     msun link =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
     x[mu] = (x[mu] - 1 + param_GridG(mu)) % param_GridG(mu);
     int idl = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1]) *
                    param_GridG(0) +
@@ -295,7 +295,7 @@ __global__ void kernel_do_hit_EO_shared_combo(GaugeFixArg<Real> arg) {
     idl += mu * DEVPARAMS::VolumeG;
     // Load downlink from global memory
     msun link1 =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, idl, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, idl, DEVPARAMS::VolumeG * 4);
     // Gauge fix hits
     if (FUNCTIONTYPE == 3)
       GaugeFixHit_NoAtomicAdd<DIR, NTPVOL, Real>(link, link1, arg.relax_boost,
@@ -311,7 +311,7 @@ __global__ void kernel_do_hit_EO_shared_combo(GaugeFixArg<Real> arg) {
   }
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 class GaugeFix_SingleNode : Tunable {
 private:
   string functionName;
@@ -326,7 +326,7 @@ private:
   void apply(const cudaStream_t &stream) {
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
     LAUNCH_KERNEL_GFIX(kernel_do_hit_EO_shared_combo, tp, stream, arg, DIR,
-                       UseTex, atype, Real);
+                       atype, Real);
   }
   dim3 createGrid(const dim3 &block) const {
     return Call_GaugeFix_createGrid(block, minThreads());
@@ -444,7 +444,7 @@ public:
 // #endif
 
 #ifdef MULTI_GPU
-template <int FUNCTIONTYPE, int NTPVOL, int DIR, bool UseTex, ArrayType atype,
+template <int FUNCTIONTYPE, int NTPVOL, int DIR, ArrayType atype,
           class Real>
 __global__ void kernel_do_hit_EO_shared_combo_interior(GaugeFixArg<Real> arg) {
   // Get the local thread id for each site, since at each site we are assigning
@@ -511,7 +511,7 @@ __global__ void kernel_do_hit_EO_shared_combo_interior(GaugeFixArg<Real> arg) {
     ids += mu * DEVPARAMS::VolumeG;
     // Load uplink and downlink from global memory
     msun link =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
     // Gauge fix hits
     if (FUNCTIONTYPE == 0)
       GaugeFixHit_NoAtomicAdd<DIR, NTPVOL, Real>(link, arg.relax_boost, tid);
@@ -530,7 +530,7 @@ __global__ void kernel_do_hit_EO_shared_combo_interior(GaugeFixArg<Real> arg) {
     ids += mu * DEVPARAMS::VolumeG;
     // Load uplink from global memory
     msun link =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
     x[mu] = (x[mu] - 1 + param_GridG(mu)) % param_GridG(mu);
     int idl = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1]) *
                    param_GridG(0) +
@@ -540,7 +540,7 @@ __global__ void kernel_do_hit_EO_shared_combo_interior(GaugeFixArg<Real> arg) {
     idl += mu * DEVPARAMS::VolumeG;
     // Load downlink from global memory
     msun link1 =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, idl, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, idl, DEVPARAMS::VolumeG * 4);
     // Gauge fix hits
     if (FUNCTIONTYPE == 3)
       GaugeFixHit_NoAtomicAdd<DIR, NTPVOL, Real>(link, link1, arg.relax_boost,
@@ -560,7 +560,7 @@ __global__ void kernel_do_hit_EO_shared_combo_interior(GaugeFixArg<Real> arg) {
 #endif
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 class GaugeFix_Interior : Tunable {
 private:
   string functionName;
@@ -657,14 +657,14 @@ public:
 #ifdef MULTI_GPU
     if (numnodes() == 1) {
       LAUNCH_KERNEL_GFIX(kernel_do_hit_EO_shared_combo, tp, stream, arg, DIR,
-                         UseTex, atype, Real);
+                         atype, Real);
     } else {
       LAUNCH_KERNEL_GFIX(kernel_do_hit_EO_shared_combo_interior, tp, stream,
-                         arg, DIR, UseTex, atype, Real);
+                         arg, DIR, atype, Real);
     }
 #else
     LAUNCH_KERNEL_GFIX(kernel_do_hit_EO_shared_combo, tp, stream, arg, DIR,
-                       UseTex, atype, Real);
+                       atype, Real);
 #endif
   }
 
@@ -718,7 +718,7 @@ template <class Real> struct GaugeFixBorderArg {
   int nlinksfaces;
 };
 
-template <int FUNCTIONTYPE, int NTPVOL, int DIR, bool UseTex, ArrayType atype,
+template <int FUNCTIONTYPE, int NTPVOL, int DIR, ArrayType atype,
           class Real>
 __global__ void
 kernel_do_hit_EO_shared_combo_border(GaugeFixBorderArg<Real> arg) {
@@ -761,7 +761,7 @@ kernel_do_hit_EO_shared_combo_border(GaugeFixBorderArg<Real> arg) {
     ids += mu * DEVPARAMS::VolumeG;
     // Load uplink and downlink from global memory
     msun link =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
     // Gauge fix hits
     if (FUNCTIONTYPE == 0)
       GaugeFixHit_NoAtomicAdd<DIR, NTPVOL, Real>(link, arg.relax_boost, tid);
@@ -780,7 +780,7 @@ kernel_do_hit_EO_shared_combo_border(GaugeFixBorderArg<Real> arg) {
     ids += mu * DEVPARAMS::VolumeG;
     // Load uplink from global memory
     msun link =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, ids, DEVPARAMS::VolumeG * 4);
     x[mu] = (x[mu] - 1 + param_GridG(mu)) % param_GridG(mu);
     int idl = ((((x[3] * param_GridG(2) + x[2]) * param_GridG(1)) + x[1]) *
                    param_GridG(0) +
@@ -790,7 +790,7 @@ kernel_do_hit_EO_shared_combo_border(GaugeFixBorderArg<Real> arg) {
     idl += mu * DEVPARAMS::VolumeG;
     // Load downlink from global memory
     msun link1 =
-        GAUGE_LOAD<UseTex, atype, Real>(arg.array, idl, DEVPARAMS::VolumeG * 4);
+        GAUGE_LOAD<atype, Real>(arg.array, idl, DEVPARAMS::VolumeG * 4);
     // Gauge fix hits
     if (FUNCTIONTYPE == 3)
       GaugeFixHit_NoAtomicAdd<DIR, NTPVOL, Real>(link, link1, arg.relax_boost,
@@ -865,7 +865,7 @@ __global__ void COMPUTE_ALLFACEINDICES(int *faceindices, int facesize,
   }
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 class GaugeFix_Border : Tunable {
 private:
   string functionName;
@@ -881,7 +881,7 @@ private:
     TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
     if (numnodes() > 1)
       LAUNCH_KERNEL_GFIX(kernel_do_hit_EO_shared_combo_border, tp, stream, arg,
-                         DIR, UseTex, atype, Real);
+                         DIR, atype, Real);
   }
 
   dim3 createGrid(const dim3 &block) const {

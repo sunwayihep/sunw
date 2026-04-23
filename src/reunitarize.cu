@@ -17,11 +17,11 @@ namespace CULQCD {
         @brief Kernel to reunitarize all links.
         @param array array to be reunitarized.
 */
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_calc_reunitarize(complex *array, int size) {
   uint id = INDEX1D();
   if (id < size) {
-    msun U = GAUGE_LOAD<UseTex, atype, Real>(array, id, size);
+    msun U = GAUGE_LOAD<atype, Real>(array, id, size);
     reunit_link<Real>(&U);
     GAUGE_SAVE<atype, Real>(array, U, id, size);
   }
@@ -35,32 +35,16 @@ Reunitarize<Real>::Reunitarize(gauge &array) : array(array) {
 }
 template <class Real> void Reunitarize<Real>::SetFunctionPtr() {
   kernel_pointer = NULL;
-  tex = false;
-  // if(array.EvenOdd()){ //independent of the normal or even/odd indexing
-  if (tex) {
 #if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      kernel_pointer = &kernel_calc_reunitarize<true, SOA, Real>;
-    if (array.Type() == SOA12)
-      kernel_pointer = &kernel_calc_reunitarize<true, SOA12, Real>;
-    if (array.Type() == SOA8)
-      kernel_pointer = &kernel_calc_reunitarize<true, SOA8, Real>;
+  if (array.Type() == SOA)
+    kernel_pointer = &kernel_calc_reunitarize<SOA, Real>;
+  if (array.Type() == SOA12)
+    kernel_pointer = &kernel_calc_reunitarize<SOA12, Real>;
+  if (array.Type() == SOA8)
+    kernel_pointer = &kernel_calc_reunitarize<SOA8, Real>;
 #else
-    kernel_pointer = &kernel_calc_reunitarize<true, SOA, Real>;
+  kernel_pointer = &kernel_calc_reunitarize<SOA, Real>;
 #endif
-  } else {
-#if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      kernel_pointer = &kernel_calc_reunitarize<false, SOA, Real>;
-    if (array.Type() == SOA12)
-      kernel_pointer = &kernel_calc_reunitarize<false, SOA12, Real>;
-    if (array.Type() == SOA8)
-      kernel_pointer = &kernel_calc_reunitarize<false, SOA8, Real>;
-#else
-    kernel_pointer = &kernel_calc_reunitarize<false, SOA, Real>;
-#endif
-  }
-  //}
   if (kernel_pointer == NULL)
     errorCULQCD("No kernel Reunitarize function exist for this gauge array...");
 }

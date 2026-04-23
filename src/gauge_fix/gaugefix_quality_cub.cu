@@ -31,7 +31,7 @@ namespace CULQCD {
 
 #ifdef USE_GAUGE_FIX
 
-template <int blockSize, int DIR, bool UseTex, ArrayType atype, class Real>
+template <int blockSize, int DIR, ArrayType atype, class Real>
 __global__ void kernel_gaugefix_quality_cub(GaugeFixQualityArg<Real> arg) {
   typedef cub::BlockReduce<complex, blockSize> BlockReduce;
   __shared__ typename BlockReduce::TempStorage temp_storage;
@@ -50,13 +50,13 @@ __global__ void kernel_gaugefix_quality_cub(GaugeFixQualityArg<Real> arg) {
     msun delta = msun::zero();
     // Uplinks
     for (int nu = 0; nu < DIR; nu++)
-      delta -= GAUGE_LOAD<UseTex, atype, Real>(
+      delta -= GAUGE_LOAD<atype, Real>(
           arg.array, idx + nu * DEVPARAMS::VolumeG, offset);
     // Fg (sum_DIR uplinks)
     res.real() = -delta.realtrace();
     // Downlinks
     for (int nu = 0; nu < DIR; nu++)
-      delta += GAUGE_LOAD<UseTex, atype, Real>(
+      delta += GAUGE_LOAD<atype, Real>(
           arg.array,
           neighborEOIndexMinusOne(id, oddbit, nu) + nu * DEVPARAMS::VolumeG,
           offset);
@@ -69,8 +69,8 @@ __global__ void kernel_gaugefix_quality_cub(GaugeFixQualityArg<Real> arg) {
     CudaAtomicAdd(arg.value, aggregate);
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-GaugeFixQualityCUB<DIR, UseTex, atype, Real>::GaugeFixQualityCUB(gauge &array)
+template <int DIR, ArrayType atype, class Real>
+GaugeFixQualityCUB<DIR, atype, Real>::GaugeFixQualityCUB(gauge &array)
     : array(array) {
   if (array.Type() != atype)
     errorCULQCD("gauge array type and template types do not match...");
@@ -88,26 +88,24 @@ GaugeFixQualityCUB<DIR, UseTex, atype, Real>::GaugeFixQualityCUB(gauge &array)
   timesec = 0.0;
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-void GaugeFixQualityCUB<DIR, UseTex, atype, Real>::apply(
+template <int DIR, ArrayType atype, class Real>
+void GaugeFixQualityCUB<DIR, atype, Real>::apply(
     const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   CUDA_SAFE_CALL(cudaMemset(arg.value, 0, sizeof(complex)));
-  LAUNCH_KERNEL(kernel_gaugefix_quality_cub, tp, stream, arg, DIR, UseTex,
+  LAUNCH_KERNEL(kernel_gaugefix_quality_cub, tp, stream, arg, DIR,
                 atype, Real);
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-GaugeFixQualityCUB<DIR, UseTex, atype, Real>::~GaugeFixQualityCUB() {
+template <int DIR, ArrayType atype, class Real>
+GaugeFixQualityCUB<DIR, atype, Real>::~GaugeFixQualityCUB() {
   dev_free(arg.value);
 };
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 complex
-GaugeFixQualityCUB<DIR, UseTex, atype, Real>::Run(const cudaStream_t &stream) {
+GaugeFixQualityCUB<DIR, atype, Real>::Run(const cudaStream_t &stream) {
 #ifdef TIMMINGS
   mtime.start();
 #endif
-  if (UseTex) {
-  }
   apply(stream);
   CUDA_SAFE_DEVICE_SYNC(); //
   CUT_CHECK_ERROR("Kernel execution failed");
@@ -125,43 +123,43 @@ GaugeFixQualityCUB<DIR, UseTex, atype, Real>::Run(const cudaStream_t &stream) {
 #endif
   return value;
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-complex GaugeFixQualityCUB<DIR, UseTex, atype, Real>::Run() {
+template <int DIR, ArrayType atype, class Real>
+complex GaugeFixQualityCUB<DIR, atype, Real>::Run() {
   return Run(0);
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-double GaugeFixQualityCUB<DIR, UseTex, atype, Real>::flops() {
+template <int DIR, ArrayType atype, class Real>
+double GaugeFixQualityCUB<DIR, atype, Real>::flops() {
   return ((double)flop() * 1.0e-9) / timesec;
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-double GaugeFixQualityCUB<DIR, UseTex, atype, Real>::bandwidth() {
+template <int DIR, ArrayType atype, class Real>
+double GaugeFixQualityCUB<DIR, atype, Real>::bandwidth() {
   return (double)bytes() / (timesec * (double)(1 << 30));
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-long long GaugeFixQualityCUB<DIR, UseTex, atype, Real>::flop() const {
+template <int DIR, ArrayType atype, class Real>
+long long GaugeFixQualityCUB<DIR, atype, Real>::flop() const {
   long long arrayflops = 2LL * DIR * array.getNumFlop(true);
   return (arrayflops + 2LL * NCOLORS * NCOLORS * (DIR + 1) +
           4LL * NCOLORS * (1 + NCOLORS)) *
          size * numnodes();
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-long long GaugeFixQualityCUB<DIR, UseTex, atype, Real>::bytes() const {
+template <int DIR, ArrayType atype, class Real>
+long long GaugeFixQualityCUB<DIR, atype, Real>::bytes() const {
   return (2LL * DIR * array.getNumParams() + 2LL) * size * sizeof(Real) *
          numnodes();
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-double GaugeFixQualityCUB<DIR, UseTex, atype, Real>::time() {
+template <int DIR, ArrayType atype, class Real>
+double GaugeFixQualityCUB<DIR, atype, Real>::time() {
   return timesec;
 }
 
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-void GaugeFixQualityCUB<DIR, UseTex, atype, Real>::stat() {
+template <int DIR, ArrayType atype, class Real>
+void GaugeFixQualityCUB<DIR, atype, Real>::stat() {
   COUT << "GaugeFixQualityCUB:  " << time() << " s\t" << bandwidth()
        << " GB/s\t" << flops() << " GFlops" << endl;
 }
-template <int DIR, bool UseTex, ArrayType atype, class Real>
-void GaugeFixQualityCUB<DIR, UseTex, atype, Real>::printValue() {
+template <int DIR, ArrayType atype, class Real>
+void GaugeFixQualityCUB<DIR, atype, Real>::printValue() {
   printfCULQCD("GaugeFixQualityCUB:Fg = %.12e\ttheta = %.12e\n", value.real(),
                value.imag());
 }

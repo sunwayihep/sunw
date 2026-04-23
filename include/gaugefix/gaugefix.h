@@ -82,7 +82,7 @@ complex GaugeFixingFFT(gauge _pgauge, int DIR, Real alpha, bool landautune,
    quality.printValue(); -> print value of Fg and theta to screen
    quality.stat(); -> performance status
 */
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 class GaugeFixQuality : Tunable {
 private:
   string functionName;
@@ -158,7 +158,7 @@ template <class Real> struct GaugeFixQualityArg {
    quality.printValue(); -> print value of Fg and theta to screen
    quality.stat(); -> performance status
 */
-template <int DIR, bool UseTex, ArrayType atype, class Real>
+template <int DIR, ArrayType atype, class Real>
 class GaugeFixQualityCUB : Tunable {
 private:
   string functionName;

@@ -21,7 +21,6 @@ private:
   int size;
   double timesec;
   int grid[4];
-  bool tex;
 #ifdef TIMMINGS
   Timer mtime;
 #endif

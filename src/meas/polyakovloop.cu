@@ -24,7 +24,7 @@ namespace CULQCD {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //// Onepolyakovloop /////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template <bool UseTex, ArrayType atypein, ArrayType atypeout, class Real>
+template <ArrayType atypein, ArrayType atypeout, class Real>
 __global__ void kernel_calc_polyakovloop_1D(complex *array, complex *ploop) {
   int id = INDEX1D();
   if (id < DEVPARAMS::tstride) {
@@ -36,16 +36,16 @@ __global__ void kernel_calc_polyakovloop_1D(complex *array, complex *ploop) {
     int index = id + (NDIMS - 1) * DEVPARAMS::Volume;
     int offset = DEVPARAMS::Volume * NDIMS;
 #endif
-    msun L = GAUGE_LOAD<UseTex, atypein, Real>(array, index,
+    msun L = GAUGE_LOAD<atypein, Real>(array, index,
                                                offset); // msun::unit();
     for (int t = 1; t < DEVPARAMS::Grid[NDIMS - 1]; t++)
-      L *= GAUGE_LOAD<UseTex, atypein, Real>(
+      L *= GAUGE_LOAD<atypein, Real>(
           array, index + t * DEVPARAMS::tstride, offset);
     GAUGE_SAVE<atypeout, Real>(ploop, L, id, DEVPARAMS::tstride);
   }
 }
 
-template <bool UseTex, ArrayType atypein, bool savePLMatrix, class Real>
+template <ArrayType atypein, bool savePLMatrix, class Real>
 __global__ void kernel_calc_polyakovloop_evenodd(complex *array,
                                                  complex *ploop) {
 
@@ -88,7 +88,7 @@ __global__ void kernel_calc_polyakovloop_evenodd(complex *array,
       int id0 = (idx + t * stride) >> 1;
 #endif
       id0 += ((idl + t) & 1) * param_HalfVolumeG();
-      L *= GAUGE_LOAD<UseTex, atypein, Real>(
+      L *= GAUGE_LOAD<atypein, Real>(
           array, id0 + (NDIMS - 1) * mustride, offset);
     }
     if (savePLMatrix) {
@@ -114,13 +114,13 @@ void Calculate_OnePloyakovLoop(gauge array, gauge ploop, bool savePLMatrix) {
     if (array.EvenOdd()) {
       
         if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd<false, SOA, savematrix, Real>
+          kernel_calc_polyakovloop_evenodd<SOA, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
         if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd<false, SOA12, savematrix, Real>
+          kernel_calc_polyakovloop_evenodd<SOA12, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
         if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd<false, SOA8, savematrix, Real>
+          kernel_calc_polyakovloop_evenodd<SOA8, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
       
     } else {
@@ -131,13 +131,13 @@ void Calculate_OnePloyakovLoop(gauge array, gauge ploop, bool savePLMatrix) {
     if (array.EvenOdd()) {
       
         if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd<false, SOA, savematrix, Real>
+          kernel_calc_polyakovloop_evenodd<SOA, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
         if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd<false, SOA12, savematrix, Real>
+          kernel_calc_polyakovloop_evenodd<SOA12, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
         if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd<false, SOA8, savematrix, Real>
+          kernel_calc_polyakovloop_evenodd<SOA8, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
       
     } else {
@@ -148,15 +148,15 @@ void Calculate_OnePloyakovLoop(gauge array, gauge ploop, bool savePLMatrix) {
   CUDA_SAFE_DEVICE_SYNC();
 }
 
-template <bool UseTex, ArrayType atype, class Real>
+template <ArrayType atype, class Real>
 __global__ void kernel_calc_polyakovloopTR_1D(complex *array, complex *ploop) {
   int id = INDEX1D();
   complex pl = complex::zero();
   if (id < DEVPARAMS::tstride) {
     int index = id + (NDIMS - 1) * DEVPARAMS::Volume;
-    msun L = GAUGE_LOAD<UseTex, atype, Real>(array, index);
+    msun L = GAUGE_LOAD<atype, Real>(array, index);
     for (int t = 1; t < DEVPARAMS::Grid[NDIMS - 1]; t++)
-      L *= GAUGE_LOAD<UseTex, atype, Real>(array,
+      L *= GAUGE_LOAD<atype, Real>(array,
                                            index + t * DEVPARAMS::tstride);
     pl = L.trace();
   }
@@ -171,16 +171,16 @@ void Calculate_TrPloyakovLoop(gauge array, complex *ploop) {
   if (array.EvenOdd()) {
     
       if (array.Type() == SOA)
-        kernel_calc_polyakovloop_evenodd<false, SOA, false, Real>
+        kernel_calc_polyakovloop_evenodd<SOA, false, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
 #if (NCOLORS == 3)
       if (array.Type() == SOA12)
-        kernel_calc_polyakovloop_evenodd<false, SOA12, false, Real>
+        kernel_calc_polyakovloop_evenodd<SOA12, false, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
       if (array.Type() == SOA8)
-        kernel_calc_polyakovloop_evenodd<false, SOA8, false, Real>
+        kernel_calc_polyakovloop_evenodd<SOA8, false, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
 #endif
@@ -191,16 +191,16 @@ void Calculate_TrPloyakovLoop(gauge array, complex *ploop) {
 #else
     
       if (array.Type() == SOA)
-        kernel_calc_polyakovloopTR_1D<false, SOA, Real>
+        kernel_calc_polyakovloopTR_1D<SOA, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
 #if (NCOLORS == 3)
       if (array.Type() == SOA12)
-        kernel_calc_polyakovloopTR_1D<false, SOA12, Real>
+        kernel_calc_polyakovloopTR_1D<SOA12, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
       if (array.Type() == SOA8)
-        kernel_calc_polyakovloopTR_1D<false, SOA8, Real>
+        kernel_calc_polyakovloopTR_1D<SOA8, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
 #endif
@@ -222,7 +222,7 @@ __global__ void kernel_ploop_finalmul(complex *array, complex *ploop,
     msun L = msun::identity();
     int offset = NCOLORS * NCOLORS * DEVPARAMS::tstride;
     for (int i = 0; i < nodes; i++) {
-      L *= GAUGE_LOAD<false, atype, Real>(array, id + offset * i,
+      L *= GAUGE_LOAD<atype, Real>(array, id + offset * i,
                                           DEVPARAMS::tstride);
     }
     pl = L.trace();
@@ -231,7 +231,7 @@ __global__ void kernel_ploop_finalmul(complex *array, complex *ploop,
   reduce_block_1d<complex>(ploop, pl);
 }
 
-template <bool UseTex, ArrayType atypein, bool evenoddorder, class Real>
+template <ArrayType atypein, bool evenoddorder, class Real>
 __global__ void kernel_calc_polyakovloop_evenodd00(complex *array,
                                                    msun *ploop) {
   uint idd = INDEX1D();
@@ -272,7 +272,7 @@ __global__ void kernel_calc_polyakovloop_evenodd00(complex *array,
     int id0 = (idx + t * stride) >> 1;
 #endif
     id0 += ((idl + t) & 1) * param_HalfVolumeG();
-    L *= GAUGE_LOAD<UseTex, atypein, Real>(array, id0 + (NDIMS - 1) * mustride,
+    L *= GAUGE_LOAD<atypein, Real>(array, id0 + (NDIMS - 1) * mustride,
                                            offset);
   }
   if (evenoddorder) {
@@ -294,13 +294,13 @@ void Calculate_OnePloyakovLoop(gauge array, msun *ploop, bool evenoddorder) {
     if (array.EvenOdd()) {
       
         if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd00<false, SOA, evenodd, Real>
+          kernel_calc_polyakovloop_evenodd00<SOA, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
         if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd00<false, SOA12, evenodd, Real>
+          kernel_calc_polyakovloop_evenodd00<SOA12, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
         if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd00<false, SOA8, evenodd, Real>
+          kernel_calc_polyakovloop_evenodd00<SOA8, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
       
     }
@@ -309,13 +309,13 @@ void Calculate_OnePloyakovLoop(gauge array, msun *ploop, bool evenoddorder) {
     if (array.EvenOdd()) {
       
         if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd00<false, SOA, evenodd, Real>
+          kernel_calc_polyakovloop_evenodd00<SOA, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
         if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd00<false, SOA12, evenodd, Real>
+          kernel_calc_polyakovloop_evenodd00<SOA12, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
         if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd00<false, SOA8, evenodd, Real>
+          kernel_calc_polyakovloop_evenodd00<SOA8, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
       
     }
@@ -543,112 +543,60 @@ template <class Real> OnePolyakovLoop<Real>::~OnePolyakovLoop() {
 }
 
 template <class Real> void OnePolyakovLoop<Real>::SetFunctionPtr() {
-  tex = false;
   kernel_pointer = NULL;
   tmp = NULL;
 #ifdef MULTI_GPU
   if (numnodes() == 1 || !comm_dim_partitioned(3)) {
     if (array.EvenOdd()) {
-      if (tex) {
 #if (NCOLORS == 3)
-        if (array.Type() == SOA)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<true, SOA, false, Real>;
-        if (array.Type() == SOA12)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<true, SOA12, false, Real>;
-        if (array.Type() == SOA8)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<true, SOA8, false, Real>;
-#else
+      if (array.Type() == SOA)
         kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<true, SOA, false, Real>;
-#endif
-      } else {
-#if (NCOLORS == 3)
-        if (array.Type() == SOA)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<false, SOA, false, Real>;
-        if (array.Type() == SOA12)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<false, SOA12, false, Real>;
-        if (array.Type() == SOA8)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<false, SOA8, false, Real>;
-#else
+            &kernel_calc_polyakovloop_evenodd<SOA, false, Real>;
+      if (array.Type() == SOA12)
         kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<false, SOA, false, Real>;
+            &kernel_calc_polyakovloop_evenodd<SOA12, false, Real>;
+      if (array.Type() == SOA8)
+        kernel_pointer =
+            &kernel_calc_polyakovloop_evenodd<SOA8, false, Real>;
+#else
+      kernel_pointer =
+          &kernel_calc_polyakovloop_evenodd<SOA, false, Real>;
 #endif
-      }
     }
   } else {
     if (array.EvenOdd()) {
-      if (tex) {
 #if (NCOLORS == 3)
-        if (array.Type() == SOA)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<true, SOA, true, Real>;
-        if (array.Type() == SOA12)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<true, SOA12, true, Real>;
-        if (array.Type() == SOA8)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<true, SOA8, true, Real>;
-#else
+      if (array.Type() == SOA)
         kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<true, SOA, true, Real>;
-#endif
-      } else {
-#if (NCOLORS == 3)
-        if (array.Type() == SOA)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<false, SOA, true, Real>;
-        if (array.Type() == SOA12)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<false, SOA12, true, Real>;
-        if (array.Type() == SOA8)
-          kernel_pointer =
-              &kernel_calc_polyakovloop_evenodd<false, SOA8, true, Real>;
-#else
+            &kernel_calc_polyakovloop_evenodd<SOA, true, Real>;
+      if (array.Type() == SOA12)
         kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<false, SOA, true, Real>;
+            &kernel_calc_polyakovloop_evenodd<SOA12, true, Real>;
+      if (array.Type() == SOA8)
+        kernel_pointer =
+            &kernel_calc_polyakovloop_evenodd<SOA8, true, Real>;
+#else
+      kernel_pointer =
+          &kernel_calc_polyakovloop_evenodd<SOA, true, Real>;
 #endif
-      }
     }
   }
 #else
   if (array.EvenOdd()) {
-    if (tex) {
 #if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<true, SOA, false, Real>;
-      if (array.Type() == SOA12)
-        kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<true, SOA12, false, Real>;
-      if (array.Type() == SOA8)
-        kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<true, SOA8, false, Real>;
-#else
+    if (array.Type() == SOA)
       kernel_pointer =
-          &kernel_calc_polyakovloop_evenodd<true, SOA, false, Real>;
-#endif
-    } else {
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<false, SOA, false, Real>;
-      if (array.Type() == SOA12)
-        kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<false, SOA12, false, Real>;
-      if (array.Type() == SOA8)
-        kernel_pointer =
-            &kernel_calc_polyakovloop_evenodd<false, SOA8, false, Real>;
-#else
+          &kernel_calc_polyakovloop_evenodd<SOA, false, Real>;
+    if (array.Type() == SOA12)
       kernel_pointer =
-          &kernel_calc_polyakovloop_evenodd<false, SOA, false, Real>;
+          &kernel_calc_polyakovloop_evenodd<SOA12, false, Real>;
+    if (array.Type() == SOA8)
+      kernel_pointer =
+          &kernel_calc_polyakovloop_evenodd<SOA8, false, Real>;
+#else
+    kernel_pointer =
+        &kernel_calc_polyakovloop_evenodd<SOA, false, Real>;
 #endif
-    }
   }
 #endif
   if (kernel_pointer == NULL)

@@ -1,7 +1,7 @@
 #pragma once
 #include <mop/wloop_arg.h>
 namespace CULQCD {
-template <bool UseTex, class Real, ArrayType atype>
+template <class Real, ArrayType atype>
 DEVICE msun N1(WLOPArg<Real> arg, int id, int lx, int muvolume, msun line_left,
                msun line_right) {
   msun mop = msun::zero();
@@ -22,19 +22,19 @@ DEVICE msun N1(WLOPArg<Real> arg, int id, int lx, int muvolume, msun line_left,
     for (int il = 0; il < 2; il++) {
       msun link0 = msun::identity();
       for (int ix = 0; ix < lx; ix++) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], 1);
       }
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       for (int ix = 0; ix < lx; ix++) {
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], -1);
-        link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
       }
@@ -47,17 +47,17 @@ DEVICE msun N1(WLOPArg<Real> arg, int id, int lx, int muvolume, msun line_left,
       msun link0 = msun::identity();
       for (int ix = 0; ix < lx; ix++) {
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], -1);
-        link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
       }
       for (int ir = 0; ir < halfline; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       for (int ix = 0; ix < lx; ix++) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], 1);
@@ -84,19 +84,19 @@ DEVICE msun N1(WLOPArg<Real> arg, int id, int lx, int muvolume, msun line_left,
       ids[1] = s;
       msun link0 = msun::identity();
       for (int ix = 0; ix < lx; ix++) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], 1);
       }
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       for (int ix = 0; ix < lx; ix++) {
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], -1);
-        link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
       }
@@ -110,17 +110,17 @@ DEVICE msun N1(WLOPArg<Real> arg, int id, int lx, int muvolume, msun line_left,
       msun link0 = msun::identity();
       for (int ix = 0; ix < lx; ix++) {
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], -1);
-        link0 *= GAUGE_LOAD_DAGGER<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD_DAGGER<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
       }
       for (int ir = halfline; ir < arg.radius; ++ir) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + muvolume, DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dir1, 1);
       }
       for (int ix = 0; ix < lx; ix++) {
-        link0 *= GAUGE_LOAD<UseTex, atype, Real>(
+        link0 *= GAUGE_LOAD<atype, Real>(
             arg.gaugefield, ids[il] + dmu[il] * DEVPARAMS::Volume,
             DEVPARAMS::size);
         ids[il] = Index_ND_Neig_NM(ids[il], dmu[il], 1);
