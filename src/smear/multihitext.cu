@@ -16,7 +16,6 @@
 #include <monte/monte.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <tune.h>
@@ -214,7 +213,6 @@ public:
     mtime.start();
 #endif
     if (UseTex) {
-      BIND_GAUGE_TEXTURE(arrayin.GetPtr());
     }
     apply(stream);
 #ifdef TIMMINGS
@@ -422,7 +420,6 @@ public:
     mtime.start();
 #endif
     if (UseTex) {
-      BIND_GAUGE_TEXTURE(arrayin.GetPtr());
     }
     arg.id = id;
     apply(stream);
@@ -478,11 +475,9 @@ void ApplyMultiHitExtended(gauge array, gauge arrayout, RNG &randstates, int mu,
 
 template <class Real>
 void ApplyMultiHitExt(gauge array, gauge arrayout, RNG &randstates, int nhit) {
-  if (PARAMS::UseTex) {
-    ApplyMultiHitExtended<true, Real>(array, arrayout, randstates, 3, nhit);
-  } else {
+  
     ApplyMultiHitExtended<false, Real>(array, arrayout, randstates, 3, nhit);
-  }
+  
 }
 template void ApplyMultiHitExt<float>(gauges array, gauges arrayout,
                                       RNG &randstates, int nhit);

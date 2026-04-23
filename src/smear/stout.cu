@@ -11,7 +11,6 @@
 #include <device_load_save.h>
 #include <index.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <tune.h>
@@ -702,18 +701,7 @@ template <class Real> void ApplyStoutinSpace(gauge array, Real w, int steps) {
   gauge arrayout(array.Type(), Device, NDIMS * PARAMS::Volume, array.EvenOdd());
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    ApplyStout<true, atypein, Real> Stout(array, arrayout, w);
-    for (int st = 0; st < steps; st++) {
-      for (int mu = 0; mu < NDIMS - 1; mu++) {
-        Stout.SetDir(mu);
-        Stout.Run();
-      }
-      array.Copy(arrayout);
-    }
-    Stout.stat();
-  } else {
+  
     ApplyStout<false, atypein, Real> Stout(array, arrayout, w);
     for (int st = 0; st < steps; st++) {
       for (int mu = 0; mu < NDIMS - 1; mu++) {
@@ -723,7 +711,7 @@ template <class Real> void ApplyStoutinSpace(gauge array, Real w, int steps) {
       array.Copy(arrayout);
     }
     Stout.stat();
-  }
+  
   arrayout.Release();
 }
 template void ApplyStoutinSpace<float>(gauges array, float w, int steps);
@@ -740,16 +728,7 @@ template <class Real> void ApplyStoutinTime(gauge array, Real w, int steps) {
   gauge arrayout(array.Type(), Device, 4 * PARAMS::Volume, array.EvenOdd());
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    ApplyStout<true, atypein, Real> Stout(array, arrayout, w);
-    Stout.SetDir(NDIMS - 1);
-    for (int st = 0; st < steps; st++) {
-      Stout.Run();
-      array.Copy(arrayout);
-    }
-    Stout.stat();
-  } else {
+  
     ApplyStout<false, atypein, Real> Stout(array, arrayout, w);
     Stout.SetDir(NDIMS - 1);
     for (int st = 0; st < steps; st++) {
@@ -757,7 +736,7 @@ template <class Real> void ApplyStoutinTime(gauge array, Real w, int steps) {
       array.Copy(arrayout);
     }
     Stout.stat();
-  }
+  
   arrayout.Release();
 }
 template void ApplyStoutinTime<float>(gauges array, float w, int steps);

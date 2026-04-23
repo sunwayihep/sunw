@@ -11,7 +11,12 @@
 #include <comm_mpi.h>
 #include <complex.h>
 #include <constants.h>
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <thrust/device_vector.h>
+#include <thrust/functional.h>
+#include <thrust/reduce.h>
+#include <culqcd_cccl_guard_end.h>
 #include <cudaAtomic.h>
 #include <cuda_common.h>
 #include <device_PHB_OVR.h>
@@ -24,10 +29,6 @@
 #include <reunitlink.h>
 #include <staple.h>
 #include <timer.h>
-
-#include <thrust/device_vector.h>
-#include <thrust/functional.h>
-#include <thrust/reduce.h>
 
 #include <lambda.h>
 

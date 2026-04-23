@@ -8,14 +8,15 @@
 #include <meas/linkUF.h>
 #include <modes.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <cudaAtomic.h>
 
 #include <launch_kernel.cuh>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -96,20 +97,7 @@ template <class Real> GaugeUFCUB<Real>::~GaugeUFCUB() { dev_free(arg.value); }
 template <class Real> void GaugeUFCUB<Real>::apply(const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   CUDA_SAFE_CALL(cudaMemset(arg.value, 0, sizeof(complex)));
-  if (PARAMS::UseTex) {
-    // just ensure that the texture was not unbind somewhere...
-    BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, true, SOA, Real);
-    if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, true, SOA12, Real);
-    if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, true, SOA8, Real);
-#else
-    LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, true, SOA, Real);
-#endif
-  } else {
+  
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
       LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, false, SOA, Real);
@@ -120,7 +108,7 @@ template <class Real> void GaugeUFCUB<Real>::apply(const cudaStream_t &stream) {
 #else
     LAUNCH_KERNEL(kernel_linkUF, tp, stream, arg, false, SOA, Real);
 #endif
-  }
+  
 }
 template <class Real>
 complex GaugeUFCUB<Real>::Run(const cudaStream_t &stream) {

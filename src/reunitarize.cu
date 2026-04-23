@@ -6,7 +6,6 @@
 #include <matrixsun.h>
 #include <reunitarize.h>
 #include <reunitlink.h>
-#include <texture_host.h>
 #include <timer.h>
 // #include <comm_mpi.h>
 
@@ -36,7 +35,7 @@ Reunitarize<Real>::Reunitarize(gauge &array) : array(array) {
 }
 template <class Real> void Reunitarize<Real>::SetFunctionPtr() {
   kernel_pointer = NULL;
-  tex = PARAMS::UseTex;
+  tex = false;
   // if(array.EvenOdd()){ //independent of the normal or even/odd indexing
   if (tex) {
 #if (NCOLORS == 3)
@@ -76,10 +75,7 @@ template <class Real> void Reunitarize<Real>::Run(const cudaStream_t &stream) {
   mtime.start();
 #endif
   // just ensure that the texture was not unbind somewhere...
-  if (tex != PARAMS::UseTex) {
-    SetFunctionPtr();
-  }
-  GAUGE_TEXTURE(array.GetPtr(), true);
+  
   apply(stream);
 #ifdef TIMMINGS
   CUDA_SAFE_DEVICE_SYNC();

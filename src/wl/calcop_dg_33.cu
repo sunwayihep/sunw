@@ -15,7 +15,6 @@
 #include <matrixsun.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <sharedmemtypes.h>
@@ -25,7 +24,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -1139,11 +1140,7 @@ void CalcWLOPs_dg_33(gauge array, gauge fieldOp, int radius, int mu, int opN) {
 
 template <class Real>
 void CalcWLOPs_dg_33(gauge array, gauge fieldOp, int radius, int mu, int opN) {
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    CalcWLOPs_dg_33<true, Real>(array, fieldOp, radius, mu, opN);
-  } else
-    CalcWLOPs_dg_33<false, Real>(array, fieldOp, radius, mu, opN);
+  CalcWLOPs_dg_33<false, Real>(array, fieldOp, radius, mu, opN);
 }
 
 // template void CalcWLOPs_dg_33<float>(gauges array, gauges fieldOp, int

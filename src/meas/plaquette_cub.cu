@@ -10,12 +10,13 @@
 #include <index.h>
 #include <meas/plaquette.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -183,24 +184,7 @@ void PlaquetteCUB<Real>::apply(const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   CUDA_SAFE_CALL(cudaMemset(arg.plaq, 0, sizeof(complex)));
   if (array.EvenOdd()) {
-    if (PARAMS::UseTex) {
-      // just ensure that the texture was not unbind somewhere...
-      BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, true,
-                      SOA, Real);
-      if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, true,
-                      SOA12, Real);
-      if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, true,
-                      SOA8, Real);
-#else
-      LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, true,
-                    SOA, Real);
-#endif
-    } else {
+    
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
         LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, false,
@@ -215,26 +199,9 @@ void PlaquetteCUB<Real>::apply(const cudaStream_t &stream) {
       LAUNCH_KERNEL(kernel_calc_plaquette_evenodd_cub, tp, stream, arg, false,
                     SOA, Real);
 #endif
-    }
+    
   } else {
-    if (PARAMS::UseTex) {
-      // just ensure that the texture was not unbind somewhere...
-      BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, true,
-                      SOA, Real);
-      if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, true,
-                      SOA12, Real);
-      if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, true,
-                      SOA8, Real);
-#else
-      LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, true,
-                    SOA, Real);
-#endif
-    } else {
+    
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
         LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, false,
@@ -249,7 +216,7 @@ void PlaquetteCUB<Real>::apply(const cudaStream_t &stream) {
       LAUNCH_KERNEL(kernel_calc_plaquette_normal_cub, tp, stream, arg, false,
                     SOA, Real);
 #endif
-    }
+    
   }
 }
 

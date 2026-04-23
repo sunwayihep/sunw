@@ -15,7 +15,6 @@
 #include <matrixsun.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <tune.h>
@@ -249,18 +248,12 @@ void ApplyMultiHitSpace(gauge array, gauge arrayout, RNG &randstates,
 
   const ArrayType atypein = SOA;
   const ArrayType atypeout = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    MultiHitSP<true, atypein, atypeout, Real> mhit(array, arrayout, randstates,
-                                                   NDIMS - 1, nhit);
-    mhit.Run();
-    mhit.stat();
-  } else {
+  
     MultiHitSP<false, atypein, atypeout, Real> mhit(array, arrayout, randstates,
                                                     NDIMS - 1, nhit);
     mhit.Run();
     mhit.stat();
-  }
+  
 }
 template void ApplyMultiHitSpace<float>(gauges array, gauges arrayout,
                                         RNG &randstates, int nhit);

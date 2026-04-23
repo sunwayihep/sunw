@@ -12,10 +12,11 @@
 #include <index.h>
 #include <meas/plaquette.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 #include <cudaAtomic.h>
 
 using namespace std;
@@ -98,7 +99,7 @@ Plaquette<Real>::Plaquette(gauge &array, complex *sum) : array(array) {
   SetFunctionPtr();
 }
 template <class Real> void Plaquette<Real>::SetFunctionPtr() {
-  tex = PARAMS::UseTex;
+  tex = false;
   kernel_pointer = NULL;
   if (array.EvenOdd()) {
     if (tex) {
@@ -140,10 +141,7 @@ void Plaquette<Real>::Run(const cudaStream_t &stream, bool calcmeanvalue) {
   plaqtime.start();
 #endif
   // just ensure that the texture was not unbind somewhere...
-  if (tex != PARAMS::UseTex) {
-    SetFunctionPtr();
-  }
-  GAUGE_TEXTURE(array.GetPtr(), true);
+  
   apply(stream);
   if (calcmeanvalue) {
     plaq_value = reduction<complex>(sum, size, stream);

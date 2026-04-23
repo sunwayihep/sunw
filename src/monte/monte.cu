@@ -20,7 +20,6 @@
 #include <monte/monte.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 using namespace std;
@@ -187,7 +186,7 @@ HeatBath<Real>::HeatBath(gauge &array, RNG &randstates)
 
 template <class Real> void HeatBath<Real>::SetFunctionPtr() {
   kernel_pointer = NULL;
-  tex = PARAMS::UseTex;
+  tex = false;
   if (array.EvenOdd()) {
     if (tex) {
 #if (NCOLORS == 3)
@@ -226,11 +225,7 @@ template <class Real> void HeatBath<Real>::Run(const cudaStream_t &stream) {
 #ifdef TIMMINGS
   mtime.start();
 #endif
-  // just ensure that the texture was not unbind somewhere...
-  if (tex != PARAMS::UseTex) {
-    SetFunctionPtr();
-  }
-  GAUGE_TEXTURE(array.GetPtr(), true);
+  
   for (parity = 0; parity < 2; parity++)
     for (dir = 0; dir < NDIMS; dir++) {
       apply(stream);

@@ -16,8 +16,6 @@
 #include <device_load_save.h>
 #include <index.h>
 #include <reduction.h>
-#include <texture.h>
-#include <texture_host.h>
 #include <timer.h>
 #include <tune.h>
 
@@ -93,7 +91,6 @@ GaugeFixQuality<DIR, UseTex, atype, Real>::Run(const cudaStream_t &stream) {
   mtime.start();
 #endif
   if (UseTex)
-    BIND_GAUGE_TEXTURE(array.GetPtr());
   apply(stream);
   value = reduction<complex>(sum, size, stream);
   value /= (Real)(PARAMS::Volume * NCOLORS);

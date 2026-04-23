@@ -11,14 +11,15 @@
 #include <device_load_save.h>
 #include <index.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <cudaAtomic.h>
 #include <launch_kernel.cuh>
 #include <tune.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -199,16 +200,11 @@ void PlaquetteFieldSpace(gauge array, complex *plaq, complex *meanplaq) {
     errorCULQCD("Not defined for EvenOdd arrays...\n");
 
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    PlaqField<true, atypein, Real, false> pf(array, plaq, meanplaq);
-    pf.Run();
-    pf.stat();
-  } else {
+  
     PlaqField<false, atypein, Real, false> pf(array, plaq, meanplaq);
     pf.Run();
     pf.stat();
-  }
+  
 }
 template void PlaquetteFieldSpace<float>(gauges array, complexs *plaq,
                                          complexs *meanplaq);
@@ -224,16 +220,11 @@ void PlaquetteField(gauge array, complex *plaq, complex *meanplaq) {
     errorCULQCD("Not defined for EvenOdd arrays...\n");
 
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    PlaqField<true, atypein, Real, true> pf(array, plaq, meanplaq);
-    pf.Run();
-    pf.stat();
-  } else {
+  
     PlaqField<false, atypein, Real, true> pf(array, plaq, meanplaq);
     pf.Run();
     pf.stat();
-  }
+  
 }
 template void PlaquetteField<float>(gauges array, complexs *plaq,
                                     complexs *meanplaq);

@@ -15,7 +15,6 @@
 #include <matrixsun.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <sharedmemtypes.h>
@@ -25,7 +24,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 #include <reduce_block_1d.h>
 
@@ -469,11 +470,7 @@ void CWilsonLoop(gauge array, complex *res, int radius, int Tmax) {
 
 template <class Real>
 void CWilsonLoop(gauge array, complex *res, int radius, int Tmax) {
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    CWilsonLoop<true, Real>(array, res, radius, Tmax);
-  } else
-    CWilsonLoop<false, Real>(array, res, radius, Tmax);
+  CWilsonLoop<false, Real>(array, res, radius, Tmax);
 }
 
 template void CWilsonLoop<float>(gauges array, complexs *res, int radius,
@@ -522,11 +519,7 @@ void WilsonLoop(gauge array, complex *res, int radius, int Tmax) {
 
 template <class Real>
 void WilsonLoop(gauge array, complex *res, int radius, int Tmax) {
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    WilsonLoop<true, Real>(array, res, radius, Tmax);
-  } else
-    WilsonLoop<false, Real>(array, res, radius, Tmax);
+  WilsonLoop<false, Real>(array, res, radius, Tmax);
 }
 
 template void WilsonLoop<float>(gauges array, complexs *res, int radius,

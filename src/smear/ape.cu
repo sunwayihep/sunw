@@ -11,7 +11,6 @@
 #include <device_load_save.h>
 #include <index.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <tune.h>
@@ -195,18 +194,7 @@ void ApplyAPEinSpace(gauge array, Real w, int steps, int nhits, Real tol) {
   gauge arrayout(array.Type(), Device, NDIMS * PARAMS::Volume, array.EvenOdd());
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    ApplyAPE<true, atypein, Real> ape(array, arrayout, w, nhits, tol);
-    for (int st = 0; st < steps; st++) {
-      for (int mu = 0; mu < NDIMS - 1; mu++) {
-        ape.SetDir(mu);
-        ape.Run();
-      }
-      array.Copy(arrayout);
-    }
-    ape.stat();
-  } else {
+  
     ApplyAPE<false, atypein, Real> ape(array, arrayout, w, nhits, tol);
     for (int st = 0; st < steps; st++) {
       for (int mu = 0; mu < NDIMS - 1; mu++) {
@@ -216,7 +204,7 @@ void ApplyAPEinSpace(gauge array, Real w, int steps, int nhits, Real tol) {
       array.Copy(arrayout);
     }
     ape.stat();
-  }
+  
   arrayout.Release();
 }
 template void ApplyAPEinSpace<float>(gauges array, float w, int steps,
@@ -236,16 +224,7 @@ void ApplyAPEinTime(gauge array, Real w, int steps, int nhits, Real tol) {
   gauge arrayout(array.Type(), Device, NDIMS * PARAMS::Volume, array.EvenOdd());
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    ApplyAPE<true, atypein, Real> ape(array, arrayout, w, nhits, tol);
-    ape.SetDir(NDIMS - 1);
-    for (int st = 0; st < steps; st++) {
-      ape.Run();
-      array.Copy(arrayout);
-    }
-    ape.stat();
-  } else {
+  
     ApplyAPE<false, atypein, Real> ape(array, arrayout, w, nhits, tol);
     ape.SetDir(NDIMS - 1);
     for (int st = 0; st < steps; st++) {
@@ -253,7 +232,7 @@ void ApplyAPEinTime(gauge array, Real w, int steps, int nhits, Real tol) {
       array.Copy(arrayout);
     }
     ape.stat();
-  }
+  
   arrayout.Release();
 }
 template void ApplyAPEinTime<float>(gauges array, float w, int steps, int nhits,

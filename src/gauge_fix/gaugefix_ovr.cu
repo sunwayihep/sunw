@@ -21,14 +21,14 @@
 #include <reduction.h>
 #include <reunitarize.h>
 #include <sharedmemtypes.h>
-#include <texture.h>
-#include <texture_host.h>
 #include <timer.h>
 #include <tune.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <thrust/device_ptr.h>
 #include <thrust/sort.h>
 #include <thrust/unique.h>
+#include <culqcd_cccl_guard_end.h>
 
 namespace CULQCD {
 
@@ -84,7 +84,6 @@ complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
   // Bind array to texture if PARAMS::UseTex is true
   // The bool here means bind(true) or unbind(false)
   //------------------------------------------------------------------------
-  GAUGE_TEXTURE(_pgauge.GetPtr(), true);
 #ifdef MULTI_GPU
   cudaStream_t stream;
   if (numnodes() > 1) {
@@ -197,7 +196,6 @@ complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
   //------------------------------------------------------------------------
   // Unbind texture
   //------------------------------------------------------------------------
-  GAUGE_TEXTURE(_pgauge.GetPtr(), false);
   CUDA_SAFE_DEVICE_SYNC();
   COUT << "Finishing " << my_name << "..." << endl;
   gfltime.stop();
@@ -215,11 +213,7 @@ complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
 template <int DIR, ArrayType atype, class Real>
 complex PerformGaugeFixOVR(gauge _pgauge, Real relax_boost, Real stopvalue,
                            int maxsteps, int reunit_interval, int verbose) {
-  if (PARAMS::UseTex)
-    return PerformGaugeFixOVR<true, DIR, atype, Real>(
-        _pgauge, relax_boost, stopvalue, maxsteps, reunit_interval, verbose);
-  else
-    return PerformGaugeFixOVR<false, DIR, atype, Real>(
+  return PerformGaugeFixOVR<false, DIR, atype, Real>(
         _pgauge, relax_boost, stopvalue, maxsteps, reunit_interval, verbose);
 }
 template <ArrayType atype, class Real>

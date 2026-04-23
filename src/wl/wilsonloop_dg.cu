@@ -15,7 +15,6 @@
 #include <matrixsun.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <sharedmemtypes.h>
@@ -25,7 +24,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -239,11 +240,7 @@ void CalcWilsonLoop_dg(gauge array, gauge fieldOp, Real *wloop, int radius,
 template <class Real>
 void CalcWilsonLoop_dg(gauge array, gauge fieldOp, Real *wloop, int radius,
                        int Tmax, int mu, int opN) {
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    CalcWilsonLoop_dg<true, Real>(array, fieldOp, wloop, radius, Tmax, mu, opN);
-  } else
-    CalcWilsonLoop_dg<false, Real>(array, fieldOp, wloop, radius, Tmax, mu,
+  CalcWilsonLoop_dg<false, Real>(array, fieldOp, wloop, radius, Tmax, mu,
                                    opN);
 }
 

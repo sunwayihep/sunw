@@ -14,7 +14,6 @@
 #include <index.h>
 #include <meas/polyakovloop.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <launch_kernel.cuh>
@@ -22,7 +21,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -229,24 +230,7 @@ template <class Real, bool ppdagger>
 void PotPLoop<Real, ppdagger>::apply(const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   CUDA_SAFE_CALL(cudaMemset(arg.pot, 0, (arg.radius + 1) * sizeof(complex)));
-  if (PARAMS::UseTex) {
-    // just ensure that the texture was not unbind somewhere...
-    BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA, Real,
-                    ppdagger);
-    if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA12,
-                    Real, ppdagger);
-    if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA8, Real,
-                    ppdagger);
-#else
-    LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA, Real,
-                  ppdagger);
-#endif
-  } else {
+  
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
       LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA, Real,
@@ -261,7 +245,7 @@ void PotPLoop<Real, ppdagger>::apply(const cudaStream_t &stream) {
     LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA, Real,
                   ppdagger);
 #endif
-  }
+  
 }
 
 template <class Real, bool ppdagger>

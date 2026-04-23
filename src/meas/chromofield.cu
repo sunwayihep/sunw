@@ -15,7 +15,6 @@
 #include <matrixsun.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <sharedmemtypes.h>
@@ -25,7 +24,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -711,12 +712,7 @@ template <class Real>
 void CalcChromoField(complex *ploop, complex *plaqfield, Real *field, Real *pl,
                      int radius, int nx, int ny, bool ppdagger,
                      bool chargeplane) {
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(plaqfield, true);
-    CalcChromoField<true, Real>(ploop, plaqfield, field, pl, radius, nx, ny,
-                                chargeplane, ppdagger);
-  } else
-    CalcChromoField<false, Real>(ploop, plaqfield, field, pl, radius, nx, ny,
+  CalcChromoField<false, Real>(ploop, plaqfield, field, pl, radius, nx, ny,
                                  chargeplane, ppdagger);
 }
 template void CalcChromoField<float>(complexs *ploop, complexs *plaqfield,

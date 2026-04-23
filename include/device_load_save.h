@@ -8,7 +8,6 @@
 #include <gaugearray.h>
 #include <matrixsun.h>
 #include <reconstruct_12p_8p.h>
-#include <texture.h>
 
 namespace CULQCD {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +28,7 @@ namespace CULQCD {
 template <bool UseTex, class Real>
 __device__ inline complex ELEM_LOAD(const complex *array, const uint id) {
   if (UseTex)
-    return TEXTURE_GAUGE<Real>(id);
+    return array[id];
   else
     return array[id];
 }
@@ -43,7 +42,7 @@ __device__ inline complex ELEM_LOAD(const complex *array, const uint id) {
 template <bool UseTex, class Real>
 __device__ inline complex ELEM_LOAD_CONJ(const complex *array, const uint id) {
   if (UseTex)
-    return TEXTURE_GAUGE_CONJ<Real>(id);
+    return array[id].conj();
   else
     return array[id].conj();
 }
@@ -363,7 +362,7 @@ __device__ inline msun GAUGE_LOAD_DAGGER(const complex *array, const uint id,
 template <bool UseTex, class Real>
 __device__ inline complex ELEM_DELTA_LOAD(const complex *array, const uint id) {
   if (UseTex)
-    return TEXTURE_DELTA<Real>(id);
+    return array[id];
   else
     return array[id];
 }
@@ -377,7 +376,7 @@ template <bool UseTex, class Real>
 __device__ inline complex ELEM_DELTA_LOAD_CONJ(const complex *array,
                                                const uint id) {
   if (UseTex)
-    return TEXTURE_DELTA_CONJ<Real>(id);
+    return array[id].conj();
   else
     return array[id].conj();
 }
@@ -509,7 +508,7 @@ __host__ __device__ inline void DELTA_SAVE(complex *array, msun A, uint id,
 template <bool UseTex, class Real>
 __device__ inline complex ELEM_GX_LOAD(const complex *array, const uint id) {
   if (UseTex)
-    return TEXTURE_GX<Real>(id);
+    return array[id];
   else
     return array[id];
 }
@@ -524,7 +523,7 @@ template <bool UseTex, class Real>
 __device__ inline complex ELEM_GX_LOAD_CONJ(const complex *array,
                                             const uint id) {
   if (UseTex)
-    return TEXTURE_GX_CONJ<Real>(id);
+    return array[id].conj();
   else
     return array[id].conj();
 }
@@ -657,7 +656,7 @@ template <bool UseTex, class Real>
 __device__ inline complex ELEM_LAMBDA_LOAD(const complex *array,
                                            const uint id) {
   if (UseTex)
-    return TEXTURE_LAMBDA<Real>(id);
+    return array[id];
   else
     return array[id];
 }

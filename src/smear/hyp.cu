@@ -10,7 +10,6 @@
 #include <device_load_save.h>
 #include <index.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <tune.h>
@@ -304,28 +303,17 @@ void ApplyHYPinSpace(gauge array, int steps, int nhits, Real tol,
   gauge arrayout(array.Type(), Device, array.Size(), array.EvenOdd());
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    ApplyHYP<true, atypein, Real> hyp(array, arrayout, nhits, tol);
-    for (int st = 0; st < steps; st++) {
-      for (int mu = 0; mu < NDIMS - 1; mu++) {
-        hyp.SetDir(mu);
-        hyp.Run();
-      }
-      array.Copy(arrayout);
+
+  ApplyHYP<false, atypein, Real> hyp_runner(array, arrayout, nhits, tol);
+  for (int st = 0; st < steps; st++) {
+    for (int mu = 0; mu < NDIMS - 1; mu++) {
+      hyp_runner.SetDir(mu);
+      hyp_runner.Run();
     }
-    hyp.stat();
-  } else {
-    ApplyHYP<false, atypein, Real> hyp(array, arrayout, nhits, tol);
-    for (int st = 0; st < steps; st++) {
-      for (int mu = 0; mu < NDIMS - 1; mu++) {
-        hyp.SetDir(mu);
-        hyp.Run();
-      }
-      array.Copy(arrayout);
-    }
-    hyp.stat();
+    array.Copy(arrayout);
   }
+  hyp_runner.stat();
+
   arrayout.Release();
   a0.stop();
   COUT << "Time to apply HYP smearing in space: " << a0.getElapsedTime() << " s"
@@ -354,24 +342,15 @@ void ApplyHYPinTime(gauge array, int steps, int nhits, Real tol, ParamHYP hyp) {
   gauge arrayout(array.Type(), Device, array.Size(), array.EvenOdd());
   arrayout.Copy(array);
   const ArrayType atypein = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    ApplyHYP<true, atypein, Real> hyp(array, arrayout, nhits, tol);
-    hyp.SetDir(NDIMS - 1);
-    for (int st = 0; st < steps; st++) {
-      hyp.Run();
-      array.Copy(arrayout);
-    }
-    hyp.stat();
-  } else {
-    ApplyHYP<false, atypein, Real> hyp(array, arrayout, nhits, tol);
-    hyp.SetDir(NDIMS - 1);
-    for (int st = 0; st < steps; st++) {
-      hyp.Run();
-      array.Copy(arrayout);
-    }
-    hyp.stat();
+
+  ApplyHYP<false, atypein, Real> hyp_runner(array, arrayout, nhits, tol);
+  hyp_runner.SetDir(NDIMS - 1);
+  for (int st = 0; st < steps; st++) {
+    hyp_runner.Run();
+    array.Copy(arrayout);
   }
+  hyp_runner.stat();
+
   arrayout.Release();
   a0.stop();
   COUT << "Time to apply HYP smearing in time: " << a0.getElapsedTime() << " s"

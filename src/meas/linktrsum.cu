@@ -8,10 +8,11 @@
 #include <meas/linktrsum.h>
 #include <modes.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 #include <cudaAtomic.h>
 #include <launch_kernel.cuh>
 
@@ -116,20 +117,7 @@ template <class Real>
 void GaugeTraceCUB<Real>::apply(const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   CUDA_SAFE_CALL(cudaMemset(arg.value, 0, sizeof(complex)));
-  if (PARAMS::UseTex) {
-    // just ensure that the texture was not unbind somewhere...
-    BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, true, SOA, Real);
-    if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, true, SOA12, Real);
-    if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, true, SOA8, Real);
-#else
-    LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, true, SOA, Real);
-#endif
-  } else {
+  
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
       LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, false, SOA, Real);
@@ -140,7 +128,7 @@ void GaugeTraceCUB<Real>::apply(const cudaStream_t &stream) {
 #else
     LAUNCH_KERNEL(kernel_linktracesum, tp, stream, arg, false, SOA, Real);
 #endif
-  }
+  
 }
 template <class Real>
 complex GaugeTraceCUB<Real>::Run(const cudaStream_t &stream) {
@@ -283,24 +271,7 @@ template <class Real> GaugeTrace<Real>::~GaugeTrace() {}
 template <class Real> void GaugeTrace<Real>::apply(const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   if (array.EvenOdd()) {
-    if (PARAMS::UseTex) {
-      // just ensure that the texture was not unbind somewhere...
-      BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_linktracesum<true, SOA, Real>
-            <<<tp.grid, tp.block, 0, stream>>>(arg);
-      if (array.Type() == SOA12)
-        kernel_linktracesum<true, SOA12, Real>
-            <<<tp.grid, tp.block, 0, stream>>>(arg);
-      if (array.Type() == SOA8)
-        kernel_linktracesum<true, SOA8, Real>
-            <<<tp.grid, tp.block, 0, stream>>>(arg);
-#else
-      kernel_linktracesum<true, SOA, Real>
-          <<<tp.grid, tp.block, 0, stream>>>(arg);
-#endif
-    } else {
+    
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
         kernel_linktracesum<false, SOA, Real>
@@ -315,7 +286,7 @@ template <class Real> void GaugeTrace<Real>::apply(const cudaStream_t &stream) {
       kernel_linktracesum<false, SOA, Real>
           <<<tp.grid, tp.block, 0, stream>>>(arg);
 #endif
-    }
+    
   }
 }
 template <class Real>

@@ -13,6 +13,7 @@
 #include <timer.h>
 
 #include <cuda.h>
+#include <culqcd_cccl_guard_begin.h>
 #include <thrust/binary_search.h>
 #include <thrust/device_free.h>
 #include <thrust/device_malloc.h>
@@ -21,9 +22,9 @@
 #include <thrust/remove.h>
 #include <thrust/sort.h>
 #include <thrust/unique.h>
+#include <culqcd_cccl_guard_end.h>
 
 #include <exchange.h>
-#include <texture_host.h>
 
 namespace CULQCD {
 #ifdef MULTI_GPU
@@ -278,7 +279,6 @@ template <class Real>
 void Exchange_gauge_border_links_gauge(gauge _pgauge, int dir, int parity,
                                        bool all_radius_border) {
   AllocateTempBuffersAndStreams<Real>();
-  GAUGE_TEXTURE(_pgauge.GetPtr(), true);
 
   dim3 threads = dim3(128, 1, 1);
   CUDA_SAFE_DEVICE_SYNC();
@@ -306,7 +306,7 @@ void Exchange_gauge_border_links_gauge(gauge _pgauge, int dir, int parity,
           true,
           PARAMS::GridWGhost[PARAMS::FaceId[fc]] -
               PARAMS::Border[PARAMS::FaceId[fc]] - 1 - border,
-          PARAMS::FaceId[fc], PARAMS::UseTex, dir, parity, &exchangeStream[0]);
+          PARAMS::FaceId[fc], false, dir, parity, &exchangeStream[0]);
 
       // Pack top face border links
       CALL_PACK_UNPACK_BORDERGHOST_LINKS_FACE_GAUGE<Real>(
@@ -314,7 +314,7 @@ void Exchange_gauge_border_links_gauge(gauge _pgauge, int dir, int parity,
           reinterpret_cast<complex *>(sendbuff_gpu) + offsetptr[fc] +
               ncopyelemshalf,
           facesize, true, PARAMS::Border[PARAMS::FaceId[fc]] + border,
-          PARAMS::FaceId[fc], PARAMS::UseTex, dir, parity, &exchangeStream[1]);
+          PARAMS::FaceId[fc], false, dir, parity, &exchangeStream[1]);
 
 #ifndef MPI_GPU_DIRECT
       // D2H top face border links
@@ -395,7 +395,6 @@ void Exchange_gauge_topborder_links_gauge(gauge _pgauge, int dir, int parity,
                                           bool all_radius_border) {
 
   AllocateTempBuffersAndStreams<Real>();
-  GAUGE_TEXTURE(_pgauge.GetPtr(), true);
 
   dim3 threads = dim3(128, 1, 1);
   CUDA_SAFE_DEVICE_SYNC();
@@ -421,7 +420,7 @@ void Exchange_gauge_topborder_links_gauge(gauge _pgauge, int dir, int parity,
           true,
           PARAMS::GridWGhost[PARAMS::FaceId[fc]] -
               PARAMS::Border[PARAMS::FaceId[fc]] - 1 - border,
-          PARAMS::FaceId[fc], PARAMS::UseTex, dir, parity, &exchangeStream[0]);
+          PARAMS::FaceId[fc], false, dir, parity, &exchangeStream[0]);
 
 #ifndef MPI_GPU_DIRECT
       // D2H top face border links
@@ -476,7 +475,7 @@ threads, _pgauge, \
 offsetptr[fc], \
                         facesize, true, \
                         PARAMS::GridWGhost[PARAMS::FaceId[fc]]-PARAMS::Border[PARAMS::FaceId[fc]]
-- 1,\ PARAMS::FaceId[fc], PARAMS::UseTex, dir, parity, &exchangeStream[0]);
+- 1,\ PARAMS::FaceId[fc], false, dir, parity, &exchangeStream[0]);
                 #ifndef  MPI_GPU_DIRECT
                 //D2H top face border links
                 CUDA_SAFE_CALL(cudaMemcpyAsync(reinterpret_cast<complex*>(sendbuff_cpu)
@@ -555,7 +554,7 @@ threads, _pgauge, \
 offsetptr[fc], \
                         facesize, true, \
                         PARAMS::GridWGhost[PARAMS::FaceId[fc]]-PARAMS::Border[PARAMS::FaceId[fc]]
-- 1,\ PARAMS::FaceId[fc], PARAMS::UseTex, dir, parity, &exchangeStream[0]);
+- 1,\ PARAMS::FaceId[fc], false, dir, parity, &exchangeStream[0]);
                 //Pack bottom face border links
                 CALL_PACK_UNPACK_BORDERGHOST_LINKS_FACE_GAUGE<Real>(blocks,
 threads, _pgauge, \
@@ -563,7 +562,7 @@ threads, _pgauge, \
 + ncopyelemshalf, \
                         facesize, true, \
                         PARAMS::Border[PARAMS::FaceId[fc]], \
-                        PARAMS::FaceId[fc], PARAMS::UseTex, dir, parity,
+                        PARAMS::FaceId[fc], false, dir, parity,
 &exchangeStream[1]); #ifndef  MPI_GPU_DIRECT
                 //D2H top face border links
                 CUDA_SAFE_CALL(cudaMemcpyAsync(reinterpret_cast<complex*>(sendbuff_cpu)
@@ -656,7 +655,6 @@ _pgauge, int dir, int parity);
 template <class Real>
 void StartExchange_gauge_fix_links_gauge(gauge _pgauge, int parity) {
   AllocateTempBuffersAndStreams<Real>();
-  GAUGE_TEXTURE(_pgauge.GetPtr(), true);
 
   // for gauge fix only needs to exchange links along partitioned faces
 
@@ -675,7 +673,7 @@ void StartExchange_gauge_fix_links_gauge(gauge _pgauge, int parity) {
         true,
         PARAMS::GridWGhost[PARAMS::FaceId[fc]] -
             PARAMS::Border[PARAMS::FaceId[fc]] - 1 - border,
-        PARAMS::FaceId[fc], PARAMS::UseTex, PARAMS::FaceId[fc], parity,
+        PARAMS::FaceId[fc], false, PARAMS::FaceId[fc], parity,
         &exchangeStream[fc]);
     MPI_CHECK(MPI_Start(&top_recv_request_border[artype][fc]));
   }
@@ -689,7 +687,7 @@ void StartExchange_gauge_fix_links_gauge(gauge _pgauge, int parity) {
         reinterpret_cast<complex *>(sendbuff_gpu) + offsetptr[fc] +
             ncopyelemshalf,
         facesize, true, PARAMS::Border[PARAMS::FaceId[fc]] - 1,
-        PARAMS::FaceId[fc], PARAMS::UseTex, PARAMS::FaceId[fc], 1 - parity,
+        PARAMS::FaceId[fc], false, PARAMS::FaceId[fc], 1 - parity,
         &exchangeStream[4 + fc]);
     MPI_CHECK(MPI_Start(&bot_recv_request_border[artype][fc]));
   }

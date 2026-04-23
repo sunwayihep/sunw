@@ -13,7 +13,6 @@
 #include <gaugearray.h>
 #include <index.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <launch_kernel.cuh>
@@ -21,7 +20,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -164,12 +165,9 @@ template <class Real> complex TracePloop(gauge array, complex *ploop) {
     errorCULQCD("Not defined for EvenOdd arrays...\n");
   const ArrayType atypein = SOA;
   complex value = complex::zero();
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    value = TracePloop<true, atypein, Real>(array, ploop);
-  } else {
+  
     value = TracePloop<false, atypein, Real>(array, ploop);
-  }
+  
   return value;
 }
 template complexs TracePloop<float>(gauges array, complexs *ploop);

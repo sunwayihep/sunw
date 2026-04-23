@@ -34,9 +34,9 @@ GCC ?= g++
 endif
 
 #SET CUDA PATH
-CUDA_PATH ?= /usr/local/cuda-11.8
+CUDA_PATH ?= /usr/local/cuda
 #SET DEVICE ARQUITECTURE -> NO SUPPORT for SM 1.X!!!!!
-GPU_ARCH = sm_80
+GPU_ARCH = sm_120
 GENCODE_FLAGS = -arch=$(GPU_ARCH)
 #GENCODE_FLAGS = -arch=$(GPU_ARCH) --ptxas-options=-v
 ############################################################################################################
@@ -64,14 +64,16 @@ DARWIN = $(strip $(findstring DARWIN, $(OSUPPER)))
 CUDA_INC_PATH   ?= $(CUDA_PATH)/include
 CUDA_BIN_PATH   ?= $(CUDA_PATH)/bin
 ifneq ($(DARWIN),)
-  CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib
+  CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib64
 else
   ifeq ($(OS_SIZE),32)
-    CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib
+    CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib64
   else
     CUDA_LIB_PATH  ?= $(CUDA_PATH)/lib64
   endif
 endif
+# WSL typically exposes the NVIDIA driver library in /usr/lib/wsl/lib.
+CUDA_DRIVER_LIB_PATH ?= $(if $(wildcard /usr/lib/wsl/lib/libcuda.so),/usr/lib/wsl/lib,$(CUDA_LIB_PATH))
 # Common binaries
 NVCC            ?= $(CUDA_BIN_PATH)/nvcc
 # Extra user flags
@@ -88,15 +90,15 @@ EXTRA_LDFLAGS   ?=
 # -use_fast_math -Xptxas -dlcm=cg  
 # OS-specific build flags
 ifneq ($(DARWIN),) 
-      LDFLAGS   := -Xlinker -rpath $(CUDA_LIB_PATH) -L$(CUDA_LIB_PATH) -lcudart -lcuda  -lcufft -lcurand -lcublas
+      LDFLAGS   := -Xlinker -rpath $(CUDA_LIB_PATH) -L$(CUDA_LIB_PATH) -L$(CUDA_DRIVER_LIB_PATH) -lcudart -lcuda  -lcufft -lcurand -lcublas
       CCFLAGS   := -arch $(OS_ARCH) 
 else
   ifeq ($(OS_SIZE),32)
-      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcudart -lcuda  -lcufft -lcurand -lcublas 
+      LDFLAGS   := -L$(CUDA_LIB_PATH) -L$(CUDA_DRIVER_LIB_PATH) -lcudart -lcuda  -lcufft -lcurand -lcublas 
  #     CCFLAGS   := -m32 -O3
       CCFLAGS   := -O3
   else
-      LDFLAGS   := -L$(CUDA_LIB_PATH) -lcudart  -lcuda  -lcufft -lcurand -lcublas 
+      LDFLAGS   := -L$(CUDA_LIB_PATH) -L$(CUDA_DRIVER_LIB_PATH) -lcudart  -lcuda  -lcufft -lcurand -lcublas 
 #      CCFLAGS   := -m64 -O3
       CCFLAGS   :=  -O3
   endif
@@ -289,7 +291,7 @@ SMEAR_OBJS := smear/ape.o smear/hyp.o smear/multihitsp.o  smear/multihit.o smear
 WL_OBJS := wl/calcop_dg_A0.o wl/wilsonloop_dg_A0.o wl/calcop_dg_33.o wl/wilsonloop_dg.o
 
 
-OBJS := timer.o random.o constants.o texture.o  texture_host.o \
+OBJS := timer.o random.o constants.o \
 		reduction_kernel.o  reduction.o reunitarize.o \
 		devicemem.o gaugearray.o  comm_mpi.o exchange.o \
 		alloc.o   tune.o io_gauge.o cuda_error_check.o \

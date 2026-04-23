@@ -15,12 +15,12 @@
 #include <device_load_save.h>
 #include <index.h>
 #include <modes.h>
-#include <texture.h>
-#include <texture_host.h>
 #include <timer.h>
 #include <tune.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 #include <cudaAtomic.h>
 #include <gaugefix/gaugefix.h>
 #include <launch_kernel.cuh>
@@ -107,7 +107,6 @@ GaugeFixQualityCUB<DIR, UseTex, atype, Real>::Run(const cudaStream_t &stream) {
   mtime.start();
 #endif
   if (UseTex) {
-    BIND_GAUGE_TEXTURE(array.GetPtr());
   }
   apply(stream);
   CUDA_SAFE_DEVICE_SYNC(); //

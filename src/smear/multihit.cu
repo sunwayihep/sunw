@@ -15,7 +15,6 @@
 #include <matrixsun.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <tune.h>
@@ -283,11 +282,7 @@ void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit) {
 template <class Real>
 void ApplyMultiHit(gauge array, gauge arrayout, RNG &randstates, int nhit) {
 
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    ApplyMultiHit<Real, true>(array, arrayout, randstates, nhit);
-  } else
-    ApplyMultiHit<Real, false>(array, arrayout, randstates, nhit);
+  ApplyMultiHit<Real, false>(array, arrayout, randstates, nhit);
 }
 template void ApplyMultiHit<float>(gauges array, gauges arrayout,
                                    RNG &randstates, int nhit);

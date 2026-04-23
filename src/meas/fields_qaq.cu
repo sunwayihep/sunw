@@ -16,7 +16,6 @@
 #include <monte.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <sharedmemtypes.h>
@@ -26,7 +25,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -511,13 +512,7 @@ void CalcFieldWilsonLoop_dg(gauge array, gauge wilson_spaceline,
                             Real *plaqfield, Real *wloop, Real *field,
                             int radius, int Tmax, int nx, int ny,
                             bool planexy) {
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    CalcFieldWilsonLoop_dg<true, Real>(array, wilson_spaceline, plaqfield,
-                                       wloop, field, radius, Tmax, nx, ny,
-                                       planexy);
-  } else
-    CalcFieldWilsonLoop_dg<false, Real>(array, wilson_spaceline, plaqfield,
+  CalcFieldWilsonLoop_dg<false, Real>(array, wilson_spaceline, plaqfield,
                                         wloop, field, radius, Tmax, nx, ny,
                                         planexy);
 }

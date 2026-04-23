@@ -22,7 +22,6 @@
 
 #include <exchange.h>
 
-#include <texture_host.h>
 #include <timer.h>
 #include <tune.h>
 
@@ -179,7 +178,6 @@ if (pPath!=NULL)
 void EndCULQCD(int status) {
   if (getTuning() == TUNE_YES)
     saveTuneCache(getVerbosity());
-  UNBIND_ALL_TEXTURES();
 #ifdef MULTI_GPU
   FreeTempBuffersAndStreams();
 #endif

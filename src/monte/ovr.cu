@@ -20,7 +20,6 @@
 #include <monte/ovr.h>
 #include <reunitlink.h>
 #include <staple.h>
-#include <texture_host.h>
 #include <timer.h>
 
 using namespace std;
@@ -178,7 +177,7 @@ OverRelaxation<Real>::OverRelaxation(gauge &array) : array(array) {
 }
 template <class Real> void OverRelaxation<Real>::SetFunctionPtr() {
   kernel_pointer = NULL;
-  tex = PARAMS::UseTex;
+  tex = false;
   if (array.EvenOdd()) {
     if (tex) {
 #if (NCOLORS == 3)
@@ -221,11 +220,7 @@ void OverRelaxation<Real>::Run(const cudaStream_t &stream) {
 #ifdef TIMMINGS
   mtime.start();
 #endif
-  // just ensure that the texture was not unbind somewhere...
-  if (tex != PARAMS::UseTex) {
-    SetFunctionPtr();
-  }
-  GAUGE_TEXTURE(array.GetPtr(), true);
+  
   for (parity = 0; parity < 2; parity++)
     for (dir = 0; dir < NDIMS; dir++) {
       apply(stream);

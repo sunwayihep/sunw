@@ -13,7 +13,6 @@
 #include <gaugearray.h>
 #include <index.h>
 #include <meas/polyakovloop.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <reduce_block_1d.h>
@@ -113,17 +112,7 @@ void Calculate_OnePloyakovLoop(gauge array, gauge ploop, bool savePLMatrix) {
   if (savePLMatrix) {
     const bool savematrix = true;
     if (array.EvenOdd()) {
-      if (PARAMS::UseTex) {
-        if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd<true, SOA, savematrix, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-        if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd<true, SOA12, savematrix, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-        if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd<true, SOA8, savematrix, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-      } else {
+      
         if (array.Type() == SOA)
           kernel_calc_polyakovloop_evenodd<false, SOA, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
@@ -133,24 +122,14 @@ void Calculate_OnePloyakovLoop(gauge array, gauge ploop, bool savePLMatrix) {
         if (array.Type() == SOA8)
           kernel_calc_polyakovloop_evenodd<false, SOA8, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-      }
+      
     } else {
       printfError("Not Implemented...\n");
     }
   } else {
     const bool savematrix = false;
     if (array.EvenOdd()) {
-      if (PARAMS::UseTex) {
-        if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd<true, SOA, savematrix, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-        if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd<true, SOA12, savematrix, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-        if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd<true, SOA8, savematrix, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-      } else {
+      
         if (array.Type() == SOA)
           kernel_calc_polyakovloop_evenodd<false, SOA, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
@@ -160,7 +139,7 @@ void Calculate_OnePloyakovLoop(gauge array, gauge ploop, bool savePLMatrix) {
         if (array.Type() == SOA8)
           kernel_calc_polyakovloop_evenodd<false, SOA8, savematrix, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop.GetPtr());
-      }
+      
     } else {
       printfError("Not Implemented...\n");
     }
@@ -190,22 +169,7 @@ void Calculate_TrPloyakovLoop(gauge array, complex *ploop) {
   uint nthreads = 128;
   dim3 nblocks = GetBlockDim(nthreads, PARAMS::tstride);
   if (array.EvenOdd()) {
-    if (PARAMS::UseTex) {
-      if (array.Type() == SOA)
-        kernel_calc_polyakovloop_evenodd<true, SOA, false, Real>
-            <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
-                                                                ploop);
-#if (NCOLORS == 3)
-      if (array.Type() == SOA12)
-        kernel_calc_polyakovloop_evenodd<true, SOA12, false, Real>
-            <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
-                                                                ploop);
-      if (array.Type() == SOA8)
-        kernel_calc_polyakovloop_evenodd<true, SOA8, false, Real>
-            <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
-                                                                ploop);
-#endif
-    } else {
+    
       if (array.Type() == SOA)
         kernel_calc_polyakovloop_evenodd<false, SOA, false, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
@@ -220,27 +184,12 @@ void Calculate_TrPloyakovLoop(gauge array, complex *ploop) {
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
 #endif
-    }
+    
   } else {
 #ifdef MULTI_GPU
     printfError("Not Implemented...\n");
 #else
-    if (PARAMS::UseTex) {
-      if (array.Type() == SOA)
-        kernel_calc_polyakovloopTR_1D<true, SOA, Real>
-            <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
-                                                                ploop);
-#if (NCOLORS == 3)
-      if (array.Type() == SOA12)
-        kernel_calc_polyakovloopTR_1D<true, SOA12, Real>
-            <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
-                                                                ploop);
-      if (array.Type() == SOA8)
-        kernel_calc_polyakovloopTR_1D<true, SOA8, Real>
-            <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
-                                                                ploop);
-#endif
-    } else {
+    
       if (array.Type() == SOA)
         kernel_calc_polyakovloopTR_1D<false, SOA, Real>
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
@@ -255,7 +204,7 @@ void Calculate_TrPloyakovLoop(gauge array, complex *ploop) {
             <<<nblocks, nthreads, nthreads * sizeof(complex)>>>(array.GetPtr(),
                                                                 ploop);
 #endif
-    }
+    
 #endif
   }
   CUT_CHECK_ERROR("Polyakov Loop: Kernel execution failed");
@@ -343,17 +292,7 @@ void Calculate_OnePloyakovLoop(gauge array, msun *ploop, bool evenoddorder) {
   if (evenoddorder) {
     const bool evenodd = true;
     if (array.EvenOdd()) {
-      if (PARAMS::UseTex) {
-        if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd00<true, SOA, evenodd, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-        if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd00<true, SOA12, evenodd, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-        if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd00<true, SOA8, evenodd, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-      } else {
+      
         if (array.Type() == SOA)
           kernel_calc_polyakovloop_evenodd00<false, SOA, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
@@ -363,22 +302,12 @@ void Calculate_OnePloyakovLoop(gauge array, msun *ploop, bool evenoddorder) {
         if (array.Type() == SOA8)
           kernel_calc_polyakovloop_evenodd00<false, SOA8, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-      }
+      
     }
   } else {
     const bool evenodd = false;
     if (array.EvenOdd()) {
-      if (PARAMS::UseTex) {
-        if (array.Type() == SOA)
-          kernel_calc_polyakovloop_evenodd00<true, SOA, evenodd, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-        if (array.Type() == SOA12)
-          kernel_calc_polyakovloop_evenodd00<true, SOA12, evenodd, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-        if (array.Type() == SOA8)
-          kernel_calc_polyakovloop_evenodd00<true, SOA8, evenodd, Real>
-              <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-      } else {
+      
         if (array.Type() == SOA)
           kernel_calc_polyakovloop_evenodd00<false, SOA, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
@@ -388,7 +317,7 @@ void Calculate_OnePloyakovLoop(gauge array, msun *ploop, bool evenoddorder) {
         if (array.Type() == SOA8)
           kernel_calc_polyakovloop_evenodd00<false, SOA8, evenodd, Real>
               <<<nblocks, nthreads>>>(array.GetPtr(), ploop);
-      }
+      
     }
   }
   CUT_CHECK_ERROR("One Polyakov Loop: Kernel execution failed");
@@ -614,7 +543,7 @@ template <class Real> OnePolyakovLoop<Real>::~OnePolyakovLoop() {
 }
 
 template <class Real> void OnePolyakovLoop<Real>::SetFunctionPtr() {
-  tex = PARAMS::UseTex;
+  tex = false;
   kernel_pointer = NULL;
   tmp = NULL;
 #ifdef MULTI_GPU
@@ -748,10 +677,7 @@ complex OnePolyakovLoop<Real>::Run(const cudaStream_t &stream) {
   mtime.start();
 #endif
   // just ensure that the texture was not unbind somewhere...
-  if (tex != PARAMS::UseTex) {
-    SetFunctionPtr();
-  }
-  GAUGE_TEXTURE(array.GetPtr(), true);
+  
 #ifdef MULTI_GPU
   if (numnodes() == 1) {
     CUDA_SAFE_CALL(cudaMemset(sum, 0, sizeof(complex)));

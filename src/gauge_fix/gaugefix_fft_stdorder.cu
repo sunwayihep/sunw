@@ -15,7 +15,6 @@
 #include <cuda_common.h>
 #include <gaugefix/gaugefix.h>
 #include <matrixsun.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <complex.h>
@@ -937,11 +936,6 @@ complex CALL_FFT(gauge _pgauge, Real alpha, bool landautune, Real stopvalue,
   //------------------------------------------------------------------------
   // Bind TEXTURES_FFT if PARAMS::UseTex is True
   //------------------------------------------------------------------------
-  GAUGE_TEXTURE(_pgauge.GetPtr(), true);
-  DELTA_TEXTURE(_delta.GetPtr(), true);
-  if (useGx)
-    GX_TEXTURE(_gx.GetPtr(), true);
-  //------------------------------------------------------------------------
   //------------------------------------------------------------------------
   // Create two 2D FFT plans.
   //------------------------------------------------------------------------
@@ -1096,10 +1090,6 @@ complex CALL_FFT(gauge _pgauge, Real alpha, bool landautune, Real stopvalue,
   //------------------------------------------------------------------------
   // Unbind TEXTURES_FFT if used
   //------------------------------------------------------------------------
-  GAUGE_TEXTURE(_pgauge.GetPtr(), false);
-  DELTA_TEXTURE(_delta.GetPtr(), false);
-  if (useGx)
-    GX_TEXTURE(_gx.GetPtr(), false);
   //------------------------------------------------------------------------
   // Release all temporary arrays
   //------------------------------------------------------------------------
@@ -1148,11 +1138,7 @@ template <ArrayType atype, ArrayType atypeDeltax, ArrayType atypeGx, class Real,
           int DIR>
 complex CALL_FFT_TEX(gauge _pgauge, Real alpha, bool landautune, Real stopvalue,
                      int maxsteps, int verbose, bool useGx) {
-  if (PARAMS::UseTex)
-    return CALL_FFT<true, atype, atypeDeltax, atypeGx, Real, DIR>(
-        _pgauge, alpha, landautune, stopvalue, maxsteps, verbose, useGx);
-  else
-    return CALL_FFT<false, atype, atypeDeltax, atypeGx, Real, DIR>(
+  return CALL_FFT<false, atype, atypeDeltax, atypeGx, Real, DIR>(
         _pgauge, alpha, landautune, stopvalue, maxsteps, verbose, useGx);
 }
 template <ArrayType atype, ArrayType atypeDeltax, ArrayType atypeGx, class Real>

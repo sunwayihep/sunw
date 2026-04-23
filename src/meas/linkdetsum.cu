@@ -8,14 +8,15 @@
 #include <meas/linkdetsum.h>
 #include <modes.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <cudaAtomic.h>
 
 #include <launch_kernel.cuh>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 #include <reduce_block_1d.h>
 
@@ -84,20 +85,7 @@ template <class Real>
 void GaugeDetCUB<Real>::apply(const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   CUDA_SAFE_CALL(cudaMemset(arg.value, 0, sizeof(complex)));
-  if (PARAMS::UseTex) {
-    // just ensure that the texture was not unbind somewhere...
-    BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-    if (array.Type() == SOA)
-      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, true, SOA, Real);
-    if (array.Type() == SOA12)
-      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, true, SOA12, Real);
-    if (array.Type() == SOA8)
-      LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, true, SOA8, Real);
-#else
-    LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, true, SOA, Real);
-#endif
-  } else {
+  
 #if (NCOLORS == 3)
     if (array.Type() == SOA)
       LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, false, SOA, Real);
@@ -108,7 +96,7 @@ void GaugeDetCUB<Real>::apply(const cudaStream_t &stream) {
 #else
     LAUNCH_KERNEL(kernel_linkdetsum, tp, stream, arg, false, SOA, Real);
 #endif
-  }
+  
 }
 template <class Real>
 complex GaugeDetCUB<Real>::Run(const cudaStream_t &stream) {
@@ -230,24 +218,7 @@ template <class Real> void GaugeDet<Real>::apply(const cudaStream_t &stream) {
   size_t memshared = tp.block.x * sizeof(complex);
   CUDA_SAFE_CALL(cudaMemset(arg.value, 0, sizeof(complex)));
   if (array.EvenOdd()) {
-    if (PARAMS::UseTex) {
-      // just ensure that the texture was not unbind somewhere...
-      BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        kernel_linkdetsum<true, SOA, Real>
-            <<<tp.grid, tp.block, memshared, stream>>>(arg);
-      if (array.Type() == SOA12)
-        kernel_linkdetsum<true, SOA12, Real>
-            <<<tp.grid, tp.block, memshared, stream>>>(arg);
-      if (array.Type() == SOA8)
-        kernel_linkdetsum<true, SOA8, Real>
-            <<<tp.grid, tp.block, memshared, stream>>>(arg);
-#else
-      kernel_linkdetsum<true, SOA, Real>
-          <<<tp.grid, tp.block, memshared, stream>>>(arg);
-#endif
-    } else {
+    
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
         kernel_linkdetsum<false, SOA, Real>
@@ -262,7 +233,7 @@ template <class Real> void GaugeDet<Real>::apply(const cudaStream_t &stream) {
       kernel_linkdetsum<false, SOA, Real>
           <<<tp.grid, tp.block, memshared, stream>>>(arg);
 #endif
-    }
+    
   }
 }
 template <class Real> complex GaugeDet<Real>::Run(const cudaStream_t &stream) {

@@ -14,7 +14,6 @@
 #include <index.h>
 #include <meas/polyakovloop.h>
 #include <reduction.h>
-#include <texture_host.h>
 #include <timer.h>
 
 #include <launch_kernel.cuh>
@@ -22,7 +21,9 @@
 
 #include <cudaAtomic.h>
 
+#include <culqcd_cccl_guard_begin.h>
 #include <cub/cub.cuh>
+#include <culqcd_cccl_guard_end.h>
 
 using namespace std;
 
@@ -135,14 +136,10 @@ template <class Real> void MatrixPloop(gauge array, gauge ploop) {
 
   const ArrayType atypein = SOA;
   const ArrayType atypeout = SOA;
-  if (PARAMS::UseTex) {
-    GAUGE_TEXTURE(array.GetPtr(), true);
-    MPloop<true, atypein, atypeout, Real> onepl(array, ploop);
-    onepl.Run();
-  } else {
+  
     MPloop<false, atypein, atypeout, Real> onepl(array, ploop);
     onepl.Run();
-  }
+  
 }
 template void MatrixPloop<float>(gauges array, gauges ploop);
 template void MatrixPloop<double>(gauged array, gauged ploop);
@@ -302,24 +299,7 @@ template <class Real> void PLoop<Real>::apply(const cudaStream_t &stream) {
   TuneParam tp = tuneLaunch(*this, getTuning(), getVerbosity());
   CUDA_SAFE_CALL(cudaMemset(arg.value, 0, sizeof(complex)));
   if (array.EvenOdd() == true) {
-    if (PARAMS::UseTex) {
-      // just ensure that the texture was not unbind somewhere...
-      BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, true, SOA,
-                      Real);
-      if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, true, SOA12,
-                      Real);
-      if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, true, SOA8,
-                      Real);
-#else
-      LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, true, SOA,
-                    Real);
-#endif
-    } else {
+    
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
         LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, false, SOA,
@@ -334,25 +314,9 @@ template <class Real> void PLoop<Real>::apply(const cudaStream_t &stream) {
       LAUNCH_KERNEL(kernel_calc_polyakovloopEO, tp, stream, arg, false, SOA,
                     Real);
 #endif
-    }
+    
   } else {
-    if (PARAMS::UseTex) {
-      // just ensure that the texture was not unbind somewhere...
-      BIND_GAUGE_TEXTURE(array.GetPtr());
-#if (NCOLORS == 3)
-      if (array.Type() == SOA)
-        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA,
-                      Real);
-      if (array.Type() == SOA12)
-        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA12,
-                      Real);
-      if (array.Type() == SOA8)
-        LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA8,
-                      Real);
-#else
-      LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, true, SOA, Real);
-#endif
-    } else {
+    
 #if (NCOLORS == 3)
       if (array.Type() == SOA)
         LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA,
@@ -367,7 +331,7 @@ template <class Real> void PLoop<Real>::apply(const cudaStream_t &stream) {
       LAUNCH_KERNEL(kernel_calc_polyakovloop, tp, stream, arg, false, SOA,
                     Real);
 #endif
-    }
+    
   }
 }
 

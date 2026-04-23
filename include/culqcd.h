@@ -14,7 +14,6 @@
 #include <matrixsun.h>   /*SU(N) matrix and related operations*/
 #include <random.h>      /* CURAND RNG container and rng initialization*/
 #include <reunitarize.h> /*reunitarize gauge field*/
-#include <texture_host.h>
 #include <timer.h>
 
 #include <gaugefix/gaugefix.h> /*Gauge fixing, Coulomb and Landau*/
