@@ -308,9 +308,9 @@ template void call_reduce<double>(int size, int threads, int blocks,
 template void call_reduce<double2>(int size, int threads, int blocks,
                                    int whichKernel, double2 *d_idata,
                                    double2 *d_odata);
-template void call_reduce<double4>(int size, int threads, int blocks,
-                                   int whichKernel, double4 *d_idata,
-                                   double4 *d_odata);
+template void call_reduce<culqcd_double4>(int size, int threads, int blocks,
+                                          int whichKernel, culqcd_double4 *d_idata,
+                                          culqcd_double4 *d_odata);
 
 template void call_reduce<complexs>(int size, int threads, int blocks,
                                     int whichKernel, complexs *d_idata,
@@ -494,10 +494,10 @@ template void call_reduce_wstream<double2>(int size, int threads, int blocks,
                                            int whichKernel, double2 *d_idata,
                                            double2 *d_odata,
                                            const cudaStream_t &stream);
-template void call_reduce_wstream<double4>(int size, int threads, int blocks,
-                                           int whichKernel, double4 *d_idata,
-                                           double4 *d_odata,
-                                           const cudaStream_t &stream);
+template void call_reduce_wstream<culqcd_double4>(
+    int size, int threads, int blocks, int whichKernel,
+    culqcd_double4 *d_idata, culqcd_double4 *d_odata,
+    const cudaStream_t &stream);
 
 template void call_reduce_wstream<complexs>(int size, int threads, int blocks,
                                             int whichKernel, complexs *d_idata,

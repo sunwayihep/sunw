@@ -3,6 +3,8 @@
 #ifndef REDUCE_T2_OP_CUH
 #define REDUCE_T2_OP_CUH
 
+#include <cuda_vector_types.h>
+
 inline __host__ __device__ int2 operator+(int2 u, int2 v) {
   return make_int2(u.x + v.x, u.y + v.y);
 }
@@ -76,18 +78,20 @@ inline __host__ __device__ void operator+=(volatile float4 &a,
   a.w += b.w;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
-inline __host__ __device__ double4 operator+(double4 u, double4 v) {
-  return make_double4(u.x + v.x, u.y + v.y, u.z + v.z, u.w + v.w);
+inline __host__ __device__ CULQCD::culqcd_double4
+operator+(CULQCD::culqcd_double4 u, CULQCD::culqcd_double4 v) {
+  return CULQCD_MAKE_DOUBLE4(u.x + v.x, u.y + v.y, u.z + v.z, u.w + v.w);
 }
 
-inline __host__ __device__ void operator+=(double4 &a, double4 b) {
+inline __host__ __device__ void operator+=(CULQCD::culqcd_double4 &a,
+                                           CULQCD::culqcd_double4 b) {
   a.x += b.x;
   a.y += b.y;
   a.z += b.z;
   a.w += b.w;
 }
-inline __host__ __device__ void operator+=(volatile double4 &a,
-                                           volatile double4 b) {
+inline __host__ __device__ void operator+=(volatile CULQCD::culqcd_double4 &a,
+                                           volatile CULQCD::culqcd_double4 b) {
   a.x += b.x;
   a.y += b.y;
   a.z += b.z;
@@ -127,8 +131,10 @@ template <> inline __host__ __device__ double zero<double>() {
 template <> inline __host__ __device__ double2 zero<double2>() {
   return make_double2((double)0.0, (double)0.0);
 }
-template <> inline __host__ __device__ double4 zero<double4>() {
-  return make_double4((double)0.0, (double)0.0, (double)0.0, (double)0.0);
+template <>
+inline __host__ __device__ CULQCD::culqcd_double4 zero<CULQCD::culqcd_double4>() {
+  return CULQCD_MAKE_DOUBLE4((double)0.0, (double)0.0, (double)0.0,
+                             (double)0.0);
 }
 
 #endif

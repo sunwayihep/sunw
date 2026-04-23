@@ -104,8 +104,9 @@ template double reduction(double *array_d, int size,
                           const cudaStream_t &stream);
 template double2 reduction(double2 *array_d, int size,
                            const cudaStream_t &stream);
-template double4 reduction(double4 *array_d, int size,
-                           const cudaStream_t &stream);
+template CULQCD::culqcd_double4
+reduction(CULQCD::culqcd_double4 *array_d, int size,
+          const cudaStream_t &stream);
 
 template complexs reduction(complexs *array_d, int size,
                             const cudaStream_t &stream);
@@ -125,7 +126,8 @@ template float4 reduction(float4 *array_d, int size);
 
 template double reduction(double *array_d, int size);
 template double2 reduction(double2 *array_d, int size);
-template double4 reduction(double4 *array_d, int size);
+template CULQCD::culqcd_double4 reduction(CULQCD::culqcd_double4 *array_d,
+                                          int size);
 
 template complexs reduction(complexs *array_d, int size);
 template complexd reduction(complexd *array_d, int size);
