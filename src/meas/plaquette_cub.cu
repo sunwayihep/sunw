@@ -254,8 +254,8 @@ template <class Real> void PlaquetteCUB<Real>::stat() {
 template <class Real> void PlaquetteCUB<Real>::printValue() {
   Real resf = (plaq_value.real() + plaq_value.imag()) / 2.0;
   //.real() space  and .imag() time part
-  printfCULQCD("Plaquette: < %.12e : %.12e > :: mean: %.12e\n",
-               plaq_value.real(), plaq_value.imag(), resf);
+  printfCULQCD("Plaquette: %.12e (spatial: %.12e, temporal: %.12e)\n",
+               resf, plaq_value.real(), plaq_value.imag());
 }
 
 template <class Real> long long PlaquetteCUB<Real>::flop() const {
